@@ -1,0 +1,341 @@
+:root {
+  --primary-blue: #005580;
+  --secondary-blue: #00334d;
+  --white: #ffffff;
+  --text-dark: #000000;
+  --error-red: #ff3333;
+}
+
+/* =========================
+  CONFIGURACIÓN GENERAL
+   ========================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: 
+    linear-gradient(
+      rgba(0, 51, 77, 0.5), 
+      rgba(0, 51, 77, 0.5)
+    ), 
+    url('../assets/manta-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* =========================
+  CONTENEDOR PRINCIPAL
+   ========================= */
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+/* =========================
+  NAVBAR
+   ========================= */
+
+header.navbar {
+  width: 100%;
+  margin: 0;
+  padding: 15px 30px;
+  background-color: #002233;
+  color: var(--white);
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* =========================
+  CONTENEDOR DEL LOGIN
+   ========================= */
+
+.auth-container {
+  width: min(440px, calc(100% - 30px));
+  max-width: 440px;
+  margin: 30px auto;
+  padding: 25px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* =========================
+  FORMULARIO
+   ========================= */
+
+form {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+form div {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 14px 0;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-align: left;
+}
+
+/* =========================
+  TÍTULO
+   ========================= */
+
+h2 {
+  margin: 0 0 20px 0;
+  color: var(--white);
+  text-align: center;
+  font-size: 24px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* =========================
+  ETIQUETAS
+   ========================= */
+
+label {
+  display: block;
+  width: 100%;
+  margin-bottom: 5px;
+  color: var(--white);
+  font-size: 13px;
+  font-weight: bold;
+  text-align: left;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* =========================
+  MENSAJE DE ERROR Y ÉXITO
+   ========================= */
+
+.auth-container > p,
+form + p {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 15px 0;
+  padding: 0;
+  color: #ff3333 !important;
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1.4;
+  text-align: center;
+  display: block;
+  overflow: visible;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* =========================
+  INPUTS
+   ========================= */
+
+input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 8px 10px;
+  border: 1px solid #99d6ff;
+  border-radius: 5px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  color: #000000 !important;
+  background-color: #ffffff !important;
+  outline: none;
+  box-shadow: none !important;
+}
+
+/* =========================
+  INPUT CONTRASEÑA
+   ========================= */
+
+.password-wrapper {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.password-wrapper input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-right: 42px;
+}
+
+/* =========================
+  ICONO DEL OJO
+   ========================= */
+
+.eye-icon {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--primary-blue);
+  cursor: pointer;
+}
+
+.eye-icon:hover {
+  color: var(--secondary-blue);
+  background: transparent !important;
+}
+
+/* =========================
+  INPUT ENFOCADO
+   ========================= */
+
+input:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 2px rgba(0, 85, 128, 0.25) !important;
+}
+
+/* =========================
+  AUTOCOMPLETADO CHROME
+   ========================= */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+/* =========================
+  BOTÓN ENTRAR
+   ========================= */
+
+button[type="submit"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  background-color: var(--primary-blue);
+  color: var(--white);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+button[type="submit"]:hover {
+  background-color: var(--secondary-blue);
+}
+
+/* =========================
+  REGISTRO
+   ========================= */
+
+p button {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  background: none !important;
+  border: none !important;
+  color: #ffffff;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+  font-weight: bold;
+  box-shadow: none !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+p button:hover {
+  color: #99d6ff;
+  background: none !important;
+}
+
+/* =========================
+  FOOTER
+   ========================= */
+
+footer.footer {
+  width: 100%;
+  margin: 0;
+  background-color: #002233;
+  color: var(--white);
+  text-align: center;
+  padding: 15px;
+  font-size: 14px;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* =========================
+  RESPONSIVE
+   ========================= */
+
+@media (max-width: 500px) {
+  .auth-container {
+    width: calc(100% - 30px);
+    margin: 25px auto;
+    padding: 20px 15px;
+  }
+
+  header.navbar {
+    padding: 12px 15px;
+    font-size: 16px;
+  }
+
+  h2 {
+    font-size: 21px;
+  }
+
+  footer.footer {
+    padding: 12px;
+    font-size: 13px;
+  }
+}
