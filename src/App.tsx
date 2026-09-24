@@ -6,9 +6,17 @@ import { type User } from './business/types/user';
 import './styles/auth.css';
 import './styles/home.css';
 
+const defaultUser: User = {
+  id: 'ana-g',
+  name: 'Ana G.',
+  email: 'ana.g@mantacampus.ui',
+  password: 'password123',
+  role: 'admin'
+};
+
 function App() {
-  const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard'>('login');
-  const [loggedUser, setLoggedUser] = useState<User | null>(null);
+  const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard'>('dashboard');
+  const [loggedUser, setLoggedUser] = useState<User | null>(defaultUser);
 
   const handleLoginSuccess = (user: User) => {
     setLoggedUser(user);

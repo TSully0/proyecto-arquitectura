@@ -161,7 +161,7 @@ form + p {
   INPUTS
    ========================= */
 
-input {
+input:not([type="checkbox"]):not([type="radio"]) {
   display: block;
   width: 100%;
   max-width: 100%;
@@ -234,7 +234,7 @@ input {
   INPUT ENFOCADO
    ========================= */
 
-input:focus {
+input:not([type="checkbox"]):not([type="radio"]):focus {
   border-color: var(--primary-blue);
   box-shadow: 0 0 0 2px rgba(0, 85, 128, 0.25) !important;
 }
@@ -254,7 +254,7 @@ input:-webkit-autofill:focus {
   BOTÓN ENTRAR
    ========================= */
 
-button[type="submit"] {
+.auth-container button[type="submit"] {
   display: block;
   width: 100%;
   max-width: 100%;
@@ -271,7 +271,7 @@ button[type="submit"] {
   transition: background-color 0.2s;
 }
 
-button[type="submit"]:hover {
+.auth-container button[type="submit"]:hover {
   background-color: var(--secondary-blue);
 }
 
