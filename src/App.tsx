@@ -1,55 +1,25 @@
-import { useState } from 'react';
-import { LoginPage } from './presentation/pages/LoginPage';
-import { RegisterPage } from './presentation/pages/RegisterPage';
-import { HomePage } from './presentation/HomePage';
-import { type User } from './business/types/user';
+import { useEffect } from 'react';
+import { AppRouter } from './presentation/routes/AppRouter';
+import { initialUsers } from './data/repositories/users';
+
 import './styles/auth.css';
 import './styles/home.css';
 
-const defaultUser: User = {
-  id: 'ana-g',
-  name: 'Ana G.',
-  email: 'ana.g@mantacampus.ui',
-  password: 'password123',
-  role: 'admin'
-};
-
 function App() {
-  const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard'>('dashboard');
-  const [loggedUser, setLoggedUser] = useState<User | null>(defaultUser);
 
-  const handleLoginSuccess = (user: User) => {
-    setLoggedUser(user);
-    setCurrentView('dashboard');
-  };
+  // 🔥 cargar usuarios iniciales (mock)
+  useEffect(() => {
+    const storedUsers = localStorage.getItem('app_users');
 
-  const handleLogout = () => {
-    setLoggedUser(null);
-    setCurrentView('login');
-  };
+    if (!storedUsers) {
+      localStorage.setItem('app_users', JSON.stringify(initialUsers));
+    }
+  }, []);
 
   return (
-    <>
-      <main className="app-main">
-        {currentView === 'login' && (
-          <LoginPage 
-            onNavigateToRegister={() => setCurrentView('register')} 
-            onLoginSuccess={handleLoginSuccess}
-          />
-        )}
-
-        {currentView === 'register' && (
-          <RegisterPage 
-            onNavigateToLogin={() => setCurrentView('login')} 
-          />
-        )}
-
-        {currentView === 'dashboard' && loggedUser && (
-          <HomePage user={loggedUser} onLogout={handleLogout} />
-        )}
-      </main>
-
-    </>
+    <main className="app-main">
+      <AppRouter />
+    </main>
   );
 }
 

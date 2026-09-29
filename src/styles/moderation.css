@@ -1,0 +1,142 @@
+/* Fondo general tipo Home */
+.moderation-wrapper {
+  background: #efe7dd;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+/* Contenedor */
+.moderation-container {
+  max-width: 1000px;
+  margin: auto;
+}
+
+/* Títulos */
+.moderation-container h1 {
+  color: #5a3e2b;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #8a6f5a;
+  margin-bottom: 25px;
+}
+
+/* Grid */
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Card */
+.review-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid #e0d6c9;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: 0.2s;
+}
+
+.review-card:hover {
+  transform: translateY(-3px);
+}
+
+/* Aprobado */
+.review-card.approved {
+  border-left: 5px solid #10b981;
+}
+
+/* Header */
+.review-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Avatar */
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: #0cb7f2;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Usuario */
+.user {
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Estado */
+.status {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Texto */
+.text {
+  margin: 10px 0;
+  color: #444;
+}
+
+/* Botones */
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-approve {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-approve:hover {
+  background: #059669;
+}
+
+.btn-delete:hover {
+  background: #dc2626;
+}
+
+/* Empty */
+.empty {
+  text-align: center;
+  margin-top: 20px;
+  color: #777;
+}
+
+/* BOTÓN VOLVER */
+.btn-back {
+  background: transparent;
+  border: none;
+  color: #8b5e3c;
+  font-weight: bold;
+  margin-bottom: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-back:hover {
+  text-decoration: underline;
+  color: #5a3e2b;
+}
