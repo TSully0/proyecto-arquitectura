@@ -10,6 +10,7 @@ type User = {
   email: string;
   role: Role;
   banned?: boolean;
+  suspendedUntil?: number | null; // ✅ FIX
 };
 
 export const AdminUsersPage = () => {
@@ -19,7 +20,7 @@ export const AdminUsersPage = () => {
 
   const navigate = useNavigate();
 
-  // 🔥 cargar usuarios (FIX)
+  // 🔥 cargar usuarios
   useEffect(() => {
     const stored = localStorage.getItem("app_users");
 
@@ -32,55 +33,57 @@ export const AdminUsersPage = () => {
         email: u.email,
         role: u.role as Role,
         banned: u.banned ?? false,
+        suspendedUntil: u.suspendedUntil ?? null,
       }));
 
       setUsers(safeUsers);
     }
   }, []);
 
-  // 💾 guardar helper
+  // 💾 guardar
   const saveUsers = (updated: User[]) => {
     setUsers(updated);
     localStorage.setItem("app_users", JSON.stringify(updated));
   };
 
-  // 🚫 banear
+  // 🚫 BAN PERMANENTE
   const handleBan = (id: string) => {
     const updated: User[] = users.map((u) =>
-      u.id === id ? { ...u, banned: !u.banned } : u
+      u.id === id ? { ...u, banned: true, suspendedUntil: null } : u
     );
     saveUsers(updated);
   };
 
-  // ❌ eliminar
-  const handleDelete = (id: string) => {
-    const updated: User[] = users.filter((u) => u.id !== id);
+  // 🔓 DESBANEAR
+  const handleUnban = (id: string) => {
+    const updated: User[] = users.map((u) =>
+      u.id === id ? { ...u, banned: false } : u
+    );
     saveUsers(updated);
   };
 
-  // ⬆ user → moderator
-  const handlePromote = (id: string) => {
-    const updated: User[] = users.map((u) => {
-      if (u.id === id && u.role === "user") {
-        return { ...u, role: "moderator" };
-      }
-      return u;
-    });
+  // ⏳ SUSPENDER
+  const handleSuspend = (id: string, hours: number) => {
+    const until = Date.now() + hours * 60 * 60 * 1000;
+
+    const updated: User[] = users.map((u) =>
+      u.id === id
+        ? { ...u, suspendedUntil: until, banned: false }
+        : u
+    );
+
     saveUsers(updated);
   };
 
-  // ⬇ moderator → user
-  const handleDemote = (id: string) => {
-    const updated: User[] = users.map((u) => {
-      if (u.id === id && u.role === "moderator") {
-        return { ...u, role: "user" };
-      }
-      return u;
-    });
+  // 🔓 QUITAR SUSPENSIÓN
+  const handleUnsuspend = (id: string) => {
+    const updated: User[] = users.map((u) =>
+      u.id === id ? { ...u, suspendedUntil: null } : u
+    );
     saveUsers(updated);
   };
 
-  // 🔍 filtro + búsqueda
+  // 🔍 filtro
   const filteredUsers = users.filter((u) => {
     const matchSearch =
       u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -91,22 +94,31 @@ export const AdminUsersPage = () => {
     return matchSearch && matchFilter;
   });
 
+  // 🔥 estado del usuario
+  const getStatus = (user: User) => {
+    if (user.banned) return "BANEADO";
+
+    if (user.suspendedUntil && user.suspendedUntil > Date.now()) {
+      return "SUSPENDIDO";
+    }
+
+    return "ACTIVO";
+  };
+
   return (
     <div className="users-container">
 
-      {/* 🔙 BACK */}
       <button className="btn-back" onClick={() => navigate(-1)}>
         ← Volver
       </button>
 
       <h1>👥 Gestión de Usuarios</h1>
 
-      {/* 🔍 TOOLBAR */}
       <div className="users-toolbar">
 
         <input
           type="text"
-          placeholder="Buscar por nombre o correo..."
+          placeholder="Buscar..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="search-input"
@@ -142,74 +154,89 @@ export const AdminUsersPage = () => {
 
       </div>
 
-      {/* GRID */}
       <div className="users-grid">
-        {filteredUsers.map((user) => (
-          <div
-            key={user.id}
-            className={`user-card ${user.banned ? "banned" : ""}`}
-          >
+        {filteredUsers.map((user) => {
 
-            <div className="user-header">
-              <div className="avatar">
-                {user.name.charAt(0)}
+          const status = getStatus(user);
+
+          return (
+            <div
+              key={user.id}
+              className={`user-card ${status.toLowerCase()}`}
+            >
+
+              <div className="user-header">
+                <div className="avatar">
+                  {user.name.charAt(0)}
+                </div>
+
+                <div>
+                  <h3>{user.name}</h3>
+                  <p>{user.email}</p>
+                </div>
               </div>
 
-              <div>
-                <h3>{user.name}</h3>
-                <p>{user.email}</p>
-              </div>
-            </div>
-
-            <div className="user-info">
-              <span className={`role ${user.role}`}>
-                {user.role}
-              </span>
-
-              {user.banned && (
-                <span className="status banned">
-                  BANEADO
+              <div className="user-info">
+                <span className={`role ${user.role}`}>
+                  {user.role}
                 </span>
-              )}
+
+                <span className={`status ${status.toLowerCase()}`}>
+                  {status}
+                </span>
+              </div>
+
+              <div className="user-actions">
+
+                {user.role !== "admin" && (
+                  <>
+                    {!user.banned ? (
+                      <button
+                        className="btn-ban"
+                        onClick={() => handleBan(user.id)}
+                      >
+                        Banear permanente
+                      </button>
+                    ) : (
+                      <button
+                        className="btn-unban"
+                        onClick={() => handleUnban(user.id)}
+                      >
+                        Desbanear
+                      </button>
+                    )}
+
+                    {status !== "SUSPENDIDO" ? (
+                      <>
+                        <button
+                          className="btn-suspend"
+                          onClick={() => handleSuspend(user.id, 1)}
+                        >
+                          Suspender 1h
+                        </button>
+
+                        <button
+                          className="btn-suspend"
+                          onClick={() => handleSuspend(user.id, 24)}
+                        >
+                          Suspender 24h
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="btn-unsuspend"
+                        onClick={() => handleUnsuspend(user.id)}
+                      >
+                        Quitar suspensión
+                      </button>
+                    )}
+                  </>
+                )}
+
+              </div>
             </div>
-
-            <div className="user-actions">
-
-              {user.role === "user" && (
-                <button
-                  className="btn-promote"
-                  onClick={() => handlePromote(user.id)}
-                >
-                  ⬆ Hacer Moderador
-                </button>
-              )}
-
-              {user.role === "moderator" && (
-                <button
-                  className="btn-demote"
-                  onClick={() => handleDemote(user.id)}
-                >
-                  ⬇ Quitar Moderador
-                </button>
-              )}
-
-              <button
-                className="btn-ban"
-                onClick={() => handleBan(user.id)}
-              >
-                {user.banned ? "Desbanear" : "Banear"}
-              </button>
-
-              <button
-                className="btn-delete"
-                onClick={() => handleDelete(user.id)}
-              >
-                Eliminar
-              </button>
-
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {filteredUsers.length === 0 && (

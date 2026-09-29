@@ -22,7 +22,6 @@ export function LoginPage({
     e.preventDefault();
     setError('');
 
-    // 🔹 limpiar datos
     const cleanIdentifier = identifier.trim().toLowerCase();
 
     const stored = localStorage.getItem('app_users');
@@ -37,19 +36,26 @@ export function LoginPage({
         u.password === btoa(password)
     );
 
-    // ❌ usuario no existe
     if (!user) {
       setError('Credenciales incorrectas');
       return;
     }
 
-    // 🚫 usuario baneado
+    // 🚫 BAN PERMANENTE
     if (user.banned) {
-      setError('Tu cuenta ha sido bloqueada por un administrador');
+      setError('Cuenta bloqueada permanentemente');
       return;
     }
 
-    // ✅ login correcto
+    // ⏳ SUSPENSIÓN
+    if (
+      user.suspendedUntil &&
+      new Date(user.suspendedUntil) > new Date()
+    ) {
+      setError('Cuenta suspendida temporalmente');
+      return;
+    }
+
     onLoginSuccess(user);
   };
 
@@ -60,7 +66,6 @@ export function LoginPage({
       {error && <p className="error">{error}</p>}
 
       <form onSubmit={handleLogin}>
-
         <div>
           <label>Correo o usuario</label>
           <input
