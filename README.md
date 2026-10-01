@@ -1,21 +1,166 @@
-# React + TypeScript + Vite
+# 🌴 Huecas Manabas – MantaCampus
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Plataforma web tipo red social enfocada en estudiantes de Manta (ULEAM), donde pueden descubrir, recomendar y comentar sobre lugares como:
 
-Currently, two official plugins are available:
+- 🍔 Comida
+- 🎬 Cines
+- 🏖️ Lugares turísticos
+- ⚡ Actividades y experiencias
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Incluye sistema de usuarios, roles (admin/moderador), notificaciones y panel de administración.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# ⚛️ React + TypeScript + Vite
 
-## Expanding the Oxlint configuration
+Este proyecto está construido con **Vite + React + TypeScript**, usando HMR (Hot Module Replacement) y configuración moderna de desarrollo.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+---
 
-```json
+## 🚀 Tecnologías utilizadas
+
+- ⚛️ React 18+
+- ⚡ Vite
+- 🟦 TypeScript
+- 🎨 CSS personalizado (tema Manta 🌊)
+- 💾 LocalStorage (mock backend)
+- 🎯 React Router DOM
+- 🎭 Lucide Icons
+
+---
+
+## 📦 Plugins oficiales disponibles
+
+- https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react
+- https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc
+- https://oxc.rs
+- https://swc.rs
+
+---
+
+## ⚡ React Compiler (opcional)
+
+https://react.dev/learn/react-compiler/installation
+
+---
+
+## 📁 Estructura del proyecto
+
+src/
+│
+├── assets/
+├── business/
+│   └── types/
+├── data/
+│   ├── repositories/
+│   └── supabase.ts
+├── presentation/
+│   ├── components/
+│   ├── pages/
+│   └── routes/
+├── styles/
+├── App.tsx
+└── main.tsx
+
+---
+
+## 🔐 Autenticación
+
+- Login / Registro
+- Persistencia con `localStorage`
+
+Usuario actual:
+localStorage.getItem("user")
+
+Usuarios iniciales mock:
+localStorage.setItem("app_users", initialUsers)
+
+---
+
+## 👥 Roles del sistema
+
+| Rol          | Permisos                       |
+|--------------|------------------------------|
+| 👤 user      | Ver lugares, comentar, guardar |
+| 🛠 moderator | Moderar contenido              |
+| 🛡 admin     | Gestión total                  |
+
+---
+
+## 🧭 Rutas principales
+
+/               → Home (requiere login)
+/login          → Iniciar sesión
+/register       → Registro
+/admin/users    → Gestión de usuarios
+/moderacion     → Panel de moderación
+/perfil         → Perfil usuario
+
+---
+
+## 🧠 Funcionalidades
+
+### 🏠 Home
+- Lista de lugares
+- Filtros por categoría
+- Búsqueda
+- Likes ❤️
+- Guardar 📌
+
+### 🗺 Sidebar
+- Lugares guardados
+- Tendencias
+- Mapa de Manta
+
+### ⭐ Reviews
+- Crear lugares
+- Calificación por estrellas
+- Tags: WiFi, pet friendly, etc.
+
+### 💬 Comentarios
+- Opiniones de usuarios
+- Preguntas y respuestas
+
+### 🔔 Notificaciones
+- Dropdown interactivo
+- Filtro leídas/no leídas
+- Marcar como leídas
+
+### 🛠 Admin Panel
+- Gestión de usuarios
+- Moderación de contenido
+- Estadísticas mock
+
+---
+
+## 🎨 Diseño UI
+
+Inspirado en Manta 🌊
+
+- Café: `#A75F37`
+- Café oscuro: `#8C4B27`
+- Azul costa: `#2C6E91`
+- Azul claro: `#99D6FF`
+
+---
+
+## ⚙️ Instalación
+
+git clone <tu-repo>
+cd proyecto-arquitectura
+npm install
+npm run dev
+
+---
+
+## 🏗 Build producción
+
+npm run build
+
+---
+
+## 🧪 Linting (Oxlint)
+
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "oxc"],
@@ -27,6 +172,18 @@ If you are developing a production application, we recommend enabling type-aware
     "react/only-export-components": ["warn", { "allowConstantExport": true }]
   }
 }
-```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+---
+
+## ⚠️ Notas importantes
+
+- No usa backend real (solo localStorage)
+- Listo para integrar Supabase o API
+- Los datos se reinician al limpiar el navegador
+
+---
+
+## 👨‍💻 Autor
+
+Proyecto académico – ULEAM  
+Ingeniería en Software
