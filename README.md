@@ -46,21 +46,26 @@ https://react.dev/learn/react-compiler/installation
 
 ## 📁 Estructura del proyecto
 
+```text
 src/
 │
 ├── assets/
 ├── business/
 │   └── types/
+│
 ├── data/
 │   ├── repositories/
 │   └── supabase.ts
+│
 ├── presentation/
 │   ├── components/
 │   ├── pages/
 │   └── routes/
+│
 ├── styles/
 ├── App.tsx
 └── main.tsx
+```
 
 ---
 
@@ -69,18 +74,17 @@ src/
 - Login / Registro
 - Persistencia con `localStorage`
 
-Usuario actual:
+```js
 localStorage.getItem("user")
-
-Usuarios iniciales mock:
 localStorage.setItem("app_users", initialUsers)
+```
 
 ---
 
 ## 👥 Roles del sistema
 
 | Rol          | Permisos                       |
-|--------------|------------------------------|
+| ------------ | ------------------------------ |
 | 👤 user      | Ver lugares, comentar, guardar |
 | 🛠 moderator | Moderar contenido              |
 | 🛡 admin     | Gestión total                  |
@@ -89,18 +93,19 @@ localStorage.setItem("app_users", initialUsers)
 
 ## 🧭 Rutas principales
 
-/               → Home (requiere login)
-/login          → Iniciar sesión
-/register       → Registro
-/admin/users    → Gestión de usuarios
-/moderacion     → Panel de moderación
-/perfil         → Perfil usuario
+- `/` → Home (requiere login)
+- `/login` → Iniciar sesión
+- `/register` → Registro
+- `/admin/users` → Gestión de usuarios
+- `/moderacion` → Panel de moderación
+- `/perfil` → Perfil de usuario
 
 ---
 
 ## 🧠 Funcionalidades
 
 ### 🏠 Home
+
 - Lista de lugares
 - Filtros por categoría
 - Búsqueda
@@ -108,25 +113,30 @@ localStorage.setItem("app_users", initialUsers)
 - Guardar 📌
 
 ### 🗺 Sidebar
+
 - Lugares guardados
 - Tendencias
 - Mapa de Manta
 
 ### ⭐ Reviews
+
 - Crear lugares
 - Calificación por estrellas
 - Tags: WiFi, pet friendly, etc.
 
 ### 💬 Comentarios
+
 - Opiniones de usuarios
 - Preguntas y respuestas
 
 ### 🔔 Notificaciones
+
 - Dropdown interactivo
 - Filtro leídas/no leídas
 - Marcar como leídas
 
 ### 🛠 Admin Panel
+
 - Gestión de usuarios
 - Moderación de contenido
 - Estadísticas mock
@@ -134,8 +144,6 @@ localStorage.setItem("app_users", initialUsers)
 ---
 
 ## 🎨 Diseño UI
-
-Inspirado en Manta 🌊
 
 - Café: `#A75F37`
 - Café oscuro: `#8C4B27`
@@ -146,21 +154,26 @@ Inspirado en Manta 🌊
 
 ## ⚙️ Instalación
 
+```bash
 git clone <tu-repo>
 cd proyecto-arquitectura
 npm install
 npm run dev
+```
 
 ---
 
 ## 🏗 Build producción
 
+```bash
 npm run build
+```
 
 ---
 
 ## 🧪 Linting (Oxlint)
 
+```json
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "oxc"],
@@ -172,18 +185,19 @@ npm run build
     "react/only-export-components": ["warn", { "allowConstantExport": true }]
   }
 }
+```
 
 ---
 
 ## ⚠️ Notas importantes
 
 - No usa backend real (solo localStorage)
-- Listo para integrar Supabase o API
+- Listo para integrar Supabase o una API
 - Los datos se reinician al limpiar el navegador
 
 ---
 
 ## 👨‍💻 Autor
 
-Proyecto académico – ULEAM  
+Proyecto académico – ULEAM
 Ingeniería en Software
