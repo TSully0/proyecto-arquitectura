@@ -1,341 +1,174 @@
 :root {
-  --primary-blue: #005580;
-  --secondary-blue: #00334d;
-  --white: #ffffff;
-  --text-dark: #000000;
-  --error-red: #ff3333;
+  --primary: #A75F37;
+  --primary-hover: #8C4B27;
+  --accent-blue: #2C6E91;
+  --text-main: #292421;
+  --text-muted: #5C4A3E;
+  --error-red: #ef4444;
 }
 
-/* =========================
-  CONFIGURACIÓN GENERAL
-   ========================= */
-
+/* RESET */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-html,
 body {
-  width: 100%;
-  height: 100%;
   margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100vh;
-  font-family: Arial, sans-serif;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background: 
-    linear-gradient(
-      rgba(0, 51, 77, 0.5), 
-      rgba(0, 51, 77, 0.5)
-    ), 
+  font-family: 'Inter', sans-serif;
+  background:
+    linear-gradient(rgba(44,110,145,0.45), rgba(167,95,55,0.25)),
     url('../assets/manta-bg.jpg');
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
   background-attachment: fixed;
 }
 
-/* =========================
-  CONTENEDOR PRINCIPAL
-   ========================= */
-
-#root {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-}
-
-/* =========================
-  NAVBAR
-   ========================= */
-
-header.navbar {
-  width: 100%;
-  margin: 0;
-  padding: 15px 30px;
-  background-color: #002233;
-  color: var(--white);
-  font-size: 18px;
-  font-weight: bold;
-  text-align: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-/* =========================
-  CONTENEDOR DEL LOGIN
-   ========================= */
-
+/* CONTENEDOR */
 .auth-container {
-  width: min(440px, calc(100% - 30px));
-  max-width: 440px;
-  margin: 30px auto;
-  padding: 25px;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  overflow: visible;
+  width: min(420px, 90%);
+  margin: 60px auto;
+  padding: 35px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  backdrop-filter: blur(5px);
 }
 
-/* =========================
-  FORMULARIO
-   ========================= */
-
-form {
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-form div {
-  width: 100%;
-  max-width: 100%;
-  margin: 0 0 14px 0;
-  padding: 0;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  text-align: left;
-}
-
-/* =========================
-  TÍTULO
-   ========================= */
-
+/* TITULO */
 h2 {
-  margin: 0 0 20px 0;
-  color: var(--white);
   text-align: center;
-  font-size: 24px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  margin-bottom: 25px;
+  color: var(--text-main);
 }
 
-/* =========================
-  ETIQUETAS
-   ========================= */
-
+/* LABELS */
 label {
-  display: block;
-  width: 100%;
-  margin-bottom: 5px;
-  color: var(--white);
   font-size: 13px;
-  font-weight: bold;
-  text-align: left;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  font-weight: 600;
+  color: var(--text-main);
 }
 
-/* =========================
-  MENSAJE DE ERROR Y ÉXITO
-   ========================= */
-
-.auth-container > p,
-form + p {
+/* INPUTS */
+input {
   width: 100%;
-  max-width: 100%;
-  margin: 0 0 15px 0;
-  padding: 0;
-  color: #ff3333 !important;
-  font-size: 13px;
-  font-weight: bold;
-  line-height: 1.4;
-  text-align: center;
-  display: block;
-  overflow: visible;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-}
-
-/* =========================
-  INPUTS
-   ========================= */
-
-input:not([type="checkbox"]):not([type="radio"]) {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  height: 36px;
-  padding: 8px 10px;
-  border: 1px solid #99d6ff;
-  border-radius: 5px;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  color: #000000 !important;
-  background-color: #ffffff !important;
+  padding: 12px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: 1px solid #d1c2b5;
+  background: #f9f9f9;
+  color: var(--text-main);
   outline: none;
-  box-shadow: none !important;
+  transition: 0.2s;
 }
 
-/* =========================
-  INPUT CONTRASEÑA
-   ========================= */
+input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(167,95,55,0.2);
+}
 
+/* PASSWORD */
 .password-wrapper {
   position: relative;
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
 }
 
 .password-wrapper input {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  padding-right: 42px;
+  padding-right: 45px;
 }
 
-/* =========================
-  ICONO DEL OJO
-   ========================= */
-
+/* 👁 ICONO */
 .eye-icon {
   position: absolute;
+  right: 15px;
   top: 50%;
-  right: 10px;
-  width: 24px;
-  height: 24px;
-  margin: 0;
-  padding: 0;
   transform: translateY(-50%);
+  
+
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: var(--primary-blue);
+
+  border: none;
   cursor: pointer;
+
+  font-size: 18px;
+  color: var(--primary);
+
+  transition: 0.2s;
 }
 
 .eye-icon:hover {
-  color: var(--secondary-blue);
-  background: transparent !important;
+  background: rgba(167,95,55,0.2);
+  transform: translateY(-50%) scale(1.1);
+  opacity: 0.6;
 }
 
-/* =========================
-  INPUT ENFOCADO
-   ========================= */
-
-input:not([type="checkbox"]):not([type="radio"]):focus {
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 2px rgba(0, 85, 128, 0.25) !important;
+.eye-icon:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
-/* =========================
-  AUTOCOMPLETADO CHROME
-   ========================= */
-
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-  -webkit-text-fill-color: #000000 !important;
-}
-
-/* =========================
-  BOTÓN ENTRAR
-   ========================= */
-
-.auth-container button[type="submit"] {
-  display: block;
+/* BOTON */
+button[type="submit"] {
   width: 100%;
-  max-width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  background-color: var(--primary-blue);
-  color: var(--white);
+  padding: 14px;
+  border-radius: 8px;
   border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-family: Arial, sans-serif;
-  font-size: 15px;
+  background: linear-gradient(135deg, #A75F37, #8C4B27);
+  color: white;
   font-weight: bold;
-  transition: background-color 0.2s;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-.auth-container button[type="submit"]:hover {
-  background-color: var(--secondary-blue);
+button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
 }
 
-/* =========================
-  REGISTRO
-   ========================= */
+/* MENSAJES */
+.error {
+  color: var(--error-red);
+  text-align: center;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.success {
+  color: #16a34a;
+  text-align: center;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+/* LINKS */
+p {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: 15px;
+}
 
 p button {
-  width: auto;
-  margin: 0;
-  padding: 0;
-  background: none !important;
-  border: none !important;
-  color: #ffffff;
-  cursor: pointer;
-  text-decoration: underline;
-  font-size: inherit;
+  background: none;
+  border: none;
+  color: var(--accent-blue);
   font-weight: bold;
-  box-shadow: none !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
 }
 
 p button:hover {
-  color: #99d6ff;
-  background: none !important;
+  color: var(--primary);
+  text-decoration: underline;
 }
 
-/* =========================
-  FOOTER
-   ========================= */
-
-footer.footer {
-  width: 100%;
-  margin: 0;
-  background-color: #002233;
-  color: var(--white);
-  text-align: center;
-  padding: 15px;
-  font-size: 14px;
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
-}
-
-/* =========================
-  RESPONSIVE
-   ========================= */
-
+/* RESPONSIVE */
 @media (max-width: 500px) {
   .auth-container {
-    width: calc(100% - 30px);
-    margin: 25px auto;
-    padding: 20px 15px;
-  }
-
-  header.navbar {
-    padding: 12px 15px;
-    font-size: 16px;
-  }
-
-  h2 {
-    font-size: 21px;
-  }
-
-  footer.footer {
-    padding: 12px;
-    font-size: 13px;
+    margin: 30px auto;
+    padding: 25px;
   }
 }

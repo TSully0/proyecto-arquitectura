@@ -1,0 +1,270 @@
+/* 🌿 FONDO GENERAL */
+.users-container {
+  padding: 40px 20px;
+  background: #f4efe8;
+  min-height: 100vh;
+  color: #3b2f25;
+  font-family: 'Inter', sans-serif;
+}
+
+/* TITULO */
+.users-container h1 {
+  margin-bottom: 10px;
+  color: #4a2f1d;
+}
+
+/* 🧩 GRID */
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* 🧾 CARD */
+.user-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid #e4dcd1;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+  transition: all 0.25s ease;
+}
+
+.user-card:hover {
+  transform: translateY(-4px);
+  border-color: #c89b6d;
+}
+
+/* 🚫 BANEADO */
+.user-card.baneado {
+  background: #fff4f4;
+  border-left: 5px solid #ef4444;
+}
+
+/* ⏳ SUSPENDIDO */
+.user-card.suspendido {
+  background: #fff8e6;
+  border-left: 5px solid #f59e0b;
+}
+
+/* 👤 HEADER */
+.user-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* 🔵 AVATAR */
+.avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0cb7f2, #2563eb);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* TEXTO */
+.user-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.user-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #7b6a58;
+}
+
+/* 🏷 INFO */
+.user-info {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ROLES */
+.role {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.role.admin {
+  background: #4a2f1d;
+  color: white;
+}
+
+.role.moderator {
+  background: #d97706;
+  color: white;
+}
+
+.role.user {
+  background: #9ca3af;
+  color: white;
+}
+
+/* ESTADOS */
+.status {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.status.activo {
+  background: #10b981;
+  color: white;
+}
+
+.status.suspendido {
+  background: #f59e0b;
+  color: white;
+}
+
+.status.baneado {
+  background: #ef4444;
+  color: white;
+}
+
+/* 🔘 BOTONES */
+.user-actions {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* BOTÓN BASE */
+.user-actions button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+/* BAN */
+.btn-ban {
+  background: #ef4444;
+  color: white;
+}
+.btn-ban:hover {
+  background: #b91c1c;
+}
+
+/* UNBAN */
+.btn-unban {
+  background: #10b981;
+  color: white;
+}
+.btn-unban:hover {
+  background: #059669;
+}
+
+/* SUSPENDER */
+.btn-suspend {
+  background: #f59e0b;
+  color: white;
+}
+.btn-suspend:hover {
+  background: #d97706;
+}
+
+/* QUITAR SUSPENSIÓN */
+.btn-unsuspend {
+  background: #3b82f6;
+  color: white;
+}
+.btn-unsuspend:hover {
+  background: #2563eb;
+}
+
+/* PROMOTE */
+.btn-promote {
+  background: #6366f1;
+  color: white;
+}
+.btn-promote:hover {
+  background: #4f46e5;
+}
+
+/* DEMOTE */
+.btn-demote {
+  background: #9ca3af;
+  color: white;
+}
+.btn-demote:hover {
+  background: #6b7280;
+}
+
+/* BOTÓN VOLVER */
+.btn-back {
+  margin-bottom: 15px;
+  background: #8b5e3c;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-back:hover {
+  background: #6f4a2f;
+}
+
+/* TOOLBAR */
+.users-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* INPUT */
+.search-input {
+  flex: 1;
+  min-width: 220px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d6cfc2;
+  outline: none;
+}
+.search-input:focus {
+  border-color: #c89b6d;
+}
+
+/* FILTROS */
+.filter-btn {
+  background: #e5ddd1;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.filter-btn:hover {
+  background: #d6c7b3;
+}
+
+.filter-btn.active {
+  background: #c89b6d;
+  color: white;
+}
+
+/* VACÍO */
+.empty {
+  text-align: center;
+  margin-top: 20px;
+  color: #7b6a58;
+}

@@ -4,4 +4,6 @@ export interface User {
     password: string;
     name: string;
     role: 'admin' | 'moderator' | 'user';
+    banned: boolean;
+    suspendedUntil?: number | null;
 }
