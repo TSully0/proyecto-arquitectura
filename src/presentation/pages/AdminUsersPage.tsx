@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/admin-users.css";
 
@@ -15,32 +15,31 @@ type User = {
 };
 
 export const AdminUsersPage = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+      const stored = localStorage.getItem("app_users");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          password: u.password,
+          role: u.role as Role,
+          banned: u.banned ?? false,
+          suspendedUntil: u.suspendedUntil ?? null,
+        }));
+      }
+    } catch {
+      // fallback
+    }
+    return [];
+  });
+  const [currentTime] = useState(() => Date.now());
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | Role>("all");
 
   const navigate = useNavigate();
-
-  // 🔥 cargar usuarios
-  useEffect(() => {
-    const stored = localStorage.getItem("app_users");
-
-    if (stored) {
-      const parsed = JSON.parse(stored);
-
-      const safeUsers: User[] = parsed.map((u: any) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        password: u.password,
-        role: u.role as Role,
-        banned: u.banned ?? false,
-        suspendedUntil: u.suspendedUntil ?? null,
-      }));
-
-      setUsers(safeUsers);
-    }
-  }, []);
 
   // 💾 guardar
   const saveUsers = (updated: User[]) => {
@@ -100,7 +99,7 @@ export const AdminUsersPage = () => {
   const getStatus = (user: User) => {
     if (user.banned) return "BANEADO";
 
-    if (user.suspendedUntil && user.suspendedUntil > Date.now()) {
+    if (user.suspendedUntil && user.suspendedUntil > currentTime) {
       return "SUSPENDIDO";
     }
 

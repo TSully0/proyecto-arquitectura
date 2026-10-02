@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { initialUsers } from '../../data/repositories/users';
+import { initialUsers, syncUserToSupabase } from '../../data/repositories/users';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 interface RegisterPageProps {
@@ -76,6 +76,11 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
 
     const updated = [...users, newUser];
     localStorage.setItem('app_users', JSON.stringify(updated));
+
+    // Sincronizar en Supabase en segundo plano
+    syncUserToSupabase(newUser).catch((err) =>
+      console.warn('Background Supabase user sync:', err)
+    );
 
     setSuccess(true);
 

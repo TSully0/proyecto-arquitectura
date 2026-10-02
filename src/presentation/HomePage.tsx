@@ -24,7 +24,15 @@ export function HomePage({ user, onLogout }: HomePageProps) {
   const [activeCategory, setActiveCategory] = useState<CategoryId>('inicio');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSection, setActiveSection] = useState<'all' | 'saved' | 'nearby' | 'trends'>('all');
-  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [savedIds] = useState<string[]>(() => {
+    try {
+      const storedSaved = localStorage.getItem('mantacampus_saved');
+      return storedSaved ? JSON.parse(storedSaved) : [];
+    } catch (e) {
+      console.warn('Storage read error:', e);
+      return [];
+    }
+  });
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [adminModal, setAdminModal] = useState<{ isOpen: boolean; type: 'admin' | 'moderator' }>({
     isOpen: false,
@@ -63,14 +71,6 @@ export function HomePage({ user, onLogout }: HomePageProps) {
         setPlaces(fetched);
       }
     });
-
-    // Load saved from local storage for instant responsiveness
-    try {
-      const storedSaved = localStorage.getItem('mantacampus_saved');
-      if (storedSaved) setSavedIds(JSON.parse(storedSaved));
-    } catch (e) {
-      console.warn('Storage read error:', e);
-    }
 
     return () => {
       isMounted = false;

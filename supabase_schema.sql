@@ -114,63 +114,77 @@ ALTER TABLE public.user_favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.place_likes ENABLE ROW LEVEL SECURITY;
 
 -- 1. Políticas para Users (Lectura controlada, login no afectado)
+DROP POLICY IF EXISTS "Permitir lectura publica de usuarios" ON public.users;
 CREATE POLICY "Permitir lectura publica de usuarios" 
 ON public.users FOR SELECT 
 USING (true);
 
+DROP POLICY IF EXISTS "Permitir registro de usuarios" ON public.users;
 CREATE POLICY "Permitir registro de usuarios" 
 ON public.users FOR INSERT 
 WITH CHECK (true);
 
 -- 2. Políticas para Categories (Lectura pública para catálogo)
+DROP POLICY IF EXISTS "Permitir lectura publica de categorias" ON public.categories;
 CREATE POLICY "Permitir lectura publica de categorias" 
 ON public.categories FOR SELECT 
 USING (true);
 
 -- 3. Políticas para Places (Catálogo público y creación)
+DROP POLICY IF EXISTS "Permitir lectura publica de lugares" ON public.places;
 CREATE POLICY "Permitir lectura publica de lugares" 
 ON public.places FOR SELECT 
 USING (true);
 
+DROP POLICY IF EXISTS "Permitir crear lugares" ON public.places;
 CREATE POLICY "Permitir crear lugares" 
 ON public.places FOR INSERT 
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Permitir actualizar lugares" ON public.places;
 CREATE POLICY "Permitir actualizar lugares" 
 ON public.places FOR UPDATE 
 USING (true);
 
 -- 4. Políticas para Reviews (Lectura pública y publicación con botón + Crea Review)
+DROP POLICY IF EXISTS "Permitir lectura publica de resenas" ON public.reviews;
 CREATE POLICY "Permitir lectura publica de resenas" 
 ON public.reviews FOR SELECT 
 USING (true);
 
+DROP POLICY IF EXISTS "Permitir insertar resenas" ON public.reviews;
 CREATE POLICY "Permitir insertar resenas" 
 ON public.reviews FOR INSERT 
 WITH CHECK (true);
 
 -- 5. Políticas para UserFavorites
+DROP POLICY IF EXISTS "Permitir ver favoritos" ON public.user_favorites;
 CREATE POLICY "Permitir ver favoritos" 
 ON public.user_favorites FOR SELECT 
 USING (true);
 
+DROP POLICY IF EXISTS "Permitir agregar favorito" ON public.user_favorites;
 CREATE POLICY "Permitir agregar favorito" 
 ON public.user_favorites FOR INSERT 
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Permitir eliminar favorito" ON public.user_favorites;
 CREATE POLICY "Permitir eliminar favorito" 
 ON public.user_favorites FOR DELETE 
 USING (true);
 
 -- 6. Políticas para PlaceLikes
+DROP POLICY IF EXISTS "Permitir ver likes" ON public.place_likes;
 CREATE POLICY "Permitir ver likes" 
 ON public.place_likes FOR SELECT 
 USING (true);
 
+DROP POLICY IF EXISTS "Permitir dar like" ON public.place_likes;
 CREATE POLICY "Permitir dar like" 
 ON public.place_likes FOR INSERT 
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Permitir quitar like" ON public.place_likes;
 CREATE POLICY "Permitir quitar like" 
 ON public.place_likes FOR DELETE 
 USING (true);
@@ -212,7 +226,7 @@ INSERT INTO public.places (
 )
 VALUES
     (
-        'p1111111-0000-0000-0000-000000000001',
+        'b1111111-0000-0000-0000-000000000001',
         'Cineplex Manta - Mall del Pacífico',
         'Cineplex Manta - Mall del Pacífico - Glorietas Universitarios, Manta.',
         'Av. Circunvalación y Calle 23, Manta',
@@ -231,7 +245,7 @@ VALUES
         142
     ),
     (
-        'p1111111-0000-0000-0000-000000000002',
+        'b1111111-0000-0000-0000-000000000002',
         'La Hueca de Pedro - Mariscos',
         'La Hueca de Pedro - Mariscos com corrdid y paraumente en Manta.',
         'Tarqui, Frente al Malecón, Manta',
@@ -250,7 +264,7 @@ VALUES
         98
     ),
     (
-        'p1111111-0000-0000-0000-000000000003',
+        'b1111111-0000-0000-0000-000000000003',
         'Playa Murciélago - Surf',
         'Playa Murciélago - Surf, comortadamente e alea planaos amendo en Manta.',
         'Malecón Escénico, Playa Murciélago, Manta',
@@ -269,7 +283,7 @@ VALUES
         210
     ),
     (
-        'p1111111-0000-0000-0000-000000000004',
+        'b1111111-0000-0000-0000-000000000004',
         'Centro Histórico & Basílica de Manta',
         'Patrimonio arquitectónico e historia viva de la cultura manteña.',
         'Centro de Manta, Calle 9 y Av. 2',
@@ -288,7 +302,7 @@ VALUES
         85
     ),
     (
-        'p1111111-0000-0000-0000-000000000005',
+        'b1111111-0000-0000-0000-000000000005',
         'Playa Murciélago - Sunset Beach',
         'Playa Murciélago - atardeceres mágicos, olas suaves y brisa marina.',
         'Costanera Manta Sur',
@@ -307,7 +321,7 @@ VALUES
         175
     ),
     (
-        'p1111111-0000-0000-0000-000000000006',
+        'b1111111-0000-0000-0000-000000000006',
         'Playa Murciélago - Parapente y Aventura',
         'Vuelo libre sobre los acantilados y costas con instructores certificados.',
         'San Mateo y Murciélago, Manta',
@@ -330,10 +344,10 @@ ON CONFLICT (id) DO NOTHING;
 -- 4. Reseña Semilla
 INSERT INTO public.reviews (id, rating, comment, "userId", "placeId", "authorName")
 VALUES (
-    'r1111111-0000-0000-0000-000000000001',
+    'e1111111-0000-0000-0000-000000000001',
     5,
     'Excelente lugar, el descuento con carnet de la U aplica todos los martes.',
     'a0000000-0000-0000-0000-000000000001',
-    'p1111111-0000-0000-0000-000000000001',
+    'b1111111-0000-0000-0000-000000000001',
     'Ana G.'
 ) ON CONFLICT (id) DO NOTHING;

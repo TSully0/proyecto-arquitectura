@@ -109,33 +109,64 @@ export const initialPlaces: Place[] = [
   }
 ];
 
+// Mapeo bidireccional de Categorías entre slugs del frontend y UUIDs de Supabase
+export const CATEGORY_UUID_MAP: Record<string, CategoryId> = {
+  'c1111111-0000-0000-0000-000000000001': 'cines',
+  'c1111111-0000-0000-0000-000000000003': 'comida',
+  'c1111111-0000-0000-0000-000000000004': 'historicos',
+  'c1111111-0000-0000-0000-000000000005': 'extremos',
+  'c1111111-0000-0000-0000-000000000006': 'naturaleza',
+};
+
+export const CATEGORY_SLUG_TO_UUID: Record<CategoryId, string> = {
+  inicio: 'c1111111-0000-0000-0000-000000000001',
+  cines: 'c1111111-0000-0000-0000-000000000001',
+  comida: 'c1111111-0000-0000-0000-000000000003',
+  historicos: 'c1111111-0000-0000-0000-000000000004',
+  extremos: 'c1111111-0000-0000-0000-000000000005',
+  naturaleza: 'c1111111-0000-0000-0000-000000000006',
+};
+
 export async function fetchPlacesFromRepository(): Promise<Place[]> {
   try {
     const { data, error } = await supabase
       .from('places')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
 
     if (error || !data || data.length === 0) {
       return initialPlaces;
     }
 
-    return data.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      category_id: item.category_id as CategoryId,
-      description: item.description,
-      address: item.address,
-      image_url: item.image_url,
-      rating: Number(item.rating) || 5.0,
-      review_count: item.review_count || 0,
-      has_student_discount: Boolean(item.has_student_discount),
-      has_wifi: Boolean(item.has_wifi),
-      is_open: Boolean(item.is_open),
-      latitude: item.latitude,
-      longitude: item.longitude,
-      likes_count: 10
-    }));
+    return data.map((item: any) => {
+      const rawCat = item.categoryId || item.category_id || '';
+      const mappedCategory: CategoryId =
+        CATEGORY_UUID_MAP[rawCat] ||
+        (['inicio', 'cines', 'comida', 'historicos', 'extremos', 'naturaleza'].includes(rawCat)
+          ? (rawCat as CategoryId)
+          : 'comida');
+
+      return {
+        id: item.id,
+        name: item.name,
+        category_id: mappedCategory,
+        description: item.description,
+        address: item.address,
+        image_url:
+          item.image_url ||
+          (Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : ''),
+        rating: Number(item.averageRating || item.rating) || 5.0,
+        review_count: item.totalReviews || item.review_count || 0,
+        has_student_discount: Boolean(item.hasStudentDiscount ?? item.has_student_discount),
+        has_wifi: Boolean(item.hasWifi ?? item.has_wifi),
+        is_open: Boolean(item.isOpen ?? item.is_open),
+        is_pet_friendly: Boolean(item.isPetFriendly ?? item.is_pet_friendly),
+        is_accessible: Boolean(item.isAccessible ?? item.is_accessible),
+        is_night_spot: Boolean(item.isNightSpot ?? item.is_night_spot),
+        latitude: item.latitude,
+        longitude: item.longitude,
+        likes_count: 10
+      };
+    });
   } catch (err) {
     console.warn('Supabase fetch fallback to local seed:', err);
     return initialPlaces;
@@ -144,18 +175,68 @@ export async function fetchPlacesFromRepository(): Promise<Place[]> {
 
 export async function addReviewToSupabase(review: Omit<Review, 'id' | 'created_at'>): Promise<boolean> {
   try {
-    const { error } = await supabase.from('reviews').insert([review]);
-    return !error;
-  } catch {
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(review.place_id);
+    const placeId = isValidUUID ? review.place_id : 'b1111111-0000-0000-0000-000000000001';
+
+    const dbPayload = {
+      rating: Math.min(5, Math.max(1, Math.round(review.rating || 5))),
+      comment: review.comment,
+      authorName: review.author_name || 'Estudiante Manta',
+      placeId: placeId,
+      userId: review.user_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(review.user_id)
+        ? review.user_id
+        : null
+    };
+
+    const { error } = await supabase.from('reviews').insert([dbPayload]);
+    if (error) {
+      console.warn('Error al guardar reseña en Supabase:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Excepción al conectar con Supabase (reviews):', err);
     return false;
   }
 }
 
 export async function addPlaceToSupabase(place: Omit<Place, 'id' | 'likes_count'>): Promise<boolean> {
   try {
-    const { error } = await supabase.from('places').insert([place]);
-    return !error;
-  } catch {
+    const categoryUUID = CATEGORY_SLUG_TO_UUID[place.category_id] || 'c1111111-0000-0000-0000-000000000003';
+    const imagesArray = place.images && place.images.length > 0
+      ? place.images
+      : place.image_url
+      ? [place.image_url]
+      : ['https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=800&q=80'];
+
+    const dbPayload = {
+      name: place.name,
+      description: place.description,
+      address: place.address || 'Manta, Ecuador',
+      latitude: place.latitude ?? -0.95,
+      longitude: place.longitude ?? -80.73,
+      priceRange: place.price_range || 'MODERATE',
+      hasStudentDiscount: Boolean(place.has_student_discount),
+      isStudyFriendly: Boolean(place.is_study_friendly),
+      images: imagesArray,
+      categoryId: categoryUUID,
+      hasWifi: Boolean(place.has_wifi),
+      isOpen: Boolean(place.is_open),
+      isPetFriendly: Boolean(place.is_pet_friendly),
+      isAccessible: Boolean(place.is_accessible),
+      isNightSpot: Boolean(place.is_night_spot),
+      averageRating: Number(place.rating) || 5.0,
+      totalReviews: Number(place.review_count) || 1
+    };
+
+    const { error } = await supabase.from('places').insert([dbPayload]);
+    if (error) {
+      console.warn('Error al guardar lugar en Supabase:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Excepción al conectar con Supabase (places):', err);
     return false;
   }
 }

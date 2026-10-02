@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { initialUsers } from "../../data/repositories/users";
 import "../../styles/admin-users.css"; 
@@ -12,12 +12,14 @@ type User = {
 
 export const AdminRolesPage = () => {
   const navigate = useNavigate();
-  const [users, setUsers] = useState<User[]>([]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("app_users");
-    setUsers(stored ? JSON.parse(stored) : initialUsers);
-  }, []);
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+      const stored = localStorage.getItem("app_users");
+      return stored ? JSON.parse(stored) : initialUsers;
+    } catch {
+      return initialUsers;
+    }
+  });
 
   // 🔥 CAMBIAR ROL
   const handleChangeRole = (id: string, newRole: User["role"]) => {

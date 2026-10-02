@@ -1,4 +1,5 @@
 import { type User } from '../../business/types/user';
+import { supabase } from '../supabase';
 
 export const initialUsers: (User & { banned?: boolean })[] = [
   {
@@ -34,3 +35,26 @@ export const initialUsers: (User & { banned?: boolean })[] = [
     banned: false
   }
 ];
+
+export async function syncUserToSupabase(user: { name: string; email: string; password?: string; role?: string }): Promise<boolean> {
+  try {
+    const roleUpper = user.role === 'admin' ? 'ADMIN' : user.role === 'moderator' ? 'MODERATOR' : 'STUDENT';
+    const { error } = await supabase.from('users').insert([
+      {
+        email: user.email,
+        passwordHash: user.password || btoa('default123'),
+        fullName: user.name,
+        role: roleUpper,
+        isActive: true
+      }
+    ]);
+    if (error) {
+      console.warn('Error al sincronizar usuario con Supabase:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Excepción al conectar usuario con Supabase:', err);
+    return false;
+  }
+}
