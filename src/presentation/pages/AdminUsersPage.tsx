@@ -8,6 +8,7 @@ type User = {
   id: string;
   name: string;
   email: string;
+  password?: string;
   role: Role;
   banned?: boolean;
   suspendedUntil?: number | null; // ✅ FIX
@@ -31,6 +32,7 @@ export const AdminUsersPage = () => {
         id: u.id,
         name: u.name,
         email: u.email,
+        password: u.password,
         role: u.role as Role,
         banned: u.banned ?? false,
         suspendedUntil: u.suspendedUntil ?? null,

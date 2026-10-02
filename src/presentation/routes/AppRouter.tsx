@@ -1,11 +1,13 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 
 import { HomePage } from "../HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { AdminPanelModal } from "../components/AdminPanelModal";
+import { AdminRolesPage } from "../pages/AdminRolesPage";
 import { AdminUsersPage } from "../pages/AdminUsersPage";
 import { ModerationPage } from "../pages/ModerationPage";
+import type { User } from "../../business/types/user";
 
 import { RoleRoute } from "./RoleRoute";
 
@@ -13,16 +15,22 @@ import { RoleRoute } from "./RoleRoute";
 const Perfil = () => <div>Perfil Usuario</div>;
 
 export const AppRouter = () => {
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const user = JSON.parse(localStorage.getItem("user") || "null") as User | null;
+
+  const getLandingPath = (role: User["role"]) => {
+    if (role === "admin") return "/admin";
+    if (role === "moderator") return "/moderacion";
+    return "/";
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     window.location.href = "/login";
   };
 
-  const handleLogin = (u: any) => {
-    localStorage.setItem("user", JSON.stringify(u));
-    window.location.href = "/";
+  const handleLogin = (loggedInUser: User) => {
+    localStorage.setItem("user", JSON.stringify(loggedInUser));
+    window.location.href = getLandingPath(loggedInUser.role);
   };
 
   return (
@@ -48,10 +56,14 @@ export const AppRouter = () => {
         <Route
           path="/login"
           element={
-            <LoginPage
-              onNavigateToRegister={() => (window.location.href = "/register")}
-              onLoginSuccess={handleLogin}
-            />
+            user ? (
+              <Navigate to={getLandingPath(user.role)} replace />
+            ) : (
+              <LoginPage
+                onNavigateToRegister={() => (window.location.href = "/register")}
+                onLoginSuccess={handleLogin}
+              />
+            )
           }
         />
 
@@ -97,6 +109,7 @@ export const AppRouter = () => {
         {/* 👥 GESTIÓN DE USUARIOS */}
         <Route element={<RoleRoute allowedRoles={["admin"]} />}>
           <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/roles" element={<AdminRolesPage />} />
         </Route>
 
       </Routes>

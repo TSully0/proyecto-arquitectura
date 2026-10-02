@@ -25,10 +25,33 @@ export function LoginPage({
     const cleanIdentifier = identifier.trim().toLowerCase();
 
     const stored = localStorage.getItem('app_users');
-    const users = stored ? JSON.parse(stored) : initialUsers;
+    const storedUsers = stored ? JSON.parse(stored) : [];
+    const users = [
+      ...initialUsers.map((initialUser) => {
+        const storedUser = storedUsers.find(
+          (candidate: User) =>
+            candidate.email.toLowerCase() === initialUser.email.toLowerCase()
+        );
+
+        return storedUser
+          ? {
+              ...initialUser,
+              ...storedUser,
+              password: initialUser.password
+            }
+          : initialUser;
+      }),
+      ...storedUsers.filter(
+        (storedUser: User) =>
+          !initialUsers.some(
+            (initialUser) =>
+              initialUser.email.toLowerCase() === storedUser.email.toLowerCase()
+          )
+      ),
+    ];
 
     const user = users.find(
-      (u: any) =>
+      (u: User) =>
         (
           u.email.toLowerCase() === cleanIdentifier ||
           u.name.toLowerCase() === cleanIdentifier

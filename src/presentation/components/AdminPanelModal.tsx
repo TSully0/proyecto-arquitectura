@@ -115,37 +115,45 @@ export function AdminPanelModal({
               <span className="status-pill status-active">Activo</span>
             </div>
 
-            <div className="admin-action-item">
-              <div className="action-info">
-                <Users size={18} color="#0cb7f2" />
-                <span>Gestión de roles y permisos.</span>
+            {type === "admin" && (
+              <div
+                className="admin-action-item clickable"
+                onClick={() => navigate("/admin/roles")}
+              >
+                <div className="action-info">
+                  <Users size={18} color="#0cb7f2" />
+                  <span>Gestión de roles y permisos.</span>
+                </div>
+                <span className="status-pill">Ir</span>
               </div>
-              <span className="status-pill status-active">OK</span>
-            </div>
+            )}
 
             {/* 🔥 IR A USUARIOS */}
-            <div
-              className="admin-action-item clickable"
-              onClick={() => navigate("/admin/users")}
-            >
-              <div className="action-info">
-                <Users size={18} color="#0cb7f2" />
-                <span>Gestionar usuarios</span>
+            {type === "admin" && (
+              <div
+                className="admin-action-item clickable"
+                onClick={() => navigate("/admin/users")}
+              >
+                <div className="action-info">
+                  <Users size={18} color="#0cb7f2" />
+                  <span>Gestionar usuarios</span>
+                </div>
+                <span className="status-pill">Ir</span>
               </div>
-              <span className="status-pill">Ir</span>
-            </div>
+            )}
 
-            {/* 🔥 IR A MODERACIÓN */}
-            <div
-              className="admin-action-item clickable"
-              onClick={() => navigate("/moderacion")}
-            >
-              <div className="action-info">
-                <AlertCircle size={18} color="#f59e0b" />
-                <span>Ir a moderación</span>
+            {type === "moderator" && (
+              <div
+                className="admin-action-item clickable"
+                onClick={() => navigate("/moderacion")}
+              >
+                <div className="action-info">
+                  <AlertCircle size={18} color="#f59e0b" />
+                  <span>Ir a moderación</span>
+                </div>
+                <span className="status-pill">Ir</span>
               </div>
-              <span className="status-pill">Ir</span>
-            </div>
+            )}
 
           </div>
         </div>

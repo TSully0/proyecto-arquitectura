@@ -98,26 +98,30 @@ export function Header({
             <>
               <div className="dropdown-overlay" onClick={() => setShowDropdown(false)} />
               <div className="admin-dropdown-menu">
-                <button
-                  className="dropdown-item"
-                  onClick={() => {
-                    setShowDropdown(false);
-                    onOpenAdmin('admin');
-                  }}
-                >
-                  <LayoutDashboard size={16} />
-                  <span>Admin Panel</span>
-                </button>
-                <button
-                  className="dropdown-item"
-                  onClick={() => {
-                    setShowDropdown(false);
-                    onOpenAdmin('moderator');
-                  }}
-                >
-                  <Wrench size={16} />
-                  <span>Moderator Tools</span>
-                </button>
+                {user.role === 'admin' && (
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      onOpenAdmin('admin');
+                    }}
+                  >
+                    <LayoutDashboard size={16} />
+                    <span>Admin Panel</span>
+                  </button>
+                )}
+                {user.role === 'moderator' && (
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      onOpenAdmin('moderator');
+                    }}
+                  >
+                    <Wrench size={16} />
+                    <span>Moderator Tools</span>
+                  </button>
+                )}
                 <div className="dropdown-divider" />
                 <button
                   className="dropdown-item text-danger"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { initialUsers } from "../../data/repositories/users";
 import "../../styles/admin-users.css"; 
 
 type User = {
@@ -15,9 +16,7 @@ export const AdminRolesPage = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem("app_users");
-    if (stored) {
-      setUsers(JSON.parse(stored));
-    }
+    setUsers(stored ? JSON.parse(stored) : initialUsers);
   }, []);
 
   // 🔥 CAMBIAR ROL
