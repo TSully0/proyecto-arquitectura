@@ -1,203 +1,227 @@
 # 🌴 Huecas Manabas – MantaCampus
 
-Plataforma web tipo red social enfocada en estudiantes de Manta (ULEAM), donde pueden descubrir, recomendar y comentar sobre lugares como:
+Plataforma web tipo red social enfocada en estudiantes de Manta (ULEAM), donde los usuarios pueden descubrir, recomendar y comentar lugares como:
 
-- 🍔 Comida
-- 🎬 Cines
-- 🏖️ Lugares turísticos
-- ⚡ Actividades y experiencias
+* 🍔 Comida típica y huecas
+* 🎬 Cines
+* 🏖️ Lugares turísticos
+* ⚡ Actividades y experiencias en Manta
 
-Incluye sistema de usuarios, roles (admin/moderador), notificaciones y panel de administración.
-
----
-
-# ⚛️ React + TypeScript + Vite
-
-Este proyecto está construido con **Vite + React + TypeScript**, usando HMR (Hot Module Replacement) y configuración moderna de desarrollo.
+Incluye sistema de usuarios, roles (admin / moderador / estudiante), notificaciones, mapa interactivo y panel de administración.
 
 ---
 
 ## 🚀 Tecnologías utilizadas
 
-- ⚛️ React 18+
-- ⚡ Vite
-- 🟦 TypeScript
-- 🎨 CSS personalizado (tema Manta 🌊)
-- 💾 LocalStorage (mock backend)
-- 🎯 React Router DOM
-- 🎭 Lucide Icons
+### Frontend
 
----
+* ⚛️ React + TypeScript
+* ⚡ Vite
+* 🎨 CSS personalizado (UI tipo red social)
+* 🎯 Lucide Icons
+* 🌍 React Router DOM
+* 🧠 Estado con React Hooks (`useState`, `useEffect`)
 
-## 📦 Plugins oficiales disponibles
+### Backend
 
-- https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react
-- https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc
-- https://oxc.rs
-- https://swc.rs
-
----
-
-## ⚡ React Compiler (opcional)
-
-https://react.dev/learn/react-compiler/installation
+* 🟢 NestJS
+* 🟡 TypeScript
+* 🧪 Vitest (testing)
+* 📦 Node.js
 
 ---
 
 ## 📁 Estructura del proyecto
 
-```text
-src/
+```
+proyecto-arquitectura/
 │
-├── assets/
-├── business/
-│   └── types/
+├── frontend (React + Vite)
+│   ├── src/
+│   │   ├── presentation/
+│   │   │   ├── components/
+│   │   │   ├── pages/
+│   │   │   └── routes/
+│   │   ├── business/
+│   │   │   └── types/
+│   │   ├── data/
+│   │   ├── styles/
+│   │   └── main.tsx
+│   │
+│   └── vite.config.ts
 │
-├── data/
-│   ├── repositories/
-│   └── supabase.ts
+├── nestjs (Backend API)
+│   ├── src/
+│   │   ├── app.controller.ts
+│   │   ├── app.service.ts
+│   │   ├── app.module.ts
+│   │   └── main.ts
+│   └── test/
 │
-├── presentation/
-│   ├── components/
-│   ├── pages/
-│   └── routes/
-│
-├── styles/
-├── App.tsx
-└── main.tsx
+└── README.md
 ```
 
 ---
 
-## 🔐 Autenticación
+## 🎯 Funcionalidades principales
 
-- Login / Registro
-- Persistencia con `localStorage`
+### 👤 Sistema de usuarios
 
-```js
-localStorage.getItem("user")
-localStorage.setItem("app_users", initialUsers)
-```
+* Registro y login
+* Recuperación de contraseña (código de verificación y nueva contraseña)
+* Roles:
+  * `admin`
+  * `moderator`
+  * `user`
+* Rutas protegidas según el rol
+* Persistencia con `localStorage` (frontend)
 
----
+### 🏠 Feed tipo red social
 
-## 👥 Roles del sistema
+* Publicaciones de lugares en Manta
+* Likes ❤️
+* Comentarios 💬
+* Compartir 🔗
+* Guardar 📌
+* Filtro por categorías:
+  * Inicio
+  * Comida
+  * Cines
+  * Naturaleza
+  * Lugares históricos
+  * Deportes extremos
 
-| Rol          | Permisos                       |
-| ------------ | ------------------------------ |
-| 👤 user      | Ver lugares, comentar, guardar |
-| 🛠 moderator | Moderar contenido              |
-| 🛡 admin     | Gestión total                  |
+### 🗺️ Mapa interactivo
 
----
+* Ubicaciones destacadas de Manta:
+  * Playa Murciélago
+  * Mall del Pacífico
+  * Tarqui
+  * ULEAM
+  * Centro de Manta
+  * San Mateo
+* Cada pin abre Google Maps
 
-## 🧭 Rutas principales
+### 💬 Sistema de comentarios avanzado
 
-- `/` → Home (requiere login)
-- `/login` → Iniciar sesión
-- `/register` → Registro
-- `/admin/users` → Gestión de usuarios
-- `/moderacion` → Panel de moderación
-- `/perfil` → Perfil de usuario
+* Comentario normal
+* Modal de comentario con:
+  * ¿Visitaste el lugar?
+  * Calificación por estrellas ⭐
+  * Comentarios comunitarios
 
----
+### 🧑‍💼 Paneles por rol
 
-## 🧠 Funcionalidades
+**Admin**
 
-### 🏠 Home
+* Gestión de usuarios
+* Gestión de roles
+* Acceso al panel general
 
-- Lista de lugares
-- Filtros por categoría
-- Búsqueda
-- Likes ❤️
-- Guardar 📌
+**Moderador**
 
-### 🗺 Sidebar
-
-- Lugares guardados
-- Tendencias
-- Mapa de Manta
-
-### ⭐ Reviews
-
-- Crear lugares
-- Calificación por estrellas
-- Tags: WiFi, pet friendly, etc.
-
-### 💬 Comentarios
-
-- Opiniones de usuarios
-- Preguntas y respuestas
+* Panel de moderación de reseñas (aprobar / eliminar)
+* Acceso rápido a Home y cierre de sesión
 
 ### 🔔 Notificaciones
 
-- Dropdown interactivo
-- Filtro leídas/no leídas
-- Marcar como leídas
-
-### 🛠 Admin Panel
-
-- Gestión de usuarios
-- Moderación de contenido
-- Estadísticas mock
+* Notificaciones tipo:
+  * Reviews
+  * Promociones
+  * Actividad de comunidad
+* Marcar como leídas
 
 ---
 
-## 🎨 Diseño UI
+## 🧩 Componentes principales (Frontend)
 
-- Café: `#A75F37`
-- Café oscuro: `#8C4B27`
-- Azul costa: `#2C6E91`
-- Azul claro: `#99D6FF`
+* `Header` → barra superior con búsqueda, usuario y notificaciones
+* `Sidebar` → mapa + navegación
+* `FacebookFeed` → publicaciones tipo red social
+* `PlaceCard` → tarjetas de lugares
+* `CommentModal` → comentarios avanzados
+* `ReviewModal` → creación de lugares
+* `AdminPanelModal` → panel admin/moderador
+* `NotificationsDropdown` → sistema de notificaciones
+* `CategoryNav` → navegación por categorías
+* `Footer` → redes sociales
 
 ---
 
-## ⚙️ Instalación
+## 🧠 Backend (NestJS)
+
+### Estructura básica
+
+* `AppModule`
+* `AppController`
+* `AppService`
+
+### Endpoint principal
+
+```ts
+GET /
+```
+
+Respuesta:
+
+```
+Hello World!
+```
+
+### Testing
+
+* Configurado con **Vitest**
+* Prueba básica del controller incluida
+
+---
+
+## ⚙️ Cómo ejecutar el proyecto
+
+### 🔵 Frontend (React)
 
 ```bash
-git clone <tu-repo>
-cd proyecto-arquitectura
+cd frontend
 npm install
 npm run dev
 ```
 
----
-
-## 🏗 Build producción
+### 🟢 Backend (NestJS)
 
 ```bash
-npm run build
+cd nestjs
+npm install
+npm run start:dev
 ```
 
 ---
 
-## 🧪 Linting (Oxlint)
+## 🌐 Mejoras futuras
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+* Base de datos (PostgreSQL o MongoDB)
+* Autenticación JWT
+* API real para usuarios y posts
+* Subida de imágenes
+* Sistema de reportes real
+* Chat entre usuarios
 
 ---
 
-## ⚠️ Notas importantes
+## 📌 Estado del proyecto
 
-- No usa backend real (solo localStorage)
-- Listo para integrar Supabase o una API
-- Los datos se reinician al limpiar el navegador
+- ✅ Frontend completo con UI tipo red social
+- ✅ Sistema de roles básico
+- ✅ Feed funcional con posts simulados
+- ✅ Comentarios, likes y guardado
+- ✅ Mapa interactivo de Manta
+- ✅ Recuperación de contraseña (simulada)
+- ✅ Backend NestJS inicial funcionando
+- ⏳ Base de datos pendiente
+- ⏳ API real pendiente
 
 ---
 
 ## 👨‍💻 Autor
 
 Proyecto académico – ULEAM
-Ingeniería en Software
+Desarrollo de Software / Arquitectura de Software
+Manta – Ecuador 🇪🇨

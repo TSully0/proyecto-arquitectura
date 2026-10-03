@@ -1,26 +1,58 @@
 import { MapPin } from 'lucide-react';
 
+type Section = 'all' | 'saved' | 'nearby' | 'trends';
+
 interface SidebarProps {
-  activeSection: 'all' | 'saved' | 'nearby' | 'trends';
-  onSelectSection: (section: 'all' | 'saved' | 'nearby' | 'trends') => void;
+  activeSection: Section;
+  onSelectSection: (section: Section) => void;
   savedCount: number;
   onMapPinClick?: (pinName: string) => void;
 }
+
+interface MapPlace {
+  name: string;
+  x: number;
+  y: number;
+  color: string;
+  query: string; // texto que se busca en Google Maps
+}
+
+// Lugares importantes y destacados de Manta, Ecuador
+const MANTA_PLACES: MapPlace[] = [
+  { name: 'Playa Murciélago', x: 90, y: 75, color: '#0cb7f2', query: 'Playa Murciélago, Manta, Ecuador' },
+  { name: 'Mall del Pacífico', x: 130, y: 85, color: '#10b981', query: 'Mall del Pacífico, Manta, Ecuador' },
+  { name: 'Tarqui (mariscos)', x: 170, y: 115, color: '#f59e0b', query: 'Playa Tarqui, Manta, Ecuador' },
+  { name: 'Centro Histórico', x: 145, y: 135, color: '#6366f1', query: 'Centro de Manta, Ecuador' },
+  { name: 'ULEAM', x: 70, y: 125, color: '#ef4444', query: 'Universidad Laica Eloy Alfaro de Manabí, Manta, Ecuador' },
+  { name: 'San Mateo', x: 45, y: 160, color: '#06b6d4', query: 'San Mateo, Manta, Ecuador' },
+];
 
 export function Sidebar({
   activeSection,
   onSelectSection,
   savedCount,
-  onMapPinClick
+  onMapPinClick,
 }: SidebarProps) {
+  const toggle = (section: Exclude<Section, 'all'>) =>
+    onSelectSection(activeSection === section ? 'all' : section);
+
+  const openPlace = (place: MapPlace) => {
+    onMapPinClick?.(place.name);
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.query)}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+  };
+
   return (
     <aside className="campus-sidebar">
-      {/* Quick Nav Card */}
+      {/* ================= NAV ================= */}
       <div className="sidebar-card nav-card">
-        {/* Item 1: Mi Lista Por Visitar */}
+        {/* Mi Lista Por Visitar */}
         <div
           className={`sidebar-nav-item ${activeSection === 'saved' ? 'active' : ''}`}
-          onClick={() => onSelectSection(activeSection === 'saved' ? 'all' : 'saved')}
+          onClick={() => toggle('saved')}
           role="button"
           tabIndex={0}
         >
@@ -29,7 +61,6 @@ export function Sidebar({
             {savedCount > 0 && <span className="item-badge">{savedCount}</span>}
           </div>
           <div className="item-illustration">
-            {/* Friendly SVG illustration of students/explorers */}
             <svg viewBox="0 0 64 64" className="illustration-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="24" cy="20" r="10" fill="#0cb7f2" />
               <path d="M12 50 C12 36, 36 36, 36 50 Z" fill="#0cb7f2" />
@@ -41,10 +72,10 @@ export function Sidebar({
 
         <div className="sidebar-divider" />
 
-        {/* Item 2: Lugares Cercanos (Map View) */}
+        {/* Lugares Cercanos */}
         <div
           className={`sidebar-nav-item ${activeSection === 'nearby' ? 'active' : ''}`}
-          onClick={() => onSelectSection(activeSection === 'nearby' ? 'all' : 'nearby')}
+          onClick={() => toggle('nearby')}
           role="button"
           tabIndex={0}
         >
@@ -55,10 +86,10 @@ export function Sidebar({
 
         <div className="sidebar-divider" />
 
-        {/* Item 3: Tendencias */}
+        {/* Tendencias */}
         <div
           className={`sidebar-nav-item ${activeSection === 'trends' ? 'active' : ''}`}
-          onClick={() => onSelectSection(activeSection === 'trends' ? 'all' : 'trends')}
+          onClick={() => toggle('trends')}
           role="button"
           tabIndex={0}
         >
@@ -76,12 +107,11 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Featured Locations Card (Ubicaciones Destacadas) */}
+      {/* ================= MAPA ================= */}
       <div className="sidebar-card map-card">
         <h3 className="sidebar-card-title">Ubicaciones Destacadas</h3>
-        
-        <div className="manta-map-container" title="Mapa Interactivo de Manta">
-          {/* Stylized SVG Map of Manta Coastline and Urban Grid with Markers */}
+
+        <div className="manta-map-container">
           <svg viewBox="0 0 280 200" className="manta-map-svg" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="oceanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -90,24 +120,24 @@ export function Sidebar({
               </linearGradient>
             </defs>
 
-            {/* Ocean / Background */}
+            {/* Mar */}
             <rect width="280" height="200" fill="url(#oceanGrad)" rx="8" />
 
-            {/* Manta Coastline Shape */}
+            {/* Costa de Manta */}
             <path
               d="M 50,0 Q 80,60 110,90 T 170,130 Q 220,160 280,180 L 280,200 L 0,200 L 0,0 Z"
               fill="#ffffff"
               opacity="0.9"
             />
 
-            {/* Street Grid lines */}
+            {/* Calles principales */}
             <path
               d="M 40,80 L 140,150 M 60,40 L 180,120 M 20,120 L 200,180 M 100,50 L 80,180 M 130,80 L 110,190 M 170,110 L 150,200"
               stroke="#e2e8f0"
               strokeWidth="2.5"
               strokeLinecap="round"
             />
-            {/* Secondary roads */}
+            {/* Calles secundarias */}
             <path
               d="M 50,110 L 120,80 M 90,140 L 160,110 M 120,170 L 220,130"
               stroke="#f1e8f3"
@@ -115,72 +145,34 @@ export function Sidebar({
               strokeDasharray="4 3"
             />
 
-            {/* Port / Malecon pier */}
-            <path
-              d="M 140,88 L 160,65 L 175,70 L 155,93 Z"
-              fill="#cbd5e1"
-            />
+            {/* Muelle / Malecón */}
+            <path d="M 140,88 L 160,65 L 175,70 L 155,93 Z" fill="#cbd5e1" />
 
-            {/* Map Pin 1: Mall del Pacífico */}
-            <g
-              className="map-marker-pin"
-              transform="translate(130, 85)"
-              onClick={() => onMapPinClick?.('Mall del Pacífico')}
-            >
-              <circle cx="0" cy="0" r="10" fill="#0cb7f2" fillOpacity="0.25" className="pin-pulse" />
-              <circle cx="0" cy="0" r="6" fill="#0cb7f2" />
-              <circle cx="0" cy="0" r="2.5" fill="#ffffff" />
-            </g>
-
-            {/* Map Pin 2: Tarqui / Mariscos */}
-            <g
-              className="map-marker-pin"
-              transform="translate(170, 115)"
-              onClick={() => onMapPinClick?.('Tarqui')}
-            >
-              <circle cx="0" cy="0" r="6" fill="#0cb7f2" />
-              <circle cx="0" cy="0" r="2.5" fill="#ffffff" />
-            </g>
-
-            {/* Map Pin 3: Playa Murciélago */}
-            <g
-              className="map-marker-pin"
-              transform="translate(90, 75)"
-              onClick={() => onMapPinClick?.('Playa Murciélago')}
-            >
-              <circle cx="0" cy="0" r="7" fill="#0cb7f2" />
-              <circle cx="0" cy="0" r="2.5" fill="#ffffff" />
-            </g>
-
-            {/* Map Pin 4: Centro */}
-            <g
-              className="map-marker-pin"
-              transform="translate(145, 135)"
-              onClick={() => onMapPinClick?.('Centro Histórico')}
-            >
-              <circle cx="0" cy="0" r="6" fill="#0cb7f2" />
-              <circle cx="0" cy="0" r="2.5" fill="#ffffff" />
-            </g>
-
-            {/* Map Pin 5: Barbasquillo / ULEAM */}
-            <g
-              className="map-marker-pin"
-              transform="translate(70, 125)"
-              onClick={() => onMapPinClick?.('ULEAM')}
-            >
-              <circle cx="0" cy="0" r="6" fill="#0cb7f2" />
-              <circle cx="0" cy="0" r="2.5" fill="#ffffff" />
-            </g>
-
-            {/* Map Pin 6: San Mateo */}
-            <g
-              className="map-marker-pin"
-              transform="translate(45, 160)"
-              onClick={() => onMapPinClick?.('San Mateo')}
-            >
-              <circle cx="0" cy="0" r="6" fill="#0cb7f2" />
-              <circle cx="0" cy="0" r="2.5" fill="#ffffff" />
-            </g>
+            {/* Pines funcionales: abren Google Maps */}
+            {MANTA_PLACES.map((place) => (
+              <g
+                key={place.name}
+                onClick={() => openPlace(place)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openPlace(place);
+                  }
+                }}
+                role="link"
+                tabIndex={0}
+                aria-label={`Ver ${place.name} en Google Maps`}
+                style={{ cursor: 'pointer', transform: 'none', transition: 'none', animation: 'none' }}
+              >
+                <title>{place.name}</title>
+                {/* Área de clic más grande para que sea fácil tocar */}
+                <circle cx={place.x} cy={place.y} r="12" fill="transparent" />
+                {/* Halo fijo (sin animación) */}
+                <circle cx={place.x} cy={place.y} r="10" fill={place.color} fillOpacity="0.2" />
+                <circle cx={place.x} cy={place.y} r="6.5" fill={place.color} />
+                <circle cx={place.x} cy={place.y} r="2.5" fill="#ffffff" />
+              </g>
+            ))}
           </svg>
 
           <div className="map-footer-label">

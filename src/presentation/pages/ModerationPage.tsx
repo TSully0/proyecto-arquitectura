@@ -1,5 +1,5 @@
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // 👈 IMPORTANTE
 import "../../styles/moderation.css";
 
 type Review = {
@@ -10,7 +10,7 @@ type Review = {
 };
 
 export const ModerationPage = () => {
-  const navigate = useNavigate(); // 👈
+  const navigate = useNavigate();
 
   const [reviews, setReviews] = useState<Review[]>([
     { id: "1", user: "Ana G.", text: "Muy buen lugar 🔥", approved: false },
@@ -27,35 +27,56 @@ export const ModerationPage = () => {
   };
 
   const handleDelete = (id: string) => {
-    setReviews(prev =>
-      prev.filter(r => r.id !== id)
-    );
+    setReviews(prev => prev.filter(r => r.id !== id));
+  };
+
+  // 🔥 SOLO VOLVER A HOME (NO LOGOUT)
+  const handleGoHome = () => {
+    navigate("/");
+  };
+
+  // 🔥 LOGOUT REAL
+  // Importante: usar window.location.replace (recarga la página) y NO navigate.
+  // Con navigate, AppRouter sigue con el "user" viejo en memoria y se
+  // crea un bucle infinito entre /login y /moderacion.
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("reset_email");
+
+    window.location.replace("/login");
   };
 
   return (
     <div className="moderation-wrapper">
       <div className="moderation-container">
 
-        {/* 🔥 BOTÓN ATRÁS */}
-        <button className="btn-back" onClick={() => navigate(-1)}>
-          ← Volver
-        </button>
+        {/* 🔘 BOTONES ARRIBA */}
+        <div style={{ display: "flex", gap: "10px" }}>
+
+          {/* VOLVER A HOME */}
+          <button className="btn-back" onClick={handleGoHome}>
+            ⬅ Volver a Home
+          </button>
+
+          {/* LOGOUT */}
+          <button className="btn-back" onClick={handleLogout}>
+            🚪 Cerrar sesión
+          </button>
+
+        </div>
 
         <h1>🛠️ Panel de Moderación</h1>
+
         <p className="subtitle">
           Administra reseñas y controla el contenido de la comunidad
         </p>
 
         <div className="reviews-grid">
           {reviews.map(r => (
-            <div
-              key={r.id}
-              className={`review-card ${r.approved ? "approved" : ""}`}
-            >
+            <div key={r.id} className={`review-card ${r.approved ? "approved" : ""}`}>
               <div className="review-header">
-                <div className="avatar">
-                  {r.user.charAt(0)}
-                </div>
+                <div className="avatar">{r.user.charAt(0)}</div>
+
                 <div>
                   <p className="user">{r.user}</p>
                   <span className="status">

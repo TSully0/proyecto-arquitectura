@@ -6,11 +6,13 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 interface LoginPageProps {
   onNavigateToRegister: () => void;
   onLoginSuccess: (user: User) => void;
+  onNavigateToForgotPassword: () => void;
 }
 
 export function LoginPage({
   onNavigateToRegister,
-  onLoginSuccess
+  onLoginSuccess,
+  onNavigateToForgotPassword
 }: LoginPageProps) {
 
   const [identifier, setIdentifier] = useState('');
@@ -25,70 +27,54 @@ export function LoginPage({
     const cleanIdentifier = identifier.trim().toLowerCase();
 
     const stored = localStorage.getItem('app_users');
-    const storedUsers = stored ? JSON.parse(stored) : [];
-    const users = [
-      ...initialUsers.map((initialUser) => {
-        const storedUser = storedUsers.find(
-          (candidate: User) =>
-            candidate.email.toLowerCase() === initialUser.email.toLowerCase()
-        );
+    const storedUsers: User[] = stored ? JSON.parse(stored) : [];
 
-        return storedUser
-          ? {
-              ...initialUser,
-              ...storedUser,
-              password: initialUser.password
-            }
-          : initialUser;
-      }),
-      ...storedUsers.filter(
-        (storedUser: User) =>
-          !initialUsers.some(
-            (initialUser) =>
-              initialUser.email.toLowerCase() === storedUser.email.toLowerCase()
-          )
-      ),
-    ];
+    // ✅ SOLUCIÓN SIMPLE Y ESTABLE (SIN MERGE BUGS)
+    const users: User[] = storedUsers.length > 0 ? storedUsers : initialUsers;
 
-    const user = users.find(
-      (u: User) =>
-        (
-          u.email.toLowerCase() === cleanIdentifier ||
-          u.name.toLowerCase() === cleanIdentifier
-        ) &&
-        u.password === btoa(password)
-    );
+    const user = users.find((u) => {
+      const matchIdentity =
+        u.email.toLowerCase() === cleanIdentifier ||
+        u.name.toLowerCase() === cleanIdentifier;
+
+      const matchPassword = u.password === btoa(password);
+
+      return matchIdentity && matchPassword;
+    });
 
     if (!user) {
       setError('Credenciales incorrectas');
       return;
     }
 
-    // 🚫 BAN PERMANENTE
     if (user.banned) {
       setError('Cuenta bloqueada permanentemente');
       return;
     }
 
-    // ⏳ SUSPENSIÓN
-    if (
-      user.suspendedUntil &&
-      new Date(user.suspendedUntil) > new Date()
-    ) {
+    if (user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
       setError('Cuenta suspendida temporalmente');
       return;
     }
 
-    onLoginSuccess(user);
+    // 🔥 normalizar antes de enviar
+    const cleanUser: User = {
+      ...user,
+      role: String(user.role).toLowerCase().trim() as User['role']
+    };
+
+    onLoginSuccess(cleanUser);
   };
 
   return (
     <div className="auth-container">
+
       <h2>Iniciar Sesión</h2>
 
       {error && <p className="error">{error}</p>}
 
       <form onSubmit={handleLogin}>
+
         <div>
           <label>Correo o usuario</label>
           <input
@@ -123,11 +109,18 @@ export function LoginPage({
       </form>
 
       <p>
+        <button type="button" onClick={onNavigateToForgotPassword}>
+          ¿Olvidaste tu contraseña?
+        </button>
+      </p>
+
+      <p>
         ¿No tienes cuenta?{' '}
         <button onClick={onNavigateToRegister}>
           Regístrate
         </button>
       </p>
+
     </div>
   );
 }

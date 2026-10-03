@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
-import type { User } from '../business/types/user';
-import type { Place, CategoryId, NotificationItem } from '../business/types/place';
+import type { User } from '../../business/types/user';
+import type { Place, CategoryId, NotificationItem } from '../../business/types/place';
 import {
   fetchPlacesFromRepository,
   addPlaceToSupabase,
   initialPlaces
-} from '../data/repositories/places';
-import { Header } from './components/Header';
-import { CategoryNav } from './components/CategoryNav';
-import { Sidebar } from './components/Sidebar';
-import { FacebookFeed } from './components/FacebookFeed';
-import { ReviewModal } from './components/ReviewModal';
-import { AdminPanelModal } from './components/AdminPanelModal';
-import { Footer } from './components/Footer';
+} from '../../data/repositories/places';
+import { Header } from '../components/Header';
+import { CategoryNav } from '../components/CategoryNav';
+import { Sidebar } from '../components/Sidebar';
+import { FacebookFeed } from '../components/FacebookFeed';
+import { ReviewModal } from '../components/ReviewModal';
+import { AdminPanelModal } from '../components/AdminPanelModal';
+import { Footer } from '../components/Footer';
 
 interface HomePageProps {
   user: User;
