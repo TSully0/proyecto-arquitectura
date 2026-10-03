@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ThumbsUp,
   MessageCircle,
@@ -13,8 +13,32 @@ import {
   Globe
 } from 'lucide-react';
 import type { User } from '../../business/types/user';
-import type { Place, CommunityPost, CategoryId } from '../../business/types/place';
+import type { Place, CommunityPost, CommunityComment, CategoryId } from '../../business/types/place';
 import { CommentModal } from './CommentModal';
+import {
+  addReviewToSupabase,
+  fetchReviewsByPlaceIds,
+  resolvePlaceId
+} from '../../data/repositories/places';
+
+// Avatar por defecto para los comentarios que vienen de la base de datos
+const COMMENT_AVATAR =
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80';
+
+// Convierte la fecha de Supabase en un texto tipo "Hace 5 min"
+function formatRelativeTime(isoDate?: string): string {
+  if (!isoDate) return 'Hace un momento';
+  const diffMs = Date.now() - new Date(isoDate).getTime();
+  if (Number.isNaN(diffMs)) return 'Hace un momento';
+
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return 'Justo ahora';
+  if (minutes < 60) return `Hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  return days === 1 ? 'Ayer' : `Hace ${days} días`;
+}
 
 interface FacebookFeedProps {
   user: User;
@@ -168,6 +192,71 @@ export function FacebookFeed({
 
   const [commentInputs, setCommentInputs] = useState<{ [postId: string]: string }>({});
 
+  // Aviso que se muestra si un comentario no pudo guardarse en la base de datos
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // CARGAR: al abrir el feed, traer de Supabase los comentarios ya guardados
+  // y agregarlos a la publicación del lugar que les corresponde
+  useEffect(() => {
+    let isMounted = true;
+
+    fetchReviewsByPlaceIds(posts.map((post) => post.place.id)).then((reviews) => {
+      if (!isMounted || reviews.length === 0) return;
+
+      setPosts((prev) =>
+        prev.map((post) => {
+          const savedComments: CommunityComment[] = reviews
+            .filter((review) => review.place_id === resolvePlaceId(post.place.id))
+            .map((review) => ({
+              id: review.id,
+              authorName: review.author_name,
+              authorAvatar: COMMENT_AVATAR,
+              text: review.comment,
+              timestamp: formatRelativeTime(review.created_at),
+              hasVisited: review.has_visited,
+              rating: review.rating
+            }));
+
+          if (savedComments.length === 0) return post;
+          return {
+            ...post,
+            commentsCount: post.commentsCount + savedComments.length,
+            comments: [...post.comments, ...savedComments]
+          };
+        })
+      );
+    });
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // GUARDAR: envía el comentario a Supabase. El comentario ya se mostró en pantalla,
+  // así que si falla solo se avisa al usuario (no se rompe nada).
+  const saveCommentToDatabase = async (
+    placeId: string | undefined,
+    text: string,
+    rating?: number
+  ) => {
+    if (!placeId) return;
+    setSaveError(null);
+
+    const saved = await addReviewToSupabase({
+      place_id: placeId,
+      user_id: user.id,
+      author_name: user.name,
+      rating,
+      has_visited: rating !== undefined,
+      comment: text
+    });
+
+    if (!saved) {
+      setSaveError('Tu comentario se publicó en pantalla, pero no se pudo guardar en la base de datos.');
+    }
+  };
+
   // Filtrar publicaciones por categoría seleccionada
   const filteredPosts = posts.filter((post) => {
     if (activeCategory === 'inicio') return true;
@@ -207,6 +296,8 @@ export function FacebookFeed({
   }) => {
     if (!commentModalState.postId) return;
 
+    saveCommentToDatabase(commentModalState.place?.id, commentData.text, commentData.rating);
+
     setPosts((prev) =>
       prev.map((post) => {
         if (post.id === commentModalState.postId) {
@@ -235,6 +326,9 @@ export function FacebookFeed({
     const text = commentInputs[postId]?.trim();
     if (!text) return;
 
+    const targetPost = posts.find((post) => post.id === postId);
+    saveCommentToDatabase(targetPost?.place.id, text);
+
     setPosts((prev) =>
       prev.map((post) => {
         if (post.id === postId) {
@@ -261,6 +355,16 @@ export function FacebookFeed({
 
   return (
     <div className="facebook-feed-container">
+      {/* Aviso de error al guardar comentarios */}
+      {saveError && (
+        <div className="feed-status-banner">
+          <span>{saveError}</span>
+          <button className="btn-text-link" onClick={() => setSaveError(null)}>
+            Cerrar
+          </button>
+        </div>
+      )}
+
       {/* 1. Caja de crear publicación */}
       <div className="fb-create-post-card">
         <div className="fb-create-top">
