@@ -4,6 +4,8 @@ import { useState } from "react";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
+import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";   // 👈 AGREGADO
+import { ResetPasswordPage } from "../pages/ResetPasswordPage";     // 👈 AGREGADO
 import { AdminPanelModal } from "../components/AdminPanelModal";
 import { AdminRolesPage } from "../pages/AdminRolesPage";
 import { AdminUsersPage } from "../pages/AdminUsersPage";
@@ -98,6 +100,26 @@ export const AppRouter = () => {
           }
         />
 
+        {/* OLVIDÉ MI CONTRASEÑA 👈 AGREGADO */}
+        <Route
+          path="/forgot-password"
+          element={
+            <ForgotPasswordPage
+              onBack={() => (window.location.href = "/login")}
+            />
+          }
+        />
+
+        {/* NUEVA CONTRASEÑA 👈 AGREGADO */}
+        <Route
+          path="/reset-password"
+          element={
+            <ResetPasswordPage
+              onFinish={() => (window.location.href = "/login")}
+            />
+          }
+        />
+
         {/* PERFIL */}
         <Route
           element={
@@ -125,7 +147,7 @@ export const AppRouter = () => {
                 <AdminPanelModal
                   isOpen={true}
                   type="admin"
-                  user={user}   // ✅ seguro porque user nunca es null aquí
+                  user={user}
                   onClose={() => (window.location.href = "/")}
                 />
               ) : (
@@ -140,6 +162,9 @@ export const AppRouter = () => {
           <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/admin/roles" element={<AdminRolesPage />} />
         </Route>
+
+        {/* CUALQUIER OTRA RUTA → evita pantalla en blanco 👈 AGREGADO */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
 
       </Routes>
     </BrowserRouter>
