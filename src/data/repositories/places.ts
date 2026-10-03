@@ -173,19 +173,47 @@ export async function fetchPlacesFromRepository(): Promise<Place[]> {
   }
 }
 
+// =============================================================================
+// RESEÑAS Y COMENTARIOS (tabla "reviews" de Supabase)
+// Regla: rating con valor (1 a 5) = visitó y calificó; rating null = comentario
+// o pregunta sin calificación (ver supabase_reviews_migration.sql).
+// =============================================================================
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Los lugares de ejemplo del feed usan ids tipo "cineplex-manta", pero en
+// Supabase esos mismos lugares tienen un UUID (ver DATOS SEMILLA en supabase_schema.sql).
+export const PLACE_SLUG_TO_UUID: Record<string, string> = {
+  'cineplex-manta': 'b1111111-0000-0000-0000-000000000001',
+  'la-hueca-de-pedro': 'b1111111-0000-0000-0000-000000000002',
+  'playa-murcielago-surf': 'b1111111-0000-0000-0000-000000000003',
+  'cineplex-manta-2': 'b1111111-0000-0000-0000-000000000004',
+  'playa-murcielago-sunset': 'b1111111-0000-0000-0000-000000000005',
+  'playa-murcielago-naturale': 'b1111111-0000-0000-0000-000000000006'
+};
+
+// Devuelve el UUID real del lugar en Supabase, o null si no existe allí.
+// Antes se usaba el UUID del Cineplex como reemplazo y los comentarios podían
+// guardarse en el lugar equivocado; ahora, si no se encuentra, no se guarda.
+export function resolvePlaceId(placeId: string): string | null {
+  if (UUID_REGEX.test(placeId)) return placeId;
+  return PLACE_SLUG_TO_UUID[placeId] ?? null;
+}
+
 export async function addReviewToSupabase(review: Omit<Review, 'id' | 'created_at'>): Promise<boolean> {
   try {
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(review.place_id);
-    const placeId = isValidUUID ? review.place_id : 'b1111111-0000-0000-0000-000000000001';
+    const placeId = resolvePlaceId(review.place_id);
+    if (!placeId) {
+      console.warn('Reseña no guardada: el lugar no existe en Supabase:', review.place_id);
+      return false;
+    }
 
     const dbPayload = {
-      rating: Math.min(5, Math.max(1, Math.round(review.rating || 5))),
+      // Sin estrellas -> null (antes se convertía en 5 y subía el promedio del lugar)
+      rating: review.rating ? Math.min(5, Math.max(1, Math.round(review.rating))) : null,
       comment: review.comment,
       authorName: review.author_name || 'Estudiante Manta',
       placeId: placeId,
-      userId: review.user_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(review.user_id)
-        ? review.user_id
-        : null
+      userId: review.user_id && UUID_REGEX.test(review.user_id) ? review.user_id : null
     };
 
     const { error } = await supabase.from('reviews').insert([dbPayload]);
@@ -197,6 +225,41 @@ export async function addReviewToSupabase(review: Omit<Review, 'id' | 'created_a
   } catch (err) {
     console.warn('Excepción al conectar con Supabase (reviews):', err);
     return false;
+  }
+}
+
+// Lee de Supabase todos los comentarios de los lugares indicados (más antiguos primero)
+export async function fetchReviewsByPlaceIds(placeIds: string[]): Promise<Review[]> {
+  try {
+    const uuids = placeIds
+      .map(resolvePlaceId)
+      .filter((id): id is string => id !== null);
+    if (uuids.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .in('placeId', uuids)
+      .order('createdAt', { ascending: true });
+
+    if (error || !data) {
+      console.warn('Error al leer reseñas de Supabase:', error);
+      return [];
+    }
+
+    return data.map((row: any) => ({
+      id: row.id,
+      place_id: row.placeId,
+      user_id: row.userId ?? undefined,
+      author_name: row.authorName || 'Estudiante Manta',
+      rating: row.rating ?? undefined,
+      has_visited: row.rating !== null && row.rating !== undefined,
+      comment: row.comment || '',
+      created_at: row.createdAt
+    }));
+  } catch (err) {
+    console.warn('Excepción al leer reseñas de Supabase:', err);
+    return [];
   }
 }
 
@@ -240,3 +303,4 @@ export async function addPlaceToSupabase(place: Omit<Place, 'id' | 'likes_count'
     return false;
   }
 }
+ 
