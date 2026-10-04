@@ -18,9 +18,25 @@ import { CategoriesController } from './categories/categories.controller.js';
 import { CategoriesService } from './categories/categories.service.js';
 import { CategoriesModule } from './categories/categories.module.js';
 import {TypeOrmModule} from '@nestjs/typeorm';
+import {ConfigModule, ConfigService} from '@nestjs/config';
 
 @Module({
-  imports: [UsersModule, UserFavoritesModule, ReviewsModule, PlaceLikesModule, PlacesModule, CategoriesModule],
+  imports: [UsersModule, UserFavoritesModule, ReviewsModule, PlaceLikesModule, PlacesModule, CategoriesModule,
+    ConfigModule.forRoot({isGlobal: true,}),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get<string>('DATABASE_URL'),
+        autoLoadEntities: true,
+        synchronize: false, 
+        ssl: {
+          rejectUnauthorized: false, 
+        },
+      })
+    })
+  ],
   controllers: [AppController, UserFavoritesController, ReviewsController, PlaceLikesController, PlacesController, CategoriesController],
   providers: [AppService, UserFavoritesService, ReviewsService, PlaceLikesService, PlacesService, CategoriesService],
 })
