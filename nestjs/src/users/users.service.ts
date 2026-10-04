@@ -5,14 +5,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UsersService {
-    constructor(@InjectRepository(users) private readonly users: Repository<users>){}
-    findAll (id?: number){
-        return this.users.find({where: id? {id}: {} });
-
+    constructor(@InjectRepository(users) private readonly usersRepo: Repository<users>){}
+    async findAll (): Promise<users[]>{
+        return await this.usersRepo.find();
     }
-    async findOne(id: number): Promise<users>{
-        const users=await this.users.findOneBy({id: Number(id)});
-        if (!users) throw new NotFoundException(`No existe este id`)
+    async findOne(id: string): Promise<users>{
+        const users=await this.usersRepo.findOneBy({id: id.trim()});
+        if (!users) {throw new NotFoundException(`No existe este id`)}
         return users;
     }
 }

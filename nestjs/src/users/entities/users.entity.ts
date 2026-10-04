@@ -8,7 +8,7 @@ export enum Role{
 @Entity('users')
 export class users{
     @PrimaryGeneratedColumn('uuid')
-        id: number;
+        id: string;
     @Column({unique: true})
     email: string;
     @Column({name: 'passwordHash', select:false})
