@@ -37,7 +37,7 @@ import {ConfigModule, ConfigService} from '@nestjs/config';
       })
     })
   ],
-  controllers: [AppController, UserFavoritesController, ReviewsController, PlaceLikesController, PlacesController, CategoriesController],
-  providers: [AppService, UserFavoritesService, ReviewsService, PlaceLikesService, PlacesService, CategoriesService],
+  controllers: [AppController, UserFavoritesController, ReviewsController, PlaceLikesController, PlacesController],
+  providers: [AppService, UserFavoritesService, ReviewsService, PlaceLikesService, PlacesService],
 })
 export class AppModule {}
