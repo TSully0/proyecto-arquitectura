@@ -6,6 +6,17 @@ interface RegisterPageProps {
   onNavigateToLogin: () => void;
 }
 
+// 🔹 lee los usuarios con la MISMA lógica que el login
+const getUsers = (): any[] => {
+  try {
+    const stored = localStorage.getItem('app_users');
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : initialUsers;
+  } catch {
+    return initialUsers;
+  }
+};
+
 export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
 
   const [name, setName] = useState('');
@@ -22,6 +33,9 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // evita registrar dos veces si se pulsa de nuevo
+    if (success) return;
 
     // 🔹 limpiar espacios
     const cleanEmail = email.trim().toLowerCase();
@@ -52,15 +66,14 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
       return;
     }
 
-    const stored = localStorage.getItem('app_users');
-    const users = stored ? JSON.parse(stored) : initialUsers;
+    const users = getUsers();
 
-    // 🔹 evitar duplicados
-    const exists = users.some(
-      (u: any) => u.email.toLowerCase() === cleanEmail
+    // 🔹 CORREO ÚNICO (el nombre sí puede repetirse)
+    const emailExists = users.some(
+      (u: any) => (u.email || '').trim().toLowerCase() === cleanEmail
     );
 
-    if (exists) {
+    if (emailExists) {
       setError('Este correo ya está registrado');
       return;
     }
@@ -116,6 +129,7 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
         <div>
           <label>Correo</label>
           <input
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -164,12 +178,14 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
           </div>
         </div>
 
-        <button type="submit">Registrarse</button>
+        <button type="submit" disabled={success}>
+          Registrarse
+        </button>
       </form>
 
       <p>
         ¿Ya tienes cuenta?{' '}
-        <button onClick={onNavigateToLogin}>
+        <button type="button" onClick={onNavigateToLogin}>
           Inicia sesión
         </button>
       </p>

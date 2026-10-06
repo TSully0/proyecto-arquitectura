@@ -1,0 +1,275 @@
+/* ====== styles/ui.css ======
+   Componentes compartidos: avisos (toast), botones y modal.
+   • Usa las variables de home.css (--primary, --bg-card, --border-subtle...)
+     → cuando hagas el modo oscuro, solo cambian esas variables.
+   • Todas las clases empiezan con "ui-" para no chocar con otros estilos.
+   • Las esquinas rectas ya las pone la regla maestra de home.css. */
+
+/* =====================================================
+   AVISOS (TOAST)
+===================================================== */
+.ui-toast-stack {
+  position: fixed;
+  top: 88px;
+  right: 24px;
+  z-index: 2000;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.ui-toast {
+  pointer-events: auto;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-left-width: 4px;
+  box-shadow: 0 10px 28px rgba(41, 36, 33, 0.18);
+
+  color: var(--text-main);
+  font-size: 13.5px;
+  line-height: 1.4;
+
+  animation: ui-toast-in 0.22s ease-out;
+}
+
+.ui-toast-text {
+  flex: 1;
+}
+
+.ui-toast-success { border-left-color: #15803d; }
+.ui-toast-error   { border-left-color: #b91c1c; }
+.ui-toast-info    { border-left-color: #2C6E91; }
+
+.ui-toast-success .ui-toast-icon { color: #15803d; }
+.ui-toast-error .ui-toast-icon   { color: #b91c1c; }
+.ui-toast-info .ui-toast-icon    { color: #2C6E91; }
+
+.ui-toast-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ui-toast-close {
+  display: flex;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ui-toast-close:hover {
+  color: var(--text-main);
+}
+
+@keyframes ui-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* =====================================================
+   BOTONES
+   (.ui-btn.ui-btn sube la prioridad para ganarle a reglas
+    globales como button[type="submit"] de auth.css)
+===================================================== */
+.ui-btn.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  width: auto;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease,
+    transform 0.2s ease, color 0.2s ease;
+}
+
+.ui-btn.ui-btn-md { padding: 10px 20px; font-size: 13.5px; }
+.ui-btn.ui-btn-sm { padding: 7px 12px;  font-size: 12.5px; }
+.ui-btn.ui-btn-full { width: 100%; }
+
+/* primario (café) */
+.ui-btn.ui-btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 6px var(--primary-glow);
+}
+.ui-btn.ui-btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* secundario (borde suave) */
+.ui-btn.ui-btn-secondary {
+  background: var(--bg-card-subtle);
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+.ui-btn.ui-btn-secondary:hover:not(:disabled) {
+  background: var(--bg-tint);
+}
+
+/* peligro (rojo) */
+.ui-btn.ui-btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+.ui-btn.ui-btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+/* fantasma (solo texto) */
+.ui-btn.ui-btn-ghost {
+  background: transparent;
+  color: var(--primary);
+}
+.ui-btn.ui-btn-ghost:hover:not(:disabled) {
+  background: var(--bg-tint);
+}
+
+.ui-btn.ui-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ui-btn.ui-btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.ui-btn.ui-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =====================================================
+   MODAL
+===================================================== */
+.ui-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+
+  background: rgba(41, 36, 33, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.ui-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+
+  animation: ui-modal-in 0.2s ease-out;
+}
+
+@keyframes ui-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ui-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ui-modal-tag {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.ui-modal-title {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 18px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.ui-modal-close {
+  display: flex;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ui-modal-close:hover {
+  color: var(--text-main);
+}
+
+.ui-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ui-modal-body p {
+  margin: 0 0 10px;
+  text-align: left;
+}
+
+.ui-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-card-subtle);
+}
+
+@media (max-width: 640px) {
+  .ui-toast-stack {
+    top: 76px;
+    right: 16px;
+  }
+}

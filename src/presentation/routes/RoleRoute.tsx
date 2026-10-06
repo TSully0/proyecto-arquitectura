@@ -28,10 +28,9 @@ export const RoleRoute = ({ allowedRoles }: Props) => {
     .toLowerCase()
     .trim() as Role;
 
-  // 🚫 acceso denegado
+  // 🚫 SOLO REDIRECCIÓN, NO BORRAR SESIÓN
   if (!allowedRoles.includes(role)) {
-    localStorage.removeItem("user");
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

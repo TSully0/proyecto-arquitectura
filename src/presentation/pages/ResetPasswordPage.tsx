@@ -1,15 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export function ResetPasswordPage({ onFinish }: { onFinish: () => void }) {
   const [newPassword, setNewPassword] = useState("");
-  const [email, setEmail] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
-  // 🔥 cargar email seguro
-  useEffect(() => {
-    const storedEmail = localStorage.getItem("reset_email");
-    setEmail(storedEmail);
-  }, []);
+  // 🔥 email seguro: se lee una sola vez al crear el estado (sin useEffect)
+  const [email] = useState<string | null>(() =>
+    localStorage.getItem("reset_email")
+  );
 
   const findUserIndex = (users: any[], email: string) => {
     return users.findIndex(
@@ -54,7 +52,7 @@ export function ResetPasswordPage({ onFinish }: { onFinish: () => void }) {
 
     setMessage("✔ Contraseña actualizada correctamente");
 
-    // 🔁 opcional: redirigir automático
+    // 🔁 redirigir automático
     setTimeout(() => {
       onFinish();
     }, 1000);

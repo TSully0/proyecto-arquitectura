@@ -1,32 +1,36 @@
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { useState } from "react";
-
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
-import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";   // 👈 AGREGADO
-import { ResetPasswordPage } from "../pages/ResetPasswordPage";     // 👈 AGREGADO
-import { AdminPanelModal } from "../components/AdminPanelModal";
+import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "../pages/ResetPasswordPage";
 import { AdminRolesPage } from "../pages/AdminRolesPage";
 import { AdminUsersPage } from "../pages/AdminUsersPage";
+import { AdminLayout } from "../pages/AdminLayout";                       // 👈 NUEVO
+import { AdminOverviewPage, AdminActivityPage, AdminReportsPage } from "../pages/AdminSections";
 import { ModerationPage } from "../pages/ModerationPage";
+import { MyProfilePage } from "../pages/MyProfilePage";
 
 import type { User } from "../../business/types/user";
 import { RoleRoute } from "./RoleRoute";
-
-const Perfil = () => <div>Perfil Usuario</div>;
+import { MessengerWidget } from "../components/MessengerWidget";   // 👈 NUEVO
 
 export const AppRouter = () => {
-  // ✅ estado reactivo (IMPORTANTE)
   const [user, setUser] = useState<User | null>(() => {
     const raw = localStorage.getItem("user");
     return raw ? JSON.parse(raw) : null;
   });
 
-  // 🔥 limpiar rol
+  /* =========================
+     NORMALIZAR ROL
+  ========================= */
   const normalizeRole = (role: string) =>
     String(role || "").toLowerCase().trim();
 
+  /* =========================
+     LANDING SEGÚN ROL
+  ========================= */
   const getLandingPath = (role?: string) => {
     const r = normalizeRole(role || "");
 
@@ -35,7 +39,9 @@ export const AppRouter = () => {
     return "/";
   };
 
-  // ✅ LOGIN
+  /* =========================
+     LOGIN
+  ========================= */
   const handleLogin = (loggedInUser: User) => {
     const cleanUser: User = {
       ...loggedInUser,
@@ -44,35 +50,41 @@ export const AppRouter = () => {
 
     localStorage.setItem("user", JSON.stringify(cleanUser));
     setUser(cleanUser);
-
-    window.location.href = getLandingPath(cleanUser.role);
   };
 
-  // ✅ LOGOUT (CORRECTO)
+  /* =========================
+     LOGOUT
+  ========================= */
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
-
-    window.location.href = "/login";
   };
 
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* HOME */}
+        {/* =========================
+            HOME (el admin NO entra aquí: va a su panel)
+        ========================= */}
         <Route
           path="/"
           element={
             user ? (
-              <HomePage user={user} onLogout={handleLogout} />
+              normalizeRole(user.role) === "admin" ? (
+                <Navigate to="/admin" replace />          // 👈 CAMBIO
+              ) : (
+                <HomePage user={user} onLogout={handleLogout} />
+              )
             ) : (
               <Navigate to="/login" replace />
             )
           }
         />
 
-        {/* LOGIN */}
+        {/* =========================
+            LOGIN
+        ========================= */}
         <Route
           path="/login"
           element={
@@ -90,7 +102,9 @@ export const AppRouter = () => {
           }
         />
 
-        {/* REGISTER */}
+        {/* =========================
+            REGISTER
+        ========================= */}
         <Route
           path="/register"
           element={
@@ -100,7 +114,9 @@ export const AppRouter = () => {
           }
         />
 
-        {/* OLVIDÉ MI CONTRASEÑA 👈 AGREGADO */}
+        {/* =========================
+            FORGOT PASSWORD
+        ========================= */}
         <Route
           path="/forgot-password"
           element={
@@ -110,7 +126,9 @@ export const AppRouter = () => {
           }
         />
 
-        {/* NUEVA CONTRASEÑA 👈 AGREGADO */}
+        {/* =========================
+            RESET PASSWORD
+        ========================= */}
         <Route
           path="/reset-password"
           element={
@@ -120,36 +138,19 @@ export const AppRouter = () => {
           }
         />
 
-        {/* PERFIL */}
+        {/* =========================
+            PERFIL (solo user y moderator, el admin NO)
+        ========================= */}
         <Route
           element={
-            <RoleRoute allowedRoles={["user", "admin", "moderator"]} />
+            <RoleRoute allowedRoles={["user", "moderator"]} />
           }
         >
-          <Route path="/perfil" element={<Perfil />} />
-        </Route>
-
-        {/* MODERACIÓN */}
-        <Route
-          element={
-            <RoleRoute allowedRoles={["admin", "moderator"]} />
-          }
-        >
-          <Route path="/moderacion" element={<ModerationPage />} />
-        </Route>
-
-        {/* ADMIN */}
-        <Route element={<RoleRoute allowedRoles={["admin"]} />}>
           <Route
-            path="/admin"
+            path="/perfil"
             element={
               user ? (
-                <AdminPanelModal
-                  isOpen={true}
-                  type="admin"
-                  user={user}
-                  onClose={() => (window.location.href = "/")}
-                />
+                <MyProfilePage user={user} />
               ) : (
                 <Navigate to="/login" replace />
               )
@@ -157,16 +158,50 @@ export const AppRouter = () => {
           />
         </Route>
 
-        {/* USERS */}
-        <Route element={<RoleRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin/users" element={<AdminUsersPage />} />
-          <Route path="/admin/roles" element={<AdminRolesPage />} />
+        {/* =========================
+            MODERACIÓN (solo moderator)
+        ========================= */}
+        <Route
+          element={
+            <RoleRoute allowedRoles={["moderator"]} />
+          }
+        >
+          <Route path="/moderacion" element={<ModerationPage />} />
         </Route>
 
-        {/* CUALQUIER OTRA RUTA → evita pantalla en blanco 👈 AGREGADO */}
+        {/* =========================
+            PANEL DE ADMIN (menú propio + subpáginas)  👈 NUEVO
+        ========================= */}
+        <Route element={<RoleRoute allowedRoles={["admin"]} />}>
+          <Route
+            path="/admin"
+            element={
+              user ? (
+                <AdminLayout user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          >
+            <Route index element={<AdminOverviewPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="roles" element={<AdminRolesPage />} />
+            <Route path="activity" element={<AdminActivityPage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
+          </Route>
+        </Route>
+
+        {/* =========================
+            FALLBACK
+        ========================= */}
         <Route path="*" element={<Navigate to="/login" replace />} />
 
       </Routes>
+
+      {/* 💬 CHAT FLOTANTE (apagado hasta que se pulse el botón; el admin no lo usa) 👈 NUEVO */}
+      {user && normalizeRole(user.role) !== "admin" && (
+        <MessengerWidget key={user.id} me={user} />
+      )}
     </BrowserRouter>
   );
 };

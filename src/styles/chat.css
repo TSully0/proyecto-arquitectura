@@ -1,0 +1,593 @@
+/* ====== styles/chat.css ======
+   Chat flotante (msg-) y ventana de conversación (chat-).
+   Todas las clases tienen prefijo para no chocar con otros estilos. */
+
+/* =====================================================
+   BOTÓN REDONDO (siempre visible)
+===================================================== */
+.msg-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 900;
+
+  width: 58px;
+  height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2C6E91, #1f566f);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.msg-fab:hover {
+  transform: scale(1.08);
+}
+
+/* =====================================================
+   PANEL (lista de chats / conversación)
+===================================================== */
+.msg-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 96px;
+  z-index: 900;
+
+  width: 360px;
+  height: 500px;
+  max-height: calc(100vh - 120px);
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+
+  animation: msg-pop 0.18s ease-out;
+}
+
+@keyframes msg-pop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* dentro del panel, la conversación ocupa todo */
+.msg-panel .chat-box {
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ---------- lista de chats ---------- */
+.msg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 8px;
+
+  color: #292421;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.msg-close {
+  display: flex;
+  padding: 6px;
+  border: none;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #444;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.msg-close:hover {
+  background: #e5e7eb;
+}
+
+.msg-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 4px 14px 10px;
+  color: #7b6a58;
+}
+
+.msg-search-wrap svg {
+  position: absolute;
+  left: 13px;
+  pointer-events: none;
+}
+
+.msg-panel .msg-search {
+  flex: 1;
+  width: 100%;
+  margin: 0;
+  padding: 10px 14px 10px 38px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #292421;
+
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.msg-panel .msg-search:focus {
+  border-color: #2C6E91;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(44, 110, 145, 0.15);
+}
+
+.msg-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 10px;
+}
+
+.msg-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.msg-list::-webkit-scrollbar-thumb {
+  background: #c89b6d;
+  border-radius: 10px;
+}
+
+.msg-empty {
+  padding: 40px 20px;
+  color: #7b6a58;
+  font-size: 14px;
+  text-align: center;
+}
+
+.msg-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.msg-item:hover {
+  background: #f3f4f6;
+}
+
+.msg-item-avatar {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2C6E91, #A75F37);
+  color: #fff;
+  font-weight: 800;
+}
+
+.msg-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.msg-item-name,
+.msg-item-preview {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msg-item-name {
+  color: #292421;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.msg-item-preview {
+  margin-top: 2px;
+  color: #777;
+  font-size: 13px;
+}
+
+.msg-item-time {
+  align-self: flex-start;
+  margin-top: 4px;
+  color: #999;
+  font-size: 11px;
+}
+
+/* =====================================================
+   VENTANA DE CONVERSACIÓN
+===================================================== */
+.chat-box {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: var(--chat-height, 480px);
+
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+}
+
+/* ---------- header ---------- */
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #2C6E91, #1f566f);
+  color: #fff;
+}
+
+.chat-avatar {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: 800;
+}
+
+.chat-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-title,
+.chat-subtitle {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.chat-subtitle {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.chat-icon-btn {
+  display: flex;
+  padding: 7px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.chat-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ---------- menú ⋯ ---------- */
+.chat-menu-wrap {
+  position: relative;
+}
+
+.chat-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+}
+
+.chat-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+
+  min-width: 190px;
+  padding: 6px;
+
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.chat-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #b91c1c;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.chat-menu-item:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.chat-menu-item:disabled {
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.chat-menu-confirm {
+  padding: 8px 10px;
+  color: #292421;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chat-menu-confirm div {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chat-menu-confirm button {
+  flex: 1;
+  padding: 7px 10px;
+
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chat-confirm-yes {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.chat-confirm-no {
+  background: #f3f4f6;
+  color: #444;
+}
+
+/* ---------- mensajes ---------- */
+.chat-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  background: #f7f1ea;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #c89b6d;
+  border-radius: 10px;
+}
+
+.chat-empty {
+  padding: 60px 20px;
+  color: #7b6a58;
+  font-size: 14px;
+  text-align: center;
+}
+
+.chat-day {
+  width: fit-content;
+  margin: 14px auto 10px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #e5ddd1;
+  color: #5C4A3E;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chat-row {
+  display: flex;
+  margin-bottom: 6px;
+}
+
+.chat-row.mine {
+  justify-content: flex-end;
+}
+
+.chat-row.theirs {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  max-width: 78%;
+  padding: 8px 12px 6px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.chat-row.mine .chat-bubble {
+  background: #2C6E91;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-row.theirs .chat-bubble {
+  background: #fff;
+  color: #292421;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-text {
+  display: block;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.chat-delete {
+  display: none;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chat-bubble:hover .chat-delete {
+  display: flex;
+}
+
+/* ---------- escribir ---------- */
+.chat-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid #eee;
+  background: #fff;
+}
+
+.chat-input {
+  flex: 1;
+  min-height: 42px;
+  max-height: 110px;
+  padding: 11px 14px;
+
+  border: 1px solid #d1c2b5;
+  border-radius: 21px;
+  background: #f9f9f9;
+  color: #292421;
+
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.3;
+  resize: none;
+  outline: none;
+  transition: 0.2s;
+}
+
+.chat-input:focus {
+  border-color: #2C6E91;
+  box-shadow: 0 0 0 3px rgba(44, 110, 145, 0.18);
+}
+
+.chat-send {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #A75F37, #8C4B27);
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.chat-send:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+.chat-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* =====================================================
+   MÓVIL
+===================================================== */
+@media (max-width: 700px) {
+  .msg-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .msg-panel {
+    right: 12px;
+    left: 12px;
+    bottom: 88px;
+    width: auto;
+  }
+
+  .chat-bubble {
+    max-width: 88%;
+  }
+}
+
+/* =====================================================
+   EXCEPCIONES REDONDAS
+   home.css aplica "border-radius: 0 !important" a TODO el proyecto,
+   así que estos elementos necesitan su propia excepción con !important
+   (igual que ya hiciste con la búsqueda y las notificaciones).
+===================================================== */
+.msg-fab,
+.msg-close,
+.msg-item-avatar,
+.chat-avatar,
+.chat-icon-btn,
+.chat-send {
+  border-radius: 50% !important;
+}
+
+.msg-panel .msg-search,
+.chat-input {
+  border-radius: 9999px !important;
+}

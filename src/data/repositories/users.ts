@@ -5,6 +5,7 @@ import { supabase } from '../supabase';
    USUARIOS BASE DEL SISTEMA
    ========================= */
 export const initialUsers: (User & { banned?: boolean })[] = [
+  // 👑 ADMINS
   {
     id: '1',
     name: 'Ana G.',
@@ -21,6 +22,8 @@ export const initialUsers: (User & { banned?: boolean })[] = [
     role: 'admin',
     banned: false
   },
+
+  // 🛡️ MODERADOR
   {
     id: '3',
     name: 'María Moderadora',
@@ -29,6 +32,8 @@ export const initialUsers: (User & { banned?: boolean })[] = [
     role: 'moderator',
     banned: false
   },
+
+  // 👤 USUARIOS NORMALES
   {
     id: '4',
     name: 'Juan Usuario',
@@ -36,6 +41,42 @@ export const initialUsers: (User & { banned?: boolean })[] = [
     password: btoa('password123'),
     role: 'user',
     banned: false
+  },
+  {
+    id: '5',
+    name: 'Camila Ruiz',
+    email: 'camila.ruiz@hotmail.com',
+    password: btoa('password123'),
+    role: 'user',
+    banned: false
+  },
+
+  // ⚠️ USUARIO PROBLEMÁTICO (activo pero sospechoso)
+  {
+    id: '6',
+    name: 'Pedro López',
+    email: 'pedro.lopez@gmail.com',
+    password: btoa('password123'),
+    role: 'user',
+    banned: false
+  },
+
+  // 🚫 BANEADOS
+  {
+    id: '7',
+    name: 'Usuario Spam',
+    email: 'spam1@email.com',
+    password: btoa('password123'),
+    role: 'user',
+    banned: true
+  },
+  {
+    id: '8',
+    name: 'Troll User',
+    email: 'troll@gmail.com',
+    password: btoa('password123'),
+    role: 'user',
+    banned: true
   }
 ];
 
