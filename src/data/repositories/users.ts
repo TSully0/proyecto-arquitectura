@@ -97,15 +97,16 @@ export async function syncUserToSupabase(user: {
         ? 'MODERATOR'
         : 'STUDENT';
 
-    const { error } = await supabase.from('users').insert([
+    const { error } = await supabase.from('users').upsert(
       {
-        email: user.email,
+        email: user.email.trim().toLowerCase(),
         passwordHash: user.password || btoa('default123'),
         fullName: user.name,
         role: roleUpper,
         isActive: true
-      }
-    ]);
+      },
+      { onConflict: 'email', ignoreDuplicates: true }
+    );
 
     if (error) {
       console.warn('Error al sincronizar usuario con Supabase:', error);
