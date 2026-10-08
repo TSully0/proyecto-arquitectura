@@ -1,25 +1,36 @@
-import {Entity, Column, PrimaryGeneratedColumn, CreateDateColumn} from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-export enum Role{
-    STUDENT = 'STUDENT',
-    ADMIN = 'ADMIN',
-    USER = 'USER'
-}
-@Entity('users')
-export class users{
-    @PrimaryGeneratedColumn('uuid')
-        id: string;
-    @Column({unique: true})
-    email: string;
-    @Column({name: 'passwordHash', select:false})
-    passwordHash: string; 
-    @Column({name: 'fullName'})
-    fullName: string;
-    @Column({type:'enum', enum: Role, enumName: 'Role',default: Role.STUDENT})
-    role: Role;
-    @Column({default: true})
-    isActive: boolean;
-    @CreateDateColumn({type: 'timestamp with time zone'})
-    createdAt: Date;
+export enum Role {
+  STUDENT = 'STUDENT',
+  MODERATOR = 'MODERATOR',
+  ADMIN = 'ADMIN',
 }
 
+@Entity({ name: 'users', schema: 'public' })
+export class UserEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ type: 'text', unique: true })
+  email!: string;
+
+  @Column({ name: 'passwordHash', type: 'text', select: false })
+  passwordHash!: string;
+
+  @Column({ name: 'fullName', type: 'text' })
+  fullName!: string;
+
+  @Column({
+    type: 'enum',
+    enum: Role,
+    enumName: 'Role',
+    default: Role.STUDENT,
+  })
+  role!: Role;
+
+  @Column({ name: 'isActive', type: 'boolean', default: true })
+  isActive!: boolean;
+
+  @CreateDateColumn({ name: 'createdAt', type: 'timestamptz' })
+  createdAt!: Date;
+}

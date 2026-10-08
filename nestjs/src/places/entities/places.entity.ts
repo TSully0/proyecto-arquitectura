@@ -6,8 +6,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { categories } from '../../categories/entities/categories.entity.js';
-import { users } from '../../users/entities/users.entity.js';
+import { CategoryEntity } from '../../categories/entities/categories.entity.js';
+import { UserEntity } from '../../users/entities/users.entity.js';
 
 export enum PriceRange {
   CHEAP = 'CHEAP',
@@ -58,17 +58,17 @@ export class places {
   @Column({ type: 'uuid' })
   categoryId: string;
 
-  @ManyToOne(() => categories, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => CategoryEntity, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'categoryId' })
-  category: categories;
+  category: CategoryEntity;
 
   // FK hacia Users
   @Column({ type: 'uuid', nullable: true })
   authorId: string;
 
-  @ManyToOne(() => users, { onDelete: 'SET NULL', nullable: true })
+  @ManyToOne(() => UserEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'authorId' })
-  author: users;
+  author: UserEntity;
 
   @Column({ type: 'boolean', default: true, nullable: true })
   hasWifi: boolean;

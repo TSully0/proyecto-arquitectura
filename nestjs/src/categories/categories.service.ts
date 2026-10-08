@@ -1,17 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { categories } from './entities/categories.entity.js';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { InjectRepository} from '@nestjs/typeorm';
+import { CategoryEntity } from './entities/categories.entity.js';
 
 @Injectable()
 export class CategoriesService {
-    constructor (@InjectRepository(categories) private readonly categorieRepo:Repository<categories>){}
-    async findAll(): Promise<categories[]>{
-        return await this.categorieRepo.find();
+  constructor(
+    @InjectRepository(CategoryEntity)
+    private readonly categoriesRepository: Repository<CategoryEntity>,
+  ) {}
+
+  findAll(): Promise<CategoryEntity[]> {
+    return this.categoriesRepository.find({
+      order: { displayOrder: 'ASC', name: 'ASC' },
+    });
+  }
+
+  async findOne(id: string): Promise<CategoryEntity> {
+    const category = await this.categoriesRepository.findOneBy({ id: id.trim() });
+    if (!category) {
+      throw new NotFoundException('Esta categoría no existe');
     }
-    async findOne(id: string): Promise<categories>{
-        const categorie = await this.categorieRepo.findOneBy({id: id.trim()})
-        if  (!categorie) {throw new NotFoundException(`Esta categoria no existe`)}
-        return categorie;
-    }
+    return category;
+  }
 }
