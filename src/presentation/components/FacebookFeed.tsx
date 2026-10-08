@@ -44,6 +44,11 @@ interface FacebookFeedProps {
   user: User;
   places: Place[];
   activeCategory: CategoryId;
+  activeSection: 'all' | 'saved' | 'nearby' | 'trends';
+  savedPlaceIds: string[];
+  favoriteError: string | null;
+  onToggleFavorite: (placeId: string) => Promise<void>;
+  reviewsRefreshKey: number;
   onOpenCreateReview: () => void;
   onSelectPlace?: (place: Place) => void;
 }
@@ -52,6 +57,11 @@ export function FacebookFeed({
   user,
   places,
   activeCategory,
+  activeSection,
+  savedPlaceIds,
+  favoriteError,
+  onToggleFavorite,
+  reviewsRefreshKey,
   onOpenCreateReview,
   onSelectPlace
 }: FacebookFeedProps) {
@@ -194,21 +204,46 @@ export function FacebookFeed({
 
   // Aviso que se muestra si un comentario no pudo guardarse en la base de datos
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [pendingFavoriteIds, setPendingFavoriteIds] = useState<string[]>([]);
+  const [favoriteActionError, setFavoriteActionError] = useState<string | null>(null);
 
-  // CARGAR: al abrir el feed, traer de Supabase los comentarios ya guardados
-  // y agregarlos a la publicación del lugar que les corresponde
+  useEffect(() => {
+    setPosts((current) =>
+      current.map((post) => {
+        const postPlaceId = resolvePlaceId(post.place.id);
+        const refreshedPlace = places.find(
+          (place) =>
+            place.id === post.place.id ||
+            (postPlaceId !== null && resolvePlaceId(place.id) === postPlaceId)
+        );
+        return refreshedPlace ? { ...post, place: refreshedPlace } : post;
+      })
+    );
+  }, [places]);
+
+  // CARGAR: traer las reseñas por lugar y crear una publicación para lugares
+  // que todavía no tienen una publicación fija en el feed.
   useEffect(() => {
     let isMounted = true;
+    const placeIds = Array.from(new Set([
+      ...places.map((place) => place.id),
+      ...posts.map((post) => post.place.id)
+    ]));
 
-    fetchReviewsByPlaceIds(posts.map((post) => post.place.id)).then((reviews) => {
-      if (!isMounted || reviews.length === 0) return;
+    fetchReviewsByPlaceIds(placeIds).then((reviews) => {
+      if (!isMounted) return;
 
       setPosts((prev) =>
-        prev.map((post) => {
+        {
+          const basePosts = prev.filter((post) => !post.id.startsWith('review-place:'));
+          const postsWithReviews = basePosts.map((post) => {
+          const previousDatabaseComments = post.comments.filter((comment) =>
+            comment.id.startsWith('db-review:')
+          );
           const savedComments: CommunityComment[] = reviews
             .filter((review) => review.place_id === resolvePlaceId(post.place.id))
             .map((review) => ({
-              id: review.id,
+              id: `db-review:${review.id}`,
               authorName: review.author_name,
               authorAvatar: COMMENT_AVATAR,
               text: review.comment,
@@ -217,13 +252,56 @@ export function FacebookFeed({
               rating: review.rating
             }));
 
-          if (savedComments.length === 0) return post;
           return {
             ...post,
-            commentsCount: post.commentsCount + savedComments.length,
-            comments: [...post.comments, ...savedComments]
+            commentsCount: Math.max(0, post.commentsCount - previousDatabaseComments.length) + savedComments.length,
+            comments: [
+              ...post.comments.filter((comment) => !comment.id.startsWith('db-review:')),
+              ...savedComments
+            ]
           };
-        })
+          });
+          const representedPlaceIds = new Set(
+            postsWithReviews
+              .map((post) => resolvePlaceId(post.place.id))
+              .filter((id): id is string => id !== null)
+          );
+          const reviewPosts = places.flatMap((place) => {
+            const resolvedPlaceId = resolvePlaceId(place.id);
+            if (!resolvedPlaceId || representedPlaceIds.has(resolvedPlaceId)) return [];
+
+            const placeReviews = reviews.filter((review) => review.place_id === resolvedPlaceId);
+            if (placeReviews.length === 0) return [];
+
+            const comments: CommunityComment[] = placeReviews.map((review) => ({
+              id: `db-review:${review.id}`,
+              authorName: review.author_name,
+              authorAvatar: COMMENT_AVATAR,
+              text: review.comment,
+              timestamp: formatRelativeTime(review.created_at),
+              hasVisited: review.has_visited,
+              rating: review.rating
+            }));
+            const firstReview = placeReviews[0];
+
+            return [{
+              id: `review-place:${place.id}`,
+              authorName: firstReview.author_name,
+              authorRole: 'Reseña de la comunidad',
+              authorAvatar: COMMENT_AVATAR,
+              timestamp: formatRelativeTime(firstReview.created_at),
+              locationName: place.name,
+              content: `Reseñas de la comunidad para ${place.name}.`,
+              imageUrl: place.image_url,
+              place,
+              likesCount: 0,
+              commentsCount: comments.length,
+              comments
+            }];
+          });
+
+          return [...postsWithReviews, ...reviewPosts];
+        }
       );
     });
 
@@ -231,7 +309,7 @@ export function FacebookFeed({
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [places, reviewsRefreshKey]);
 
   // GUARDAR: envía el comentario a Supabase. El comentario ya se mostró en pantalla,
   // así que si falla solo se avisa al usuario (no se rompe nada).
@@ -259,9 +337,36 @@ export function FacebookFeed({
 
   // Filtrar publicaciones por categoría seleccionada
   const filteredPosts = posts.filter((post) => {
-    if (activeCategory === 'inicio') return true;
-    return post.place.category_id === activeCategory;
+    const matchesCategory =
+      activeCategory === 'inicio' || post.place.category_id === activeCategory;
+    const resolvedPlaceId = resolvePlaceId(post.place.id);
+    const matchesSaved =
+      activeSection !== 'saved' ||
+      (resolvedPlaceId !== null && savedPlaceIds.includes(resolvedPlaceId));
+
+    return matchesCategory && matchesSaved;
   });
+
+  const handleToggleFavorite = async (placeId: string) => {
+    const resolvedPlaceId = resolvePlaceId(placeId);
+    if (!resolvedPlaceId) {
+      setFavoriteActionError('Este lugar todavía no está disponible en Supabase y no se puede guardar.');
+      return;
+    }
+    if (pendingFavoriteIds.includes(resolvedPlaceId)) return;
+    setPendingFavoriteIds((current) => [...current, resolvedPlaceId]);
+    setFavoriteActionError(null);
+
+    try {
+      await onToggleFavorite(resolvedPlaceId);
+    } catch (error) {
+      setFavoriteActionError(
+        error instanceof Error ? error.message : 'No se pudo actualizar el lugar guardado.'
+      );
+    } finally {
+      setPendingFavoriteIds((current) => current.filter((id) => id !== resolvedPlaceId));
+    }
+  };
 
   const handleToggleLike = (postId: string) => {
     setPosts((prev) =>
@@ -362,6 +467,16 @@ export function FacebookFeed({
           <button className="btn-text-link" onClick={() => setSaveError(null)}>
             Cerrar
           </button>
+        </div>
+      )}
+      {(favoriteError || favoriteActionError) && (
+        <div className="feed-status-banner" role="alert">
+          <span>{favoriteActionError || favoriteError}</span>
+          {favoriteActionError && (
+            <button className="btn-text-link" onClick={() => setFavoriteActionError(null)}>
+              Cerrar
+            </button>
+          )}
         </div>
       )}
 
@@ -558,9 +673,25 @@ export function FacebookFeed({
                 <span>Compartir</span>
               </button>
 
-              <button className="fb-action-btn">
-                <Bookmark size={18} />
-                <span>Guardar</span>
+              <button
+                className={`fb-action-btn ${
+                  savedPlaceIds.includes(resolvePlaceId(post.place.id) ?? '') ? 'active' : ''
+                }`}
+                onClick={() => handleToggleFavorite(post.place.id)}
+                disabled={pendingFavoriteIds.includes(resolvePlaceId(post.place.id) ?? '')}
+                aria-pressed={savedPlaceIds.includes(resolvePlaceId(post.place.id) ?? '')}
+              >
+                <Bookmark
+                  size={18}
+                  fill={savedPlaceIds.includes(resolvePlaceId(post.place.id) ?? '') ? 'currentColor' : 'none'}
+                />
+                <span>
+                  {pendingFavoriteIds.includes(resolvePlaceId(post.place.id) ?? '')
+                    ? 'Guardando...'
+                    : savedPlaceIds.includes(resolvePlaceId(post.place.id) ?? '')
+                    ? 'Guardado'
+                    : 'Guardar'}
+                </span>
               </button>
             </div>
 
@@ -628,11 +759,20 @@ export function FacebookFeed({
 
         {filteredPosts.length === 0 && (
           <div className="fb-empty-feed">
-            <h4>No hay publicaciones en esta categoría</h4>
-            <p>¡Sé el primero en compartir tu experiencia en Manta!</p>
-            <button className="btn-submit" onClick={onOpenCreateReview}>
-              + Crear la primera reseña
-            </button>
+            {activeSection === 'saved' ? (
+              <>
+                <h4>Aún no tienes lugares guardados</h4>
+                <p>Pulsa “Guardar” en una publicación para agregarla a tu lista.</p>
+              </>
+            ) : (
+              <>
+                <h4>No hay publicaciones en esta categoría</h4>
+                <p>¡Sé el primero en compartir tu experiencia en Manta!</p>
+                <button className="btn-submit" onClick={onOpenCreateReview}>
+                  + Crear la primera reseña
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { X, Upload, MapPin } from 'lucide-react';
-import type { CategoryId } from '../../business/types/place';
+import type { CategoryId, Place } from '../../business/types/place';
 
 interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
+  places: Place[];
+  onSubmitReview: (review: { place_id: string; rating: number; comment: string }) => Promise<void>;
   onSubmit: (newPlace: {
     name: string;
     category_id: CategoryId;
@@ -18,10 +20,13 @@ interface ReviewModalProps {
     is_pet_friendly: boolean;
     is_accessible: boolean;
     is_night_spot: boolean;
-  }) => void;
+  }) => Promise<void>;
 }
 
-export function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalProps) {
+export function ReviewModal({ isOpen, onClose, places, onSubmitReview, onSubmit }: ReviewModalProps) {
+  const [mode, setMode] = useState<'review' | 'place'>('review');
+  const [placeId, setPlaceId] = useState('');
+  const [reviewComment, setReviewComment] = useState('');
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState<CategoryId>('comida');
   const [description, setDescription] = useState('');
@@ -34,45 +39,142 @@ export function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalProps) {
   const [isAccessible, setIsAccessible] = useState(false);
   const [isNightSpot, setIsNightSpot] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleClose = () => {
+    if (!isSubmitting) onClose();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !description.trim()) return;
-
-    onSubmit({
-      name: name.trim(),
-      category_id: categoryId,
-      description: description.trim(),
-      address: address.trim() || 'Manta, Ecuador',
-      image_url: imageUrl.trim() || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-      rating,
-      has_student_discount: hasStudentDiscount,
-      has_wifi: hasWifi,
-      is_open: isOpenNow,
-      is_pet_friendly: isPetFriendly,
-      is_accessible: isAccessible,
-      is_night_spot: isNightSpot
-    });
-
-    onClose();
+    setSubmitError(null);
+    setIsSubmitting(true);
+    try {
+      if (mode === 'review') {
+        if (!placeId || !reviewComment.trim()) {
+          throw new Error('Selecciona un lugar y escribe tu reseña.');
+        }
+        await onSubmitReview({ place_id: placeId, rating, comment: reviewComment.trim() });
+        setReviewComment('');
+      } else {
+        if (!name.trim() || !description.trim()) {
+          throw new Error('Completa el nombre del lugar y la descripción.');
+        }
+        await onSubmit({
+          name: name.trim(),
+          category_id: categoryId,
+          description: description.trim(),
+          address: address.trim() || 'Manta, Ecuador',
+          image_url: imageUrl.trim() || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+          rating,
+          has_student_discount: hasStudentDiscount,
+          has_wifi: hasWifi,
+          is_open: isOpenNow,
+          is_pet_friendly: isPetFriendly,
+          is_accessible: isAccessible,
+          is_night_spot: isNightSpot
+        });
+        setName('');
+        setDescription('');
+        setAddress('');
+        setImageUrl('');
+      }
+      onClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'No se pudo publicar. Inténtalo de nuevo.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={handleClose}>
       <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
             <span className="modal-tag">HUECAS MANABAS COMUNIDAD</span>
-            <h2 className="modal-title">+ Crea Review / Recomienda un Lugar</h2>
+            <h2 className="modal-title">
+              {mode === 'review' ? 'Escribe una reseña' : 'Recomienda un lugar'}
+            </h2>
           </div>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
+          <button className="modal-close-btn" onClick={handleClose} disabled={isSubmitting} aria-label="Cerrar">
             <X size={20} />
           </button>
         </div>
 
+        <div className="modal-actions">
+          <button
+            type="button"
+            className={mode === 'review' ? 'btn-submit' : 'btn-cancel'}
+            onClick={() => { setMode('review'); setSubmitError(null); }}
+            disabled={isSubmitting}
+          >
+            Reseñar un lugar
+          </button>
+          <button
+            type="button"
+            className={mode === 'place' ? 'btn-submit' : 'btn-cancel'}
+            onClick={() => { setMode('place'); setSubmitError(null); }}
+            disabled={isSubmitting}
+          >
+            Recomendar lugar nuevo
+          </button>
+        </div>
+
+        {submitError && <div className="feed-status-banner" role="alert">{submitError}</div>}
+
         <form onSubmit={handleSubmit} className="modal-form">
+          {mode === 'review' ? (
+            <>
+              <div className="form-group">
+                <label htmlFor="review-place">Lugar que deseas reseñar *</label>
+                <select
+                  id="review-place"
+                  required
+                  value={placeId}
+                  onChange={(e) => setPlaceId(e.target.value)}
+                >
+                  <option value="">Selecciona un lugar</option>
+                  {places.map((place) => (
+                    <option key={place.id} value={place.id}>{place.name}</option>
+                  ))}
+                </select>
+                {places.length === 0 && <small>No hay lugares disponibles para reseñar.</small>}
+              </div>
+              <div className="form-group">
+                <label>Calificación *</label>
+                <div className="rating-select">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      type="button"
+                      key={star}
+                      className={`star-select-btn ${rating >= star ? 'active' : ''}`}
+                      onClick={() => setRating(star)}
+                      aria-label={`${star} estrellas`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="review-comment">Tu reseña *</label>
+                <textarea
+                  id="review-comment"
+                  required
+                  rows={4}
+                  maxLength={2000}
+                  placeholder="Cuéntale a la comunidad cómo fue tu experiencia..."
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                />
+              </div>
+            </>
+          ) : (
+          <>
           <div className="form-group">
             <label>Nombre del Lugar *</label>
             <input
@@ -212,13 +314,15 @@ export function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalProps) {
               </label>
             </div>
           </div>
+          </>
+          )}
 
           <div className="modal-actions">
-            <button type="button" className="btn-cancel" onClick={onClose}>
+            <button type="button" className="btn-cancel" onClick={handleClose} disabled={isSubmitting}>
               Cancelar
             </button>
-            <button type="submit" className="btn-submit">
-              Publicar Review
+            <button type="submit" className="btn-submit" disabled={isSubmitting || (mode === 'review' && places.length === 0)}>
+              {isSubmitting ? 'Publicando...' : mode === 'review' ? 'Publicar reseña' : 'Recomendar lugar'}
             </button>
           </div>
         </form>

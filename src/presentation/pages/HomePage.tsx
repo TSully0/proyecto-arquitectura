@@ -3,9 +3,16 @@ import type { User } from '../../business/types/user';
 import type { Place, CategoryId, NotificationItem } from '../../business/types/place';
 import {
   fetchPlacesFromRepository,
+  fetchPlaceFromSupabase,
+  fetchFavoritePlaceIds,
+  getSupabaseUserId,
+  resolvePlaceId,
+  setPlaceFavorite,
+  addReviewToSupabase,
   addPlaceToSupabase,
   initialPlaces
 } from '../../data/repositories/places';
+import { syncUserToSupabase } from '../../data/repositories/users';
 import { Header } from '../components/Header';
 import { CategoryNav } from '../components/CategoryNav';
 import { Sidebar } from '../components/Sidebar';
@@ -24,15 +31,9 @@ export function HomePage({ user, onLogout }: HomePageProps) {
   const [activeCategory, setActiveCategory] = useState<CategoryId>('inicio');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSection, setActiveSection] = useState<'all' | 'saved' | 'nearby' | 'trends'>('all');
-  const [savedIds] = useState<string[]>(() => {
-    try {
-      const storedSaved = localStorage.getItem('mantacampus_saved');
-      return storedSaved ? JSON.parse(storedSaved) : [];
-    } catch (e) {
-      console.warn('Storage read error:', e);
-      return [];
-    }
-  });
+  const [savedPlaceIds, setSavedPlaceIds] = useState<string[]>([]);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [adminModal, setAdminModal] = useState<{ isOpen: boolean; type: 'admin' | 'moderator' }>({
     isOpen: false,
@@ -77,8 +78,97 @@ export function HomePage({ user, onLogout }: HomePageProps) {
     };
   }, []);
 
-  // Handle adding new place/review
-  const handleCreateReview = async (newPlaceData: {
+  useEffect(() => {
+    let isMounted = true;
+    syncUserToSupabase(user)
+      .then((synced) => {
+        if (!synced) {
+          throw new Error('No se pudo sincronizar tu cuenta con Supabase para cargar tus favoritos.');
+        }
+        return fetchFavoritePlaceIds(user.email);
+      })
+      .then((placeIds) => {
+        if (isMounted) {
+          setSavedPlaceIds(placeIds);
+          setFavoriteError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (isMounted) {
+          setFavoriteError(
+            error instanceof Error ? error.message : 'No se pudieron cargar tus lugares guardados.'
+          );
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  const handleToggleFavorite = async (placeId: string) => {
+    const isFavorite = savedPlaceIds.includes(placeId);
+    await setPlaceFavorite(user.email, placeId, !isFavorite);
+    setSavedPlaceIds((current) =>
+      isFavorite ? current.filter((id) => id !== placeId) : [...current, placeId]
+    );
+    setFavoriteError(null);
+  };
+
+  const refreshPlaceSummary = async (placeId: string) => {
+    try {
+      const updatedPlace = await fetchPlaceFromSupabase(placeId);
+      if (updatedPlace) {
+        setPlaces((current) =>
+          current.map((place) =>
+            resolvePlaceId(place.id) === updatedPlace.id ? updatedPlace : place
+          )
+        );
+      }
+    } catch (error) {
+      console.warn('La reseña se guardó, pero no se pudo actualizar el resumen del lugar:', error);
+    }
+  };
+
+  const handleSubmitReview = async (review: {
+    place_id: string;
+    rating: number;
+    comment: string;
+  }) => {
+    const synced = await syncUserToSupabase(user);
+    if (!synced) {
+      throw new Error('No se pudo sincronizar tu cuenta con Supabase. La reseña no se publicó.');
+    }
+    const userId = await getSupabaseUserId(user.email);
+    const saved = await addReviewToSupabase({
+      place_id: review.place_id,
+      user_id: userId,
+      author_name: user.name,
+      rating: review.rating,
+      has_visited: true,
+      comment: review.comment
+    });
+
+    if (!saved) {
+      throw new Error('Supabase no pudo guardar la reseña. Revisa la conexión y vuelve a intentarlo.');
+    }
+
+    setReviewsRefreshKey((key) => key + 1);
+    await refreshPlaceSummary(review.place_id);
+    setNotifications((current) => [
+      {
+        id: `notif-${Date.now()}`,
+        title: '¡Reseña publicada!',
+        description: `Tu reseña sobre "${places.find((place) => place.id === review.place_id)?.name ?? 'el lugar'}" ya está guardada.`,
+        timestamp: 'Justo ahora',
+        isRead: false,
+        type: 'review'
+      },
+      ...current
+    ]);
+  };
+
+  const handleRecommendPlace = async (newPlaceData: {
     name: string;
     category_id: CategoryId;
     description: string;
@@ -92,32 +182,52 @@ export function HomePage({ user, onLogout }: HomePageProps) {
     is_accessible: boolean;
     is_night_spot: boolean;
   }) => {
-    const newPlace: Place = {
-      id: `place-${Date.now()}`,
+    const synced = await syncUserToSupabase(user);
+    if (!synced) {
+      throw new Error('No se pudo sincronizar tu cuenta con Supabase. El lugar no se creó.');
+    }
+    const userId = await getSupabaseUserId(user.email);
+    const placeId = await addPlaceToSupabase({
       ...newPlaceData,
-      review_count: 1,
+      rating: 0,
+      review_count: 0
+    });
+    const newPlace: Place = {
+      id: placeId,
+      ...newPlaceData,
+      rating: 0,
+      review_count: 0,
       likes_count: 0
     };
-
     setPlaces((prev) => [newPlace, ...prev]);
 
-    // Agregar notificación de confirmación
+    const reviewSaved = await addReviewToSupabase({
+      place_id: placeId,
+      user_id: userId,
+      author_name: user.name,
+      rating: newPlaceData.rating,
+      has_visited: true,
+      comment: newPlaceData.description
+    });
+    if (!reviewSaved) {
+      throw new Error(
+        `El lugar "${newPlaceData.name}" se creó, pero la reseña inicial no se guardó. Ya puedes reseñarlo desde “Reseñar un lugar”.`
+      );
+    }
+
+    setReviewsRefreshKey((key) => key + 1);
+    await refreshPlaceSummary(placeId);
     setNotifications((prev) => [
       {
         id: `notif-${Date.now()}`,
         title: '¡Publicación exitosa!',
-        description: `Tu recomendación sobre "${newPlaceData.name}" ya es visible para toda la comunidad.`,
+        description: `El lugar y tu reseña sobre "${newPlaceData.name}" ya están guardados.`,
         timestamp: 'Justo ahora',
         isRead: false,
         type: 'system'
       },
       ...prev
     ]);
-
-    // Sync with Supabase in background
-    addPlaceToSupabase({ ...newPlaceData, review_count: 1 }).catch((err) =>
-      console.warn('Background Supabase insert error:', err)
-    );
   };
 
   // Handle map pin click
@@ -157,8 +267,11 @@ export function HomePage({ user, onLogout }: HomePageProps) {
         {/* Left Column Sidebar */}
         <Sidebar
           activeSection={activeSection}
-          onSelectSection={(sec) => setActiveSection(sec)}
-          savedCount={savedIds.length}
+          onSelectSection={(sec) => {
+            setActiveSection(sec);
+            if (sec === 'saved') setActiveCategory('inicio');
+          }}
+          savedCount={savedPlaceIds.length}
           onMapPinClick={handleMapPinClick}
         />
 
@@ -166,7 +279,7 @@ export function HomePage({ user, onLogout }: HomePageProps) {
         <section className="campus-feed-area">
           {activeSection === 'saved' && (
             <div className="feed-status-banner">
-              <span>Mostrando tus lugares guardados ({savedIds.length})</span>
+              <span>Mostrando tus lugares guardados ({savedPlaceIds.length})</span>
               <button
                 className="btn-text-link"
                 onClick={() => setActiveSection('all')}
@@ -181,6 +294,11 @@ export function HomePage({ user, onLogout }: HomePageProps) {
             user={user}
             places={places}
             activeCategory={activeCategory}
+            activeSection={activeSection}
+            savedPlaceIds={savedPlaceIds}
+            favoriteError={favoriteError}
+            onToggleFavorite={handleToggleFavorite}
+            reviewsRefreshKey={reviewsRefreshKey}
             onOpenCreateReview={() => setIsReviewModalOpen(true)}
             onSelectPlace={(place) => {
               setSearchQuery(place.name);
@@ -196,7 +314,9 @@ export function HomePage({ user, onLogout }: HomePageProps) {
       <ReviewModal
         isOpen={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
-        onSubmit={handleCreateReview}
+        places={places}
+        onSubmitReview={handleSubmitReview}
+        onSubmit={handleRecommendPlace}
       />
 
       {/* Admin / Moderator Modal */}

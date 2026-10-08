@@ -228,6 +228,49 @@ export async function addReviewToSupabase(review: Omit<Review, 'id' | 'created_a
   }
 }
 
+export async function fetchPlaceFromSupabase(placeId: string): Promise<Place | null> {
+  const resolvedPlaceId = resolvePlaceId(placeId);
+  if (!resolvedPlaceId) return null;
+
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('id', resolvedPlaceId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`No se pudo actualizar la calificación del lugar: ${error.message}`);
+  }
+  if (!data) return null;
+
+  const rawCategory = data.categoryId || data.category_id || '';
+  const categoryId: CategoryId =
+    CATEGORY_UUID_MAP[rawCategory] ||
+    (['inicio', 'cines', 'comida', 'historicos', 'extremos', 'naturaleza'].includes(rawCategory)
+      ? (rawCategory as CategoryId)
+      : 'comida');
+
+  return {
+    id: data.id,
+    name: data.name,
+    category_id: categoryId,
+    description: data.description,
+    address: data.address,
+    image_url: data.image_url || (Array.isArray(data.images) ? data.images[0] ?? '' : ''),
+    rating: Number(data.averageRating) || 0,
+    review_count: Number(data.totalReviews) || 0,
+    has_student_discount: Boolean(data.hasStudentDiscount ?? data.has_student_discount),
+    has_wifi: Boolean(data.hasWifi ?? data.has_wifi),
+    is_open: Boolean(data.isOpen ?? data.is_open),
+    is_pet_friendly: Boolean(data.isPetFriendly ?? data.is_pet_friendly),
+    is_accessible: Boolean(data.isAccessible ?? data.is_accessible),
+    is_night_spot: Boolean(data.isNightSpot ?? data.is_night_spot),
+    latitude: data.latitude,
+    longitude: data.longitude,
+    likes_count: 10
+  };
+}
+
 // Lee de Supabase todos los comentarios de los lugares indicados (más antiguos primero)
 export async function fetchReviewsByPlaceIds(placeIds: string[]): Promise<Review[]> {
   try {
@@ -263,44 +306,109 @@ export async function fetchReviewsByPlaceIds(placeIds: string[]): Promise<Review
   }
 }
 
-export async function addPlaceToSupabase(place: Omit<Place, 'id' | 'likes_count'>): Promise<boolean> {
-  try {
-    const categoryUUID = CATEGORY_SLUG_TO_UUID[place.category_id] || 'c1111111-0000-0000-0000-000000000003';
-    const imagesArray = place.images && place.images.length > 0
-      ? place.images
-      : place.image_url
-      ? [place.image_url]
-      : ['https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=800&q=80'];
+export async function getSupabaseUserId(email: string): Promise<string> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle();
 
-    const dbPayload = {
-      name: place.name,
-      description: place.description,
-      address: place.address || 'Manta, Ecuador',
-      latitude: place.latitude ?? -0.95,
-      longitude: place.longitude ?? -80.73,
-      priceRange: place.price_range || 'MODERATE',
-      hasStudentDiscount: Boolean(place.has_student_discount),
-      isStudyFriendly: Boolean(place.is_study_friendly),
-      images: imagesArray,
-      categoryId: categoryUUID,
-      hasWifi: Boolean(place.has_wifi),
-      isOpen: Boolean(place.is_open),
-      isPetFriendly: Boolean(place.is_pet_friendly),
-      isAccessible: Boolean(place.is_accessible),
-      isNightSpot: Boolean(place.is_night_spot),
-      averageRating: Number(place.rating) || 5.0,
-      totalReviews: Number(place.review_count) || 1
-    };
+  if (error) {
+    throw new Error(`No se pudo buscar la cuenta en Supabase: ${error.message}`);
+  }
+  if (!data) {
+    throw new Error('Tu cuenta todavía no está sincronizada con Supabase. Cierra sesión e inténtalo de nuevo.');
+  }
 
-    const { error } = await supabase.from('places').insert([dbPayload]);
+  return data.id;
+}
+
+export async function fetchFavoritePlaceIds(userEmail: string): Promise<string[]> {
+  const userId = await getSupabaseUserId(userEmail);
+  const { data, error } = await supabase
+    .from('user_favorites')
+    .select('placeId')
+    .eq('userId', userId);
+
+  if (error) {
+    throw new Error(`No se pudieron cargar tus lugares guardados: ${error.message}`);
+  }
+
+  return (data ?? []).map((favorite) => favorite.placeId);
+}
+
+export async function setPlaceFavorite(
+  userEmail: string,
+  placeId: string,
+  isFavorite: boolean
+): Promise<void> {
+  const userId = await getSupabaseUserId(userEmail);
+  const resolvedPlaceId = resolvePlaceId(placeId);
+  if (!resolvedPlaceId) {
+    throw new Error('Este lugar todavía no está disponible en Supabase y no se puede guardar.');
+  }
+
+  if (isFavorite) {
+    const { error } = await supabase
+      .from('user_favorites')
+      .upsert(
+        [{ userId, placeId: resolvedPlaceId }],
+        { onConflict: 'userId,placeId', ignoreDuplicates: true }
+      );
+
     if (error) {
-      console.warn('Error al guardar lugar en Supabase:', error);
-      return false;
+      throw new Error(`No se pudo guardar el lugar: ${error.message}`);
     }
-    return true;
-  } catch (err) {
-    console.warn('Excepción al conectar con Supabase (places):', err);
-    return false;
+    return;
+  }
+
+  const { error } = await supabase
+    .from('user_favorites')
+    .delete()
+    .eq('userId', userId)
+    .eq('placeId', resolvedPlaceId);
+
+  if (error) {
+    throw new Error(`No se pudo quitar el lugar de guardados: ${error.message}`);
   }
 }
- 
+
+export async function addPlaceToSupabase(place: Omit<Place, 'id' | 'likes_count'>): Promise<string> {
+  const categoryUUID = CATEGORY_SLUG_TO_UUID[place.category_id] || 'c1111111-0000-0000-0000-000000000003';
+  const imagesArray = place.images && place.images.length > 0
+    ? place.images
+    : place.image_url
+    ? [place.image_url]
+    : ['https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=800&q=80'];
+
+  const dbPayload = {
+    name: place.name,
+    description: place.description,
+    address: place.address || 'Manta, Ecuador',
+    latitude: place.latitude ?? -0.95,
+    longitude: place.longitude ?? -80.73,
+    priceRange: place.price_range || 'MODERATE',
+    hasStudentDiscount: Boolean(place.has_student_discount),
+    isStudyFriendly: Boolean(place.is_study_friendly),
+    images: imagesArray,
+    categoryId: categoryUUID,
+    hasWifi: Boolean(place.has_wifi),
+    isOpen: Boolean(place.is_open),
+    isPetFriendly: Boolean(place.is_pet_friendly),
+    isAccessible: Boolean(place.is_accessible),
+    isNightSpot: Boolean(place.is_night_spot),
+    averageRating: Number(place.rating) || 0,
+    totalReviews: Number(place.review_count) || 0
+  };
+
+  const { data, error } = await supabase
+    .from('places')
+    .insert([dbPayload])
+    .select('id')
+    .single();
+
+  if (error) {
+    throw new Error(`No se pudo guardar el lugar en Supabase: ${error.message}`);
+  }
+  return data.id;
+}
