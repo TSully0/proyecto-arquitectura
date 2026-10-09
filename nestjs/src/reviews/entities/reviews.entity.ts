@@ -2,8 +2,6 @@ import {Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,ManyToOne,JoinColu
 import { UserEntity } from '../../users/entities/users.entity.js';
 import { places } from '../../places/entities/places.entity.js';
 
-
-
 @Entity('reviews')
 export class reviewsentity{
     @PrimaryGeneratedColumn('uuid')
