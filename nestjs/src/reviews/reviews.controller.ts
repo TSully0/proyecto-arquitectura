@@ -20,4 +20,9 @@ export class ReviewsController {
     async create(@Body()createreviw: CreateReviewDto){
         return await this.review.create(createreviw);
     }
+
+    @Patch(':id')
+    async update(@Param('id') id:string, @Body() bod:CreateReviewDto){
+        return await this.review.update(String(id),bod);
+    }
 }

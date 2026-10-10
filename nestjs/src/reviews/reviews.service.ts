@@ -22,4 +22,10 @@ export class ReviewsService {
         const review = this.review.create(dto);
         return await this.review.save(review);
     }
+
+    async update (id: string, dto:ReviewsQueryDto){
+        const revie = await this.findOne(id);
+        Object.assign(revie,dto);
+        return await this.review.save(revie);
+    }
 }
