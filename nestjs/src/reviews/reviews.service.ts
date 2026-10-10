@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ReviewsQueryDto } from './dto/reviews.dto.js';
 import { reviewsentity } from './entities/reviews.entity.js';
 
 @Injectable()
@@ -15,5 +16,10 @@ export class ReviewsService {
         const revie= await this.review.findOneBy({id: id.trim()});
         if (!revie) {throw new NotFoundException('ñoñoño')}
         return revie;
+    }
+
+    async create(dto:ReviewsQueryDto): Promise<reviewsentity>{
+        const review = this.review.create(dto);
+        return await this.review.save(review);
     }
 }

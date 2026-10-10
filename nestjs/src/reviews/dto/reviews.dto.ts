@@ -25,6 +25,14 @@ export class CreateReviewDto {
 
 	@IsUUID()
 	placeId!: string;
+	
+	@IsOptional()
+    @IsUUID()
+    userId?: string;
+
+    @IsOptional()
+    @IsString()
+    authorName?: string;
 }
 
 export class UpdateReviewDto {
