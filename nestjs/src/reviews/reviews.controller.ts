@@ -1,4 +1,4 @@
-import { Controller,Get,Post,Param,Patch,ParseUUIDPipe, Body } from '@nestjs/common';
+import { Controller,Get,Post,Param,Patch,ParseUUIDPipe, Body, Delete } from '@nestjs/common';
 import { ReviewsService } from './reviews.service.js';
 import { CreateReviewDto } from './dto/reviews.dto.js';
 
@@ -25,4 +25,10 @@ export class ReviewsController {
     async update(@Param('id') id:string, @Body() bod:CreateReviewDto){
         return await this.review.update(String(id),bod);
     }
+
+    @Delete(':id')
+    async remove(@Param('id') id: string){
+        return this.review.remove(String(id));
+    }
+
 }

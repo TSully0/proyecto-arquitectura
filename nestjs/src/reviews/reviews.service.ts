@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Delete, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReviewsQueryDto } from './dto/reviews.dto.js';
@@ -28,4 +28,11 @@ export class ReviewsService {
         Object.assign(revie,dto);
         return await this.review.save(revie);
     }
+
+    async remove(id: string){
+        const quitar = await this.findOne(id);
+        await this.review.remove(quitar);
+        return quitar;
+    }
+
 }
