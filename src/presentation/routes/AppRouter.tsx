@@ -1,20 +1,20 @@
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import { HomePage } from "../pages/HomePage";
-import { LoginPage } from "../pages/LoginPage";
-import { RegisterPage } from "../pages/RegisterPage";
-import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
-import { ResetPasswordPage } from "../pages/ResetPasswordPage";
-import { AdminRolesPage } from "../pages/AdminRolesPage";
-import { AdminUsersPage } from "../pages/AdminUsersPage";
-import { AdminLayout } from "../pages/AdminLayout";                       // 👈 NUEVO
-import { AdminOverviewPage, AdminActivityPage, AdminReportsPage } from "../pages/AdminSections";
+import { LoginPage } from "../pages/auth/LoginPage";
+import { RegisterPage } from "../pages/auth/RegisterPage";
+import { ForgotPasswordPage } from "../pages/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "../pages/auth/ResetPasswordPage";
+import { AdminRolesPage } from "../pages/admin/AdminRolesPage";
+import { AdminUsersPage } from "../pages/admin/AdminUsersPage";
+import { AdminLayout } from "../pages/admin/AdminLayout";                       // 👈 NUEVO
+import { AdminOverviewPage, AdminActivityPage, AdminReportsPage } from "../pages/admin/AdminSections";
 import { ModerationPage } from "../pages/ModerationPage";
 import { MyProfilePage } from "../pages/MyProfilePage";
 
 import type { User } from "../../business/types/user";
 import { RoleRoute } from "./RoleRoute";
-import { MessengerWidget } from "../components/MessengerWidget";   // 👈 NUEVO
+import { MessengerWidget } from "../components/chat/MessengerWidget";   // 👈 NUEVO
 
 export const AppRouter = () => {
   const [user, setUser] = useState<User | null>(() => {

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { AppRouter } from "./presentation/routes/AppRouter";
-import { ToastProvider } from "./presentation/components/ToastProvider";   // 👈 NUEVO
+import { ToastProvider } from "./presentation/components/ui/ToastProvider";   // 👈 NUEVO
 import { initialUsers } from "./data/repositories/users";
 
 import "./styles/auth.css";

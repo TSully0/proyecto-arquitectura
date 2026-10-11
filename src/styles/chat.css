@@ -591,3 +591,120 @@
 .chat-input {
   border-radius: 9999px !important;
 }
+
+/* =====================================================
+   FOTOS Y ENLACES EN EL CHAT
+===================================================== */
+
+/* enlaces dentro de un mensaje */
+.chat-link {
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.chat-row.mine .chat-link {
+  color: #fff;
+}
+
+.chat-row.theirs .chat-link {
+  color: #2C6E91;
+}
+
+/* foto dentro de la burbuja */
+.chat-image-btn {
+  display: block;
+  margin: 0 0 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+
+.chat-image {
+  display: block;
+  max-width: 220px;
+  max-height: 240px;
+  width: auto;
+  height: auto;
+}
+
+/* foto en grande (ventana) */
+.chat-lightbox-img {
+  display: block;
+  max-width: 100%;
+  max-height: 70vh;
+  margin: 0 auto;
+}
+
+/* zona de abajo: foto por enviar + escribir */
+.chat-footer {
+  border-top: 1px solid #eee;
+  background: #fff;
+}
+
+.chat-footer .chat-composer {
+  border-top: none;
+}
+
+.chat-file-input {
+  display: none;
+}
+
+.chat-attach {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  background: #f3f4f6;
+  color: #2C6E91;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.chat-attach:hover {
+  background: #e5e7eb;
+}
+
+/* foto por enviar (vista previa pequeña) */
+.chat-attachment {
+  position: relative;
+  width: fit-content;
+  margin: 10px 14px 0;
+}
+
+.chat-attachment img {
+  display: block;
+  height: 84px;
+  width: auto;
+  border: 1px solid #e5e7eb;
+}
+
+.chat-attachment-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+
+  width: 22px;
+  height: 22px;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  background: #292421;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* home.css pone border-radius:0 !important a todo: estos sí van redondos */
+.chat-attach,
+.chat-attachment-remove {
+  border-radius: 50% !important;
+}

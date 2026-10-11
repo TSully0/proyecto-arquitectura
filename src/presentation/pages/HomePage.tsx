@@ -13,13 +13,13 @@ import {
   initialPlaces
 } from '../../data/repositories/places';
 import { syncUserToSupabase } from '../../data/repositories/users';
-import { Header } from '../components/Header';
-import { CategoryNav } from '../components/CategoryNav';
-import { Sidebar } from '../components/Sidebar';
-import { FacebookFeed } from '../components/FacebookFeed';
-import { ReviewModal } from '../components/ReviewModal';
-import { AdminPanelModal } from '../components/AdminPanelModal';
-import { Footer } from '../components/Footer';
+import { Header } from '../components/home/Header';
+import { CategoryNav } from '../components/home/CategoryNav';
+import { Sidebar } from '../components/home/Sidebar';
+import { FacebookFeed } from '../components/home/FacebookFeed';
+import { ReviewModal } from '../components/home/ReviewModal';
+import { AdminPanelModal } from '../components/home/AdminPanelModal';
+import { Footer } from '../components/home/Footer';
 
 interface HomePageProps {
   user: User;
