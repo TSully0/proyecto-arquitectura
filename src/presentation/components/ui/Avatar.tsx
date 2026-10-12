@@ -1,4 +1,4 @@
-import "../../../styles/avatar.css";
+import "../../../styles/ui/avatar.css";
 
 interface AvatarProps {
   name: string;

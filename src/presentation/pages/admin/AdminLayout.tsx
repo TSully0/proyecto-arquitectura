@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import type { User } from "../../../business/types/user";
-import "../../../styles/admin-dashboard.css";
+import "../../../styles/admin/admin-dashboard.css";
 
 interface AdminLayoutProps {
   user: User;

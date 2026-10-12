@@ -3,8 +3,8 @@ import { AppRouter } from "./presentation/routes/AppRouter";
 import { ToastProvider } from "./presentation/components/ui/ToastProvider";   // 👈 NUEVO
 import { initialUsers } from "./data/repositories/users";
 
-import "./styles/auth.css";
-import "./styles/home.css";
+import "./styles/auth/auth.css";
+import "./styles/home/home.css";
 
 function App() {
   // 🔥 cargar usuarios iniciales (solo primera vez)

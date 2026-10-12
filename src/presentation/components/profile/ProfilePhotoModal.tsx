@@ -16,7 +16,7 @@ import {
   saveProfilePhoto
 } from "../../../data/repositories/profilePhoto";
 
-import "../../../styles/avatar.css";
+import "../../../styles/ui/avatar.css";
 
 type Mode = "choose" | "camera" | "link" | "preview";
 

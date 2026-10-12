@@ -17,7 +17,7 @@ import { PostGrid } from "../components/profile/PostGrid";
 import { EditNameModal } from "../components/profile/EditNameModal";
 import { ProfilePhotoModal } from "../components/profile/ProfilePhotoModal";
 
-import "../../styles/profile.css";
+import "../../styles/profile/profile.css";
 
 interface MyProfilePageProps {
   user: User;

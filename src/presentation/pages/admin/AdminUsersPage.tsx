@@ -1,131 +1,223 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../../../styles/admin-users.css";
+import type { User } from "../../../business/types/user";
+import {
+  SanctionModal,
+  type SanctionType,
+} from "../../components/admin/SanctionModal";
+import {
+  UserCard,
+  type UserStatus,
+} from "../../components/admin/UserCard";
+import "../../../styles/admin/admin-users.css";
 
 type Role = "admin" | "moderator" | "user";
 
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  password?: string;
-  role: Role;
+type ManagedUser = User & {
   banned?: boolean;
-  suspendedUntil?: number | null; // ✅ FIX
+  suspendedUntil?: number | null;
+  sanctionReason?: string;
 };
 
 export const AdminUsersPage = () => {
-  const [users, setUsers] = useState<User[]>(() => {
+  const [users, setUsers] = useState<ManagedUser[]>(() => {
     try {
       const stored = localStorage.getItem("app_users");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return parsed.map((u: any) => ({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          password: u.password,
-          role: u.role as Role,
-          banned: u.banned ?? false,
-          suspendedUntil: u.suspendedUntil ?? null,
-        }));
-      }
-    } catch {
-      // fallback
+
+      if (!stored) return [];
+
+      const parsed: unknown = JSON.parse(stored);
+
+      if (!Array.isArray(parsed)) return [];
+
+      return parsed.map((item): ManagedUser => {
+        const user = item as Partial<ManagedUser>;
+
+        return {
+          ...user,
+          id: String(user.id ?? ""),
+          name: String(user.name ?? ""),
+          email: String(user.email ?? ""),
+          role: (String(user.role ?? "user").toLowerCase().trim() as Role),
+          banned: user.banned ?? false,
+          suspendedUntil: user.suspendedUntil ?? null,
+          sanctionReason: user.sanctionReason ?? "",
+        } as ManagedUser;
+      });
+    } catch (error) {
+      console.error("No se pudieron cargar los usuarios:", error);
+      return [];
     }
-    return [];
   });
-  const [currentTime] = useState(() => Date.now());
+
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | Role>("all");
 
+  const [sanctionModalOpen, setSanctionModalOpen] = useState(false);
+  const [sanctionUserId, setSanctionUserId] = useState<string | null>(null);
+  const [sanctionType, setSanctionType] = useState<SanctionType>("ban");
+  const [sanctionHours, setSanctionHours] = useState(1);
+
   const navigate = useNavigate();
 
-  // 💾 guardar
-  const saveUsers = (updated: User[]) => {
-    setUsers(updated);
-    localStorage.setItem("app_users", JSON.stringify(updated));
+  // Actualiza los estados cuando una suspensión llega a su fin.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 30_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // Guarda los cambios y actualiza la lista.
+  const saveUsers = (updated: ManagedUser[]) => {
+    try {
+      localStorage.setItem("app_users", JSON.stringify(updated));
+      setUsers(updated);
+    } catch (error) {
+      console.error("No se pudieron guardar los usuarios:", error);
+      window.alert(
+        "No se pudieron guardar los cambios. Comprueba el almacenamiento del navegador."
+      );
+    }
   };
 
-  // 🚫 BAN PERMANENTE
+  const openSanctionModal = (
+    id: string,
+    type: SanctionType,
+    hours = 1
+  ) => {
+    setSanctionUserId(id);
+    setSanctionType(type);
+    setSanctionHours(hours);
+    setSanctionModalOpen(true);
+  };
+
   const handleBan = (id: string) => {
-    const updated: User[] = users.map((u) =>
-      u.id === id ? { ...u, banned: true, suspendedUntil: null } : u
-    );
-    saveUsers(updated);
+    openSanctionModal(id, "ban");
   };
 
-  // 🔓 DESBANEAR
   const handleUnban = (id: string) => {
-    const updated: User[] = users.map((u) =>
-      u.id === id ? { ...u, banned: false } : u
+    saveUsers(
+      users.map((user) =>
+        user.id === id
+          ? { ...user, banned: false, sanctionReason: "" }
+          : user
+      )
     );
-    saveUsers(updated);
   };
 
-  // ⏳ SUSPENDER
   const handleSuspend = (id: string, hours: number) => {
-    const until = Date.now() + hours * 60 * 60 * 1000;
-
-    const updated: User[] = users.map((u) =>
-      u.id === id
-        ? { ...u, suspendedUntil: until, banned: false }
-        : u
-    );
-
-    saveUsers(updated);
+    openSanctionModal(id, "suspend", hours);
   };
 
-  // 🔓 QUITAR SUSPENSIÓN
   const handleUnsuspend = (id: string) => {
-    const updated: User[] = users.map((u) =>
-      u.id === id ? { ...u, suspendedUntil: null } : u
+    saveUsers(
+      users.map((user) =>
+        user.id === id
+          ? {
+              ...user,
+              suspendedUntil: null,
+              sanctionReason: "",
+            }
+          : user
+      )
     );
-    saveUsers(updated);
   };
 
-  // 🔍 filtro
-  const filteredUsers = users.filter((u) => {
-    const matchSearch =
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
+  const closeSanctionModal = () => {
+    setSanctionModalOpen(false);
+    setSanctionUserId(null);
+  };
 
-    const matchFilter = filter === "all" ? true : u.role === filter;
+  // El modal valida el motivo y lo entrega a esta función.
+  const confirmSanction = (reason: string) => {
+    if (!sanctionUserId || !reason.trim()) return;
 
-    return matchSearch && matchFilter;
-  });
+    const cleanReason = reason.trim();
+    const suspensionEnd =
+      Date.now() + sanctionHours * 60 * 60 * 1000;
 
-  // 🔥 estado del usuario
-  const getStatus = (user: User) => {
+    const updated = users.map((user) => {
+      if (user.id !== sanctionUserId) return user;
+
+      if (sanctionType === "ban") {
+        return {
+          ...user,
+          banned: true,
+          suspendedUntil: null,
+          sanctionReason: cleanReason,
+        };
+      }
+
+      return {
+        ...user,
+        banned: false,
+        suspendedUntil: suspensionEnd,
+        sanctionReason: cleanReason,
+      };
+    });
+
+    saveUsers(updated);
+    setCurrentTime(Date.now());
+    closeSanctionModal();
+  };
+
+  const getStatus = (user: ManagedUser): UserStatus => {
     if (user.banned) return "BANEADO";
 
-    if (user.suspendedUntil && user.suspendedUntil > currentTime) {
+    if (
+      user.suspendedUntil &&
+      user.suspendedUntil > currentTime
+    ) {
       return "SUSPENDIDO";
     }
 
     return "ACTIVO";
   };
 
+  const normalizedSearch = search.trim().toLowerCase();
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(normalizedSearch) ||
+      user.email.toLowerCase().includes(normalizedSearch);
+
+    const matchesFilter =
+      filter === "all" || user.role === filter;
+
+    return matchesSearch && matchesFilter;
+  });
+
+  const selectedUser =
+    users.find((user) => user.id === sanctionUserId) ?? null;
+
   return (
     <div className="users-container">
-
-      <button className="btn-back" onClick={() => navigate(-1)}>
+      <button
+        type="button"
+        className="btn-back"
+        onClick={() => navigate(-1)}
+      >
         ← Volver
       </button>
 
       <h1>👥 Gestión de Usuarios</h1>
 
       <div className="users-toolbar">
-
         <input
           type="text"
-          placeholder="Buscar..."
+          placeholder="Buscar por nombre o correo..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(event) => setSearch(event.target.value)}
           className="search-input"
+          aria-label="Buscar usuarios"
         />
 
         <button
+          type="button"
           className={`filter-btn ${filter === "all" ? "active" : ""}`}
           onClick={() => setFilter("all")}
         >
@@ -133,6 +225,7 @@ export const AdminUsersPage = () => {
         </button>
 
         <button
+          type="button"
           className={`filter-btn ${filter === "admin" ? "active" : ""}`}
           onClick={() => setFilter("admin")}
         >
@@ -140,6 +233,7 @@ export const AdminUsersPage = () => {
         </button>
 
         <button
+          type="button"
           className={`filter-btn ${filter === "moderator" ? "active" : ""}`}
           onClick={() => setFilter("moderator")}
         >
@@ -147,103 +241,40 @@ export const AdminUsersPage = () => {
         </button>
 
         <button
+          type="button"
           className={`filter-btn ${filter === "user" ? "active" : ""}`}
           onClick={() => setFilter("user")}
         >
           Usuarios
         </button>
-
       </div>
 
       <div className="users-grid">
-        {filteredUsers.map((user) => {
-
-          const status = getStatus(user);
-
-          return (
-            <div
-              key={user.id}
-              className={`user-card ${status.toLowerCase()}`}
-            >
-
-              <div className="user-header">
-                <div className="avatar">
-                  {user.name.charAt(0)}
-                </div>
-
-                <div>
-                  <h3>{user.name}</h3>
-                  <p>{user.email}</p>
-                </div>
-              </div>
-
-              <div className="user-info">
-                <span className={`role ${user.role}`}>
-                  {user.role}
-                </span>
-
-                <span className={`status ${status.toLowerCase()}`}>
-                  {status}
-                </span>
-              </div>
-
-              <div className="user-actions">
-
-                {user.role !== "admin" && (
-                  <>
-                    {!user.banned ? (
-                      <button
-                        className="btn-ban"
-                        onClick={() => handleBan(user.id)}
-                      >
-                        Banear permanente
-                      </button>
-                    ) : (
-                      <button
-                        className="btn-unban"
-                        onClick={() => handleUnban(user.id)}
-                      >
-                        Desbanear
-                      </button>
-                    )}
-
-                    {status !== "SUSPENDIDO" ? (
-                      <>
-                        <button
-                          className="btn-suspend"
-                          onClick={() => handleSuspend(user.id, 1)}
-                        >
-                          Suspender 1h
-                        </button>
-
-                        <button
-                          className="btn-suspend"
-                          onClick={() => handleSuspend(user.id, 24)}
-                        >
-                          Suspender 24h
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="btn-unsuspend"
-                        onClick={() => handleUnsuspend(user.id)}
-                      >
-                        Quitar suspensión
-                      </button>
-                    )}
-                  </>
-                )}
-
-              </div>
-            </div>
-          );
-        })}
+        {filteredUsers.map((user) => (
+          <UserCard
+            key={user.id}
+            user={user}
+            status={getStatus(user)}
+            onBan={handleBan}
+            onUnban={handleUnban}
+            onSuspend={handleSuspend}
+            onUnsuspend={handleUnsuspend}
+          />
+        ))}
       </div>
 
       {filteredUsers.length === 0 && (
         <p className="empty">No se encontraron usuarios</p>
       )}
 
+      <SanctionModal
+        isOpen={sanctionModalOpen}
+        user={selectedUser}
+        type={sanctionType}
+        hours={sanctionHours}
+        onClose={closeSanctionModal}
+        onConfirm={confirmSanction}
+      />
     </div>
   );
 };

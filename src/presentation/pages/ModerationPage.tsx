@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import "../../styles/moderation.css";
+import "../../styles/moderation/moderation.css";
 
 type Review = {
   id: string;

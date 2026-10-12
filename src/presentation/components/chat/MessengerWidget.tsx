@@ -11,7 +11,7 @@ import {
 } from "../../../data/repositories/messages";
 import type { Contact } from "../../../data/repositories/messages";
 
-import "../../../styles/chat.css";
+import "../../../styles/chat/chat.css";
 
 /*
   Chat flotante (como Messenger / Instagram):

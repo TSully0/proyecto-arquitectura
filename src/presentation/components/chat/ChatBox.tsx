@@ -1,40 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { ArrowLeft, ImagePlus, MoreHorizontal, Send, Trash2, X } from "lucide-react";
-
+import type { ChangeEvent } from "react";
 import type { User } from "../../../business/types/user";
-import {
-  getMessages,
-  sendMessage,
-  deleteMessage,
-  clearConversation,
-  MESSAGES_KEY,
-  MAX_MESSAGE_LENGTH
-} from "../../../data/repositories/messages";
+import { getMessages, sendMessage, deleteMessage, clearConversation, MESSAGES_KEY, MAX_MESSAGE_LENGTH } from "../../../data/repositories/messages";
 import type { Message } from "../../../data/repositories/messages";
 import { fileToChatImage } from "../../../business/services/imageTools";
-
-import { Modal } from "../ui/Modal";
-import { UserAvatar } from "../ui/UserAvatar";
 import { useToast } from "../ui/toast-context";
-import { LinkifiedText } from "./LinkifiedText";
+import { ChatHeader } from "./ChatHeader";
+import { ChatMessages } from "./ChatMessages";
+import { ChatComposer } from "./ChatComposer";
+import { ChatMediaViewer } from "./ChatMediaViewer";
+import type { PendingAttachment } from "./ChatAttachmentPreview";
+import "../../../styles/chat/chat.css";
 
-import "../../../styles/chat.css";
-
-/*
-  ChatBox reutilizable:
-
-  • Chat contigo mismo:
-      <ChatBox me={user} peer={user} />
-
-  • Chat con otra persona:
-      <ChatBox key={otro.id} me={user} peer={{ id: otro.id, name: otro.name }} />
-
-  onBack  → muestra la flecha ← (volver a la lista de chats)
-  onClose → muestra la ✕ (cerrar la ventana)
-
-  Se pueden enviar textos, fotos y enlaces (los enlaces se abren con un clic).
-*/
 interface ChatBoxProps {
   me: User;
   peer: { id: string; name: string; role?: string };
@@ -42,370 +19,269 @@ interface ChatBoxProps {
   onClose?: () => void;
 }
 
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8 MB (luego se reduce)
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_DOCUMENT_BYTES = 1024 * 1024;
+const MAX_VIDEO_BYTES = 2 * 1024 * 1024;
+const ALLOWED_DOCUMENT_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+  "text/csv",
+]);
 
-/* =========================
-   HELPERS
-========================= */
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString("es-EC", {
-    hour: "2-digit",
-    minute: "2-digit"
+const ALLOWED_DOCUMENT_EXTENSIONS =
+  /\.(pdf|doc|docx|xls|xlsx|txt|csv)$/i;
+const readFileAsDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("No se pudo leer el archivo."));
+      }
+    };
+    reader.onerror = () =>
+      reject(new Error("No se pudo leer el archivo."));
+    reader.readAsDataURL(file);
   });
-
-const dayLabel = (iso: string) => {
-  const d = new Date(iso);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  if (d.toDateString() === today.toDateString()) return "Hoy";
-  if (d.toDateString() === yesterday.toDateString()) return "Ayer";
-
-  return d.toLocaleDateString("es-EC", { day: "numeric", month: "long" });
-};
-
-const roleLabel = (role?: string) => {
-  const r = String(role || "").toLowerCase().trim();
-  if (r === "moderator") return "Moderador";
-  if (r === "user") return "Estudiante";
-  return "Conversación";
-};
-
-export function ChatBox({ me, peer, onBack, onClose }: ChatBoxProps) {
+export function ChatBox({
+  me,
+  peer,
+  onBack,
+  onClose,
+}: ChatBoxProps) {
   const isSelf = me.id === peer.id;
   const { error } = useToast();
-
   const [messages, setMessages] = useState<Message[]>(() =>
     getMessages(me.id, peer.id)
   );
   const [text, setText] = useState("");
-  const [attachment, setAttachment] = useState<string | null>(null); // foto por enviar
-  const [viewing, setViewing] = useState<string | null>(null);       // foto en grande
+  const [pending, setPending] =
+    useState<PendingAttachment | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-
   const listRef = useRef<HTMLDivElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  /* =========================
-     ACTUALIZAR si otra pestaña escribe
-  ========================= */
+  const textRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === MESSAGES_KEY || e.key === null) {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === MESSAGES_KEY || event.key === null) {
         setMessages(getMessages(me.id, peer.id));
       }
     };
-
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+    };
   }, [me.id, peer.id]);
-
-  /* =========================
-     BAJAR al último mensaje
-     (se mueve solo la caja, no toda la página)
-  ========================= */
   useEffect(() => {
-    const el = listRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    const element = listRef.current;
+    if (element) {
+      element.scrollTop = element.scrollHeight;
+    }
   }, [messages.length]);
-
-  /* =========================
-     ACCIONES
-  ========================= */
-  const refresh = () => setMessages(getMessages(me.id, peer.id));
-
+  const refresh = () => {
+    setMessages(getMessages(me.id, peer.id));
+  };
   const closeMenu = () => {
     setMenuOpen(false);
     setConfirmClear(false);
   };
-
-  const canSend = !!text.trim() || !!attachment;
-
+  const canSend = Boolean(text.trim() || pending);
   const handleSend = () => {
     if (!canSend) return;
-
-    const result = sendMessage(me.id, peer.id, text, attachment ?? undefined);
-
+    const image =
+      pending?.kind === "image" ? pending.data : undefined;
+    const file =
+      pending?.kind === "file" ? pending.file : undefined;
+    const result = sendMessage(
+      me.id,
+      peer.id,
+      text,
+      image,
+      file
+    );
     if (!result.ok) {
       if (result.reason === "storage") {
-        error("No hay espacio para guardar esta foto. Vacía el chat o prueba con otra más pequeña.");
+        error(
+          "No hay espacio para guardar este archivo. Vacía algunos chats o elige un archivo más pequeño."
+        );
       }
       return;
     }
-
     refresh();
     setText("");
-    setAttachment(null);
+    setPending(null);
+    setAttachMenuOpen(false);
   };
-
-  // Enter envía · Shift+Enter hace salto de línea
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handlePickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // permite elegir el mismo archivo otra vez
-
+  const handlePickMedia = async (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      error("Ese archivo no es una imagen.");
+    if (file.type.startsWith("image/")) {
+      if (file.size > MAX_IMAGE_BYTES) {
+        error(
+          "La imagen pesa más de 8 MB. Elige una más liviana."
+        );
+        return;
+      }
+      try {
+        const data = await fileToChatImage(file);
+        setPending({
+          kind: "image",
+          data,
+          name: file.name,
+        });
+        setAttachMenuOpen(false);
+      } catch {
+        error(
+          "No se pudo procesar esa imagen. Prueba con JPG o PNG."
+        );
+      }
       return;
     }
-
-    if (file.size > MAX_IMAGE_BYTES) {
-      error("La imagen pesa más de 8 MB. Elige una más liviana.");
+    if (file.type.startsWith("video/")) {
+      if (file.size > MAX_VIDEO_BYTES) {
+        error(
+          "El vídeo supera los 2 MB permitidos para el chat."
+        );
+        return;
+      }
+      try {
+        const data = await readFileAsDataUrl(file);
+        setPending({
+          kind: "file",
+          file: {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            data,
+          },
+        });
+        setAttachMenuOpen(false);
+      } catch {
+        error("No se pudo leer el vídeo.");
+      }
       return;
     }
-
+    error("Selecciona una imagen o un vídeo válido.");
+  };
+  const handlePickDocument = async (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const validType =
+      ALLOWED_DOCUMENT_TYPES.has(file.type) ||
+      ALLOWED_DOCUMENT_EXTENSIONS.test(file.name);
+    if (!validType) {
+      error(
+        "Formato no permitido. Usa PDF, DOC, DOCX, XLS, XLSX, TXT o CSV."
+      );
+      return;
+    }
+    if (file.size > MAX_DOCUMENT_BYTES) {
+      error(
+        "El documento supera 1 MB. Elige un archivo más pequeño."
+      );
+      return;
+    }
     try {
-      setAttachment(await fileToChatImage(file));
+      const data = await readFileAsDataUrl(file);
+      setPending({
+        kind: "file",
+        file: {
+          name: file.name,
+          type: file.type || "application/octet-stream",
+          size: file.size,
+          data,
+        },
+      });
+      setAttachMenuOpen(false);
     } catch {
-      error("No se pudo leer esa imagen. Prueba con JPG o PNG.");
+      error("No se pudo leer el documento.");
     }
   };
-
+  const handleInsertLink = () => {
+    setText((current) => {
+      const separator =
+        current && !current.endsWith(" ") ? " " : "";
+      return `${current}${separator}https://`;
+    });
+    setAttachMenuOpen(false);
+    requestAnimationFrame(() => {
+      textRef.current?.focus();
+    });
+  };
   const handleDelete = (id: string) => {
     deleteMessage(id);
     refresh();
   };
-
   const handleClear = () => {
     clearConversation(me.id, peer.id);
     refresh();
     closeMenu();
   };
-
-  /* =========================
-     UI
-  ========================= */
   return (
     <div className="chat-box">
-
-      {/* HEADER */}
-      <div className="chat-header">
-        {onBack && (
-          <button
-            type="button"
-            className="chat-icon-btn"
-            title="Volver a los chats"
-            onClick={onBack}
-          >
-            <ArrowLeft size={18} />
-          </button>
-        )}
-
-        <UserAvatar
-          userId={peer.id}
-          name={isSelf ? me.name : peer.name}
-          size={38}
-          shape="circle"
-        />
-
-        <div className="chat-header-info">
-          <span className="chat-title">
-            {isSelf ? `${me.name} (Tú)` : peer.name}
-          </span>
-          <span className="chat-subtitle">
-            {isSelf
-              ? "Mensajes personales · solo tú los ves"
-              : roleLabel(peer.role)}
-          </span>
-        </div>
-
-        {/* MENÚ ⋯ */}
-        <div className="chat-menu-wrap">
-          <button
-            type="button"
-            className="chat-icon-btn"
-            title="Opciones"
-            onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
-          >
-            <MoreHorizontal size={18} />
-          </button>
-
-          {menuOpen && (
-            <>
-              <div className="chat-menu-backdrop" onClick={closeMenu} />
-
-              <div className="chat-menu">
-                {confirmClear ? (
-                  <div className="chat-menu-confirm">
-                    <span>¿Vaciar todo el chat?</span>
-                    <div>
-                      <button
-                        type="button"
-                        className="chat-confirm-yes"
-                        onClick={handleClear}
-                      >
-                        Vaciar
-                      </button>
-                      <button
-                        type="button"
-                        className="chat-confirm-no"
-                        onClick={closeMenu}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="chat-menu-item"
-                    disabled={messages.length === 0}
-                    onClick={() => setConfirmClear(true)}
-                  >
-                    <Trash2 size={15} />
-                    Vaciar chat
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {onClose && (
-          <button
-            type="button"
-            className="chat-icon-btn"
-            title="Cerrar"
-            onClick={onClose}
-          >
-            <X size={18} />
-          </button>
-        )}
-      </div>
-
-      {/* MENSAJES */}
-      <div className="chat-messages" ref={listRef}>
-        {messages.length === 0 && (
-          <div className="chat-empty">
-            {isSelf
+      <ChatHeader
+        me={me}
+        peer={peer}
+        menuOpen={menuOpen}
+        confirmClear={confirmClear}
+        onToggleMenu={() => {
+          if (menuOpen) {
+            closeMenu();
+          } else {
+            setMenuOpen(true);
+          }
+        }}
+        onRequestClear={() => setConfirmClear(true)}
+        onCancelClear={closeMenu}
+        onConfirmClear={handleClear}
+        onBack={onBack}
+        onClose={onClose}
+      />
+      <div ref={listRef} className="chat-messages-container">
+        <ChatMessages
+          messages={messages}
+          myId={me.id}
+          onDelete={handleDelete}
+          onViewImage={setViewing}
+          emptyMessage={
+            isSelf
               ? "Escribe notas, enlaces o recordatorios para ti, o guarda una foto 📝"
-              : `Empieza la conversación con ${peer.name} 👋`}
-          </div>
-        )}
-
-        {messages.map((m, i) => {
-          const mine = m.senderId === me.id;
-          const day = dayLabel(m.createdAt);
-          const showDay =
-            i === 0 || dayLabel(messages[i - 1].createdAt) !== day;
-
-          return (
-            <div key={m.id}>
-              {showDay && <div className="chat-day">{day}</div>}
-
-              <div className={`chat-row ${mine ? "mine" : "theirs"}`}>
-                <div className="chat-bubble">
-                  {m.image && (
-                    <button
-                      type="button"
-                      className="chat-image-btn"
-                      title="Ver foto"
-                      onClick={() => setViewing(m.image ?? null)}
-                    >
-                      <img src={m.image} alt="Foto enviada" className="chat-image" />
-                    </button>
-                  )}
-
-                  {m.text && (
-                    <span className="chat-text">
-                      <LinkifiedText text={m.text} />
-                    </span>
-                  )}
-
-                  <span className="chat-meta">
-                    {formatTime(m.createdAt)}
-                    {mine && (
-                      <button
-                        type="button"
-                        className="chat-delete"
-                        title="Eliminar mensaje"
-                        onClick={() => handleDelete(m.id)}
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+              : `Empieza la conversación con ${peer.name} 👋`
+          }
+        />
       </div>
-
-      {/* ESCRIBIR */}
-      <div className="chat-footer">
-        {attachment && (
-          <div className="chat-attachment">
-            <img src={attachment} alt="Foto por enviar" />
-            <button
-              type="button"
-              className="chat-attachment-remove"
-              title="Quitar foto"
-              onClick={() => setAttachment(null)}
-            >
-              <X size={14} />
-            </button>
-          </div>
-        )}
-
-        <div className="chat-composer">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="chat-file-input"
-            onChange={handlePickImage}
-          />
-
-          <button
-            type="button"
-            className="chat-attach"
-            title="Enviar una foto"
-            onClick={() => fileRef.current?.click()}
-          >
-            <ImagePlus size={18} />
-          </button>
-
-          <textarea
-            className="chat-input"
-            rows={1}
-            value={text}
-            maxLength={MAX_MESSAGE_LENGTH}
-            placeholder={isSelf ? "Escríbete un mensaje..." : "Escribe un mensaje..."}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-
-          <button
-            type="button"
-            className="chat-send"
-            onClick={handleSend}
-            disabled={!canSend}
-            title="Enviar"
-          >
-            <Send size={18} />
-          </button>
-        </div>
-      </div>
-
-      {/* FOTO EN GRANDE (se dibuja fuera del chat para que no la recorte) */}
-      {viewing &&
-        createPortal(
-          <Modal isOpen title="Foto" maxWidth={680} onClose={() => setViewing(null)}>
-            <img src={viewing} alt="Foto enviada" className="chat-lightbox-img" />
-          </Modal>,
-          document.body
-        )}
+      <ChatComposer
+        text={text}
+        pending={pending}
+        menuOpen={attachMenuOpen}
+        maxLength={MAX_MESSAGE_LENGTH}
+        onTextChange={setText}
+        onSend={handleSend}
+        onRemoveAttachment={() => setPending(null)}
+        onToggleAttachmentMenu={() =>
+          setAttachMenuOpen((open) => !open)
+        }
+        onSelectImage={handlePickMedia}
+        onSelectFile={handlePickDocument}
+        onInsertLink={handleInsertLink}
+      />
+      <ChatMediaViewer
+        image={viewing}
+        onClose={() => setViewing(null)}
+      />
     </div>
   );
 }

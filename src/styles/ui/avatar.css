@@ -1,0 +1,356 @@
+/* ====== styles/avatar.css ======
+   Avatares (inicial o foto) y ventana de foto de perfil.
+   Clases con prefijo "ui-", "photo-" y "profile-avatar-". */
+
+/* ---------- AVATAR ---------- */
+.ui-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  background: linear-gradient(135deg, #2C6E91, #A75F37);
+  color: #fff;
+  font-weight: 800;
+  line-height: 1;
+  overflow: hidden;
+  user-select: none;
+}
+
+.ui-avatar-photo {
+  display: block;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+/* home.css pone border-radius:0 !important a todo; el círculo necesita su excepción */
+.ui-avatar-circle {
+  border-radius: 50% !important;
+}
+
+/* ---------- PERFIL: avatar con botón de cámara ---------- */
+.profile-avatar-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.profile-avatar-edit {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+
+  width: 34px;
+  height: 34px;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 2px solid #fff;
+  border-radius: 50% !important;
+  background: #2C6E91;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.profile-avatar-edit:hover {
+  background: #1f566f;
+  transform: scale(1.08);
+}
+
+/* ---------- VENTANA DE FOTO ---------- */
+.photo-file-input {
+  display: none;
+}
+
+.photo-current {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.photo-options {
+  display: grid;
+  gap: 10px;
+}
+
+.photo-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-subtle);
+  color: var(--text-main);
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.photo-option:hover {
+  border-color: var(--primary);
+  background: var(--bg-tint);
+}
+
+.photo-option.danger {
+  color: #b91c1c;
+}
+
+.photo-option small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.photo-video,
+.photo-preview {
+  display: block;
+  width: min(320px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  object-fit: cover;
+  background: #111;
+}
+
+/* la cámara se muestra como espejo, igual que en una selfie */
+.photo-video {
+  transform: scaleX(-1);
+}
+
+.photo-hint {
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---------- FOTO DESDE UN ENLACE ---------- */
+.photo-link-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.photo-link-input {
+  width: 100%;
+  margin: 0;
+  padding: 12px;
+
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-subtle);
+  color: var(--text-main);
+
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.photo-link-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+/* ====== styles/avatar.css ======
+   Avatares (inicial o foto) y ventana de foto de perfil.
+   Clases con prefijo "ui-", "photo-" y "profile-avatar-".
+*/
+
+/* ---------- AVATAR ---------- */
+.ui-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  background: linear-gradient(135deg, #2C6E91, #A75F37);
+  color: #fff;
+  font-weight: 800;
+  line-height: 1;
+  overflow: hidden;
+  user-select: none;
+}
+
+.ui-avatar-photo {
+  display: block;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+/* Excepción para el avatar circular */
+.ui-avatar-circle {
+  border-radius: 50% !important;
+}
+
+/* ---------- PERFIL: AVATAR CON BOTÓN DE CÁMARA ---------- */
+.profile-avatar-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.profile-avatar-edit {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+
+  width: 34px;
+  height: 34px;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 2px solid #fff;
+  border-radius: 50% !important;
+  background: #2C6E91;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.profile-avatar-edit:hover {
+  background: #1f566f;
+  transform: scale(1.08);
+}
+
+/* ---------- VENTANA DE FOTO ---------- */
+.photo-file-input {
+  display: none;
+}
+
+.photo-current {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.photo-options {
+  display: grid;
+  gap: 10px;
+}
+
+.photo-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-subtle);
+  color: var(--text-main);
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.photo-option:hover {
+  border-color: var(--primary);
+  background: var(--bg-tint);
+}
+
+.photo-option.danger {
+  color: #b91c1c;
+}
+
+.photo-option small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.photo-video,
+.photo-preview {
+  display: block;
+  width: min(320px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  object-fit: cover;
+  background: #111;
+}
+
+/* La cámara se muestra como espejo */
+.photo-video {
+  transform: scaleX(-1);
+}
+
+.photo-hint {
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---------- FOTO DESDE UN ENLACE ---------- */
+.photo-link-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.photo-link-input {
+  width: 100%;
+  margin: 0;
+  padding: 12px;
+
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-subtle);
+  color: var(--text-main);
+
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.photo-link-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 480px) {
+  .profile-avatar-wrap {
+    width: 82px;
+    height: 82px;
+  }
+
+  .profile-avatar-edit {
+    width: 30px;
+    height: 30px;
+    right: -5px;
+    bottom: -5px;
+  }
+
+  .photo-option {
+    padding: 12px;
+    gap: 8px;
+  }
+}

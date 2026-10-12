@@ -1903,3 +1903,89 @@ body {
     gap: 12px;
   }
 }
+
+@media (max-width: 480px) {
+  .campus-header {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .brand-palm-icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .brand-logo-text {
+    font-size: 19px;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .notification-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .create-review-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .campus-main-layout {
+    padding: 12px 8px 28px;
+    gap: 14px;
+  }
+
+  .fb-post-header {
+    padding: 12px 10px 8px;
+  }
+
+  .fb-post-content {
+    padding: 4px 10px 12px;
+    font-size: 13px;
+  }
+
+  .fb-actions-bar {
+    padding: 4px;
+  }
+
+  .fb-action-btn {
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .fb-comments-section {
+    padding: 10px;
+  }
+
+  .modal-backdrop {
+    padding: 8px;
+  }
+
+  .modal-dialog {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90dvh;
+  }
+
+  .modal-header {
+    padding: 14px;
+  }
+
+  .modal-form,
+  .admin-modal-body {
+    padding: 14px;
+  }
+
+  .admin-grid-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+}

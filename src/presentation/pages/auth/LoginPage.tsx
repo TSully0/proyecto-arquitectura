@@ -15,6 +15,13 @@ interface LoginPageProps {
   onNavigateToForgotPassword: () => void;
 }
 
+// Campos adicionales usados para las sanciones
+type UserWithSanction = User & {
+  banned?: boolean;
+  suspendedUntil?: number | null;
+  sanctionReason?: string;
+};
+
 const LOCKED_MESSAGE =
   'Cuenta bloqueada temporalmente por seguridad. Inténtalo de nuevo en unos minutos.';
 
@@ -36,15 +43,26 @@ export function LoginPage({
     const cleanIdentifier = identifier.trim().toLowerCase();
 
     const stored = localStorage.getItem('app_users');
-    const storedUsers: User[] = stored ? JSON.parse(stored) : [];
 
-    // ✅ SOLUCIÓN SIMPLE Y ESTABLE (SIN MERGE BUGS)
-    const users: User[] = storedUsers.length > 0 ? storedUsers : initialUsers;
+    let storedUsers: UserWithSanction[] = [];
 
-    // 🔒 contador de intentos de ESTA cuenta en ESTE navegador
+    try {
+      storedUsers = stored ? JSON.parse(stored) : [];
+    } catch {
+      setError('No se pudieron leer los datos de usuarios.');
+      return;
+    }
+
+    // Se conservan los usuarios guardados y el fallback original.
+    const users: UserWithSanction[] =
+      storedUsers.length > 0
+        ? storedUsers
+        : initialUsers;
+
+    // Contador de intentos fallidos de esta cuenta.
     const guardKey = getGuardKey(users, cleanIdentifier);
 
-    // si ya está bloqueada, ni se revisa la contraseña
+    // Bloqueo por intentos fallidos.
     if (isLoginLocked(guardKey)) {
       setError(LOCKED_MESSAGE);
       return;
@@ -61,26 +79,42 @@ export function LoginPage({
     });
 
     if (!user) {
-      // mismo mensaje de siempre: no se avisa de intentos ni de bloqueo
       registerFailedLogin(guardKey);
       setError('Credenciales incorrectas');
       return;
     }
 
-    // credenciales correctas → se borra el contador de esa cuenta
+    // Credenciales correctas: limpiar contador de intentos.
     clearLoginAttempts(guardKey);
 
+    // Baneo permanente: el motivo aparece debajo del mensaje.
     if (user.banned) {
-      setError('Cuenta bloqueada permanentemente');
+      const reason =
+        user.sanctionReason?.trim() ||
+        'Incumplimiento de las normas de la comunidad.';
+
+      setError(
+        `Cuenta bloqueada permanentemente.\nMotivo: ${reason}`
+      );
       return;
     }
 
-    if (user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
-      setError('Cuenta suspendida temporalmente');
+    // Suspensión temporal: el motivo aparece debajo del mensaje.
+    if (
+      user.suspendedUntil &&
+      user.suspendedUntil > Date.now()
+    ) {
+      const reason =
+        user.sanctionReason?.trim() ||
+        'Incumplimiento de las normas de la comunidad.';
+
+      setError(
+        `Cuenta suspendida temporalmente.\nMotivo: ${reason}`
+      );
       return;
     }
 
-    // 🔥 normalizar antes de enviar
+    // Normalizar el rol antes de iniciar sesión.
     const cleanUser: User = {
       ...user,
       role: String(user.role).toLowerCase().trim() as User['role']
@@ -94,7 +128,15 @@ export function LoginPage({
 
       <h2>Iniciar Sesión</h2>
 
-      {error && <p className="error">{error}</p>}
+      {/* Mostrar el error respetando los saltos de línea */}
+      {error && (
+        <p
+          className="error"
+          style={{ whiteSpace: 'pre-line' }}
+        >
+          {error}
+        </p>
+      )}
 
       <form onSubmit={handleLogin}>
 
@@ -103,6 +145,7 @@ export function LoginPage({
           <input
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="usuario@ejemplo.com"
             required
           />
         </div>
@@ -115,6 +158,7 @@ export function LoginPage({
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••"
               required
             />
 
@@ -122,6 +166,11 @@ export function LoginPage({
               type="button"
               className="eye-icon"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={
+                showPassword
+                  ? 'Ocultar contraseña'
+                  : 'Mostrar contraseña'
+              }
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
@@ -132,14 +181,20 @@ export function LoginPage({
       </form>
 
       <p>
-        <button type="button" onClick={onNavigateToForgotPassword}>
+        <button
+          type="button"
+          onClick={onNavigateToForgotPassword}
+        >
           ¿Olvidaste tu contraseña?
         </button>
       </p>
 
       <p>
         ¿No tienes cuenta?{' '}
-        <button onClick={onNavigateToRegister}>
+        <button
+          type="button"
+          onClick={onNavigateToRegister}
+        >
           Regístrate
         </button>
       </p>

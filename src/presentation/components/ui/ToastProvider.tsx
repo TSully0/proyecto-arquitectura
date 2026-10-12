@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 import { ToastContext } from "./toast-context";
 import type { ToastApi, ToastType } from "./toast-context";
 
-import "../../../styles/ui.css";
+import "../../../styles/ui/ui.css";
 
 type ToastItem = {
   id: string;

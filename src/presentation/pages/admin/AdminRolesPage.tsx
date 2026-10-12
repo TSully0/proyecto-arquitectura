@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { initialUsers } from "../../../data/repositories/users";
-import "../../../styles/admin-users.css"; 
+import "../../../styles/admin/admin-users.css"; 
 
 type User = {
   id: string;

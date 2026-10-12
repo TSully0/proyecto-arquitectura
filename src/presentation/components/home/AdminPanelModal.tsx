@@ -1,7 +1,7 @@
 import { X, ShieldCheck, Users, MapPin, AlertCircle, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { User } from "../../../business/types/user";
-import "../../../styles/admin-modal.css";
+import "../../../styles/admin/admin-modal.css";
 
 interface AdminPanelModalProps {
   isOpen: boolean;
