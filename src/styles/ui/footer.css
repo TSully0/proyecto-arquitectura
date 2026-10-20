@@ -69,18 +69,21 @@ html body .campus-footer .footer-university {
   align-items: center;
   gap: 12px;
   margin-bottom: 18px;
+  background: transparent !important;
 }
 
 html body .campus-footer .footer-uleam-logo {
   display: block;
-  width: 90px;
-  height: 90px;
+  width: 120px;
+  height: 120px;
   flex-shrink: 0;
-  padding: 6px;
+  padding: 0;
   object-fit: contain;
-  background-color: #ffffff !important;
+  background: transparent !important;
   border: none;
-  border-radius: 12px;
+  border-radius: 0;
+  box-shadow: none;
+  mix-blend-mode: normal;
 }
 
 html body .campus-footer .footer-university-text {
@@ -330,9 +333,8 @@ html body .campus-footer .footer-github-link:hover {
   }
 
   html body .campus-footer .footer-uleam-logo {
-    width: 80px;
-    height: 80px;
-    border-radius: 12px;
+    width: 100px;
+    height: 100px;
   }
 }
 
@@ -361,10 +363,9 @@ html body .campus-footer .footer-github-link:hover {
   }
 
   html body .campus-footer .footer-uleam-logo {
-    width: 65px;
-    height: 65px;
-    padding: 5px;
-    border-radius: 12px;
+    width: 75px;
+    height: 75px;
+    padding: 0;
   }
 
   html body .campus-footer .footer-university-text h2 {
