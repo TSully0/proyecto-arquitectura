@@ -1,0 +1,422 @@
+/* =========================================
+   FOOTER - HUECAS MANABAS
+   MantaCampus | ULEAM - 2026
+========================================= */
+
+html body .campus-footer {
+  display: block;
+  position: relative;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 48px 0;
+  background-color: #1a1a1a !important;
+  color: #eeeeee !important;
+  font-family: inherit;
+  box-sizing: border-box;
+  isolation: isolate;
+}
+
+html body .campus-footer *,
+html body .campus-footer *::before,
+html body .campus-footer *::after {
+  box-sizing: border-box;
+}
+
+/* Fondos internos transparentes */
+html body .campus-footer .footer-container,
+html body .campus-footer .footer-brand,
+html body .campus-footer .footer-contact,
+html body .campus-footer .footer-team,
+html body .campus-footer .footer-university,
+html body .campus-footer .footer-university-text,
+html body .campus-footer .footer-project-brand,
+html body .campus-footer .footer-university-contact,
+html body .campus-footer .footer-team-member {
+  background-color: transparent !important;
+}
+
+/* =========================================
+   DISTRIBUCIÓN PRINCIPAL
+========================================= */
+
+html body .campus-footer .footer-container {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1.15fr)
+    minmax(0, 1.5fr);
+  align-items: start;
+  gap: 48px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+html body .campus-footer .footer-brand,
+html body .campus-footer .footer-contact,
+html body .campus-footer .footer-team {
+  min-width: 0;
+}
+
+/* =========================================
+   LOGO E IDENTIDAD ULEAM
+========================================= */
+
+html body .campus-footer .footer-university {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+html body .campus-footer .footer-uleam-logo {
+  display: block;
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
+  padding: 6px;
+  object-fit: contain;
+  background-color: #ffffff !important;
+  border: none;
+  border-radius: 12px;
+}
+
+html body .campus-footer .footer-university-text {
+  min-width: 0;
+}
+
+html body .campus-footer .footer-university-text h2 {
+  margin: 0 0 5px;
+  color: #ffffff !important;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 1px;
+}
+
+html body .campus-footer .footer-university-text p {
+  margin: 0;
+  color: #bbbbbb !important;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   REDES SOCIALES
+========================================= */
+
+html body .campus-footer .footer-socials {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 24px;
+  background: transparent !important;
+}
+
+html body .campus-footer .footer-socials a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  color: #eeeeee !important;
+  background-color: #2a2a2a !important;
+  border: 1px solid #444444 !important;
+  border-radius: 50%;
+  text-decoration: none;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+html body .campus-footer .footer-socials svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+html body .campus-footer .footer-socials a:first-child svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+html body .campus-footer .footer-socials .social-dot {
+  fill: currentColor;
+  stroke: none;
+}
+
+html body .campus-footer .footer-socials a:hover {
+  color: #99d6ff !important;
+  background-color: #303030 !important;
+  border-color: #99d6ff !important;
+  transform: translateY(-2px);
+}
+
+html body .campus-footer .footer-socials a:focus-visible {
+  outline: 2px solid #99d6ff;
+  outline-offset: 4px;
+}
+
+/* =========================================
+   MARCA HUECAS MANABAS
+========================================= */
+
+html body .campus-footer .footer-project-brand {
+  padding-top: 18px;
+  border-top: 1px solid #444444 !important;
+  background: transparent !important;
+}
+
+html body .campus-footer .footer-brand-title {
+  margin: 0;
+  color: #ffffff !important;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+  overflow-wrap: anywhere;
+}
+
+html body .campus-footer .footer-brand-copper {
+  color: #c47b50 !important;
+}
+
+html body .campus-footer .footer-brand-white {
+  color: #ffffff !important;
+}
+
+html body .campus-footer .footer-brand-subtitle {
+  margin: 7px 0 18px;
+  color: #99d6ff !important;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+html body .campus-footer .footer-description {
+  max-width: 310px;
+  margin: 0;
+  color: #bbbbbb !important;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* =========================================
+   TÍTULOS DE LAS SECCIONES
+========================================= */
+
+html body .campus-footer .footer-contact h2,
+html body .campus-footer .footer-team h2 {
+  margin: 0 0 22px;
+  color: #f0646b !important;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+/* =========================================
+   INFORMACIÓN ACADÉMICA
+========================================= */
+
+html body .campus-footer .footer-contact p {
+  margin: 0 0 13px;
+  color: #cccccc !important;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+html body .campus-footer .footer-contact strong {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+html body .campus-footer .footer-academic-subtitle {
+  color: #99d6ff !important;
+  font-weight: 700;
+}
+
+html body .campus-footer .footer-university-contact {
+  margin-top: 23px;
+  padding-top: 18px;
+  border-top: 1px solid #444444 !important;
+}
+
+html body .campus-footer .footer-university-contact a {
+  color: #99d6ff !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+  transition: color 0.2s ease;
+}
+
+html body .campus-footer .footer-university-contact a:hover {
+  color: #c47b50 !important;
+}
+
+/* =========================================
+   EQUIPO DE DESARROLLO
+========================================= */
+
+html body .campus-footer .footer-team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: transparent !important;
+}
+
+html body .campus-footer .footer-team-member {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #444444 !important;
+}
+
+html body .campus-footer .footer-member-name {
+  color: #eeeeee !important;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+html body .campus-footer .footer-github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #99d6ff !important;
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+html body .campus-footer .footer-github-link:hover {
+  color: #c47b50 !important;
+  text-decoration: underline;
+}
+
+/* =========================================
+   TABLETAS
+========================================= */
+
+@media (max-width: 900px) {
+  html body .campus-footer .footer-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 38px 30px;
+    padding-right: 28px;
+    padding-left: 28px;
+  }
+
+  html body .campus-footer .footer-brand {
+    grid-column: 1 / -1;
+  }
+
+  html body .campus-footer .footer-description {
+    max-width: 500px;
+  }
+
+  html body .campus-footer .footer-uleam-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+  }
+}
+
+/* =========================================
+   CELULARES
+========================================= */
+
+@media (max-width: 600px) {
+  html body .campus-footer {
+    padding: 34px 0 30px;
+  }
+
+  html body .campus-footer .footer-container {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    padding: 0 22px;
+  }
+
+  html body .campus-footer .footer-brand {
+    grid-column: auto;
+  }
+
+  html body .campus-footer .footer-university {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  html body .campus-footer .footer-uleam-logo {
+    width: 65px;
+    height: 65px;
+    padding: 5px;
+    border-radius: 12px;
+  }
+
+  html body .campus-footer .footer-university-text h2 {
+    font-size: 18px;
+  }
+
+  html body .campus-footer .footer-university-text p {
+    font-size: 11px;
+  }
+
+  html body .campus-footer .footer-socials {
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  html body .campus-footer .footer-socials a {
+    width: 40px;
+    height: 40px;
+  }
+
+  html body .campus-footer .footer-brand-title {
+    font-size: 27px;
+  }
+
+  html body .campus-footer .footer-brand-subtitle {
+    font-size: 13px;
+    letter-spacing: 1.5px;
+  }
+
+  html body .campus-footer .footer-contact h2,
+  html body .campus-footer .footer-team h2 {
+    margin-bottom: 16px;
+    font-size: 23px;
+  }
+
+  html body .campus-footer .footer-contact p {
+    font-size: 13px;
+  }
+
+  html body .campus-footer .footer-member-name {
+    font-size: 12px;
+  }
+}
+
+/* =========================================
+   ACCESIBILIDAD
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html body .campus-footer .footer-socials a,
+  html body .campus-footer .footer-github-link,
+  html body .campus-footer .footer-university-contact a {
+    transition: none;
+  }
+}
