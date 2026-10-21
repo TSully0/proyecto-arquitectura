@@ -1,8 +1,19 @@
-import {Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,ManyToOne,JoinColumn,} from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { CategoryEntity } from '../../categories/entities/categories.entity.js';
 import { UserEntity } from '../../users/entities/users.entity.js';
 
-export enum PriceRange {CHEAP = 'CHEAP',MODERATE = 'MODERATE',EXPENSIVE = 'EXPENSIVE',}
+export enum PriceRange {
+  CHEAP = 'CHEAP',
+  MODERATE = 'MODERATE',
+  EXPENSIVE = 'EXPENSIVE',
+}
 
 @Entity('places')
 export class places {
@@ -27,7 +38,11 @@ export class places {
   @Column({ type: 'text', nullable: true })
   openingHours: string;
 
-  @Column({type: 'enum',enum: PriceRange,default: PriceRange.MODERATE,})
+  @Column({
+    type: 'enum',
+    enum: PriceRange,
+    default: PriceRange.MODERATE,
+  })
   priceRange: PriceRange;
 
   @Column({ type: 'boolean', default: false })
@@ -68,7 +83,13 @@ export class places {
   @Column({ type: 'boolean', default: false, nullable: true })
   isNightSpot: boolean;
 
-  @Column({type: 'numeric',precision: 2,scale: 1,default: 5.0,nullable: true,})
+  @Column({
+    type: 'numeric',
+    precision: 2,
+    scale: 1,
+    default: 5.0,
+    nullable: true,
+  })
   averageRating: number;
 
   @Column({ type: 'int', default: 0, nullable: true })

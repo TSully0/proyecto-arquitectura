@@ -1,6 +1,19 @@
-import { IsUUID } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
 
 export class CreateUserFavoriteDto {
-	@IsUUID()
-	placeId!: string;
+  @IsUUID()
+  userId!: string;
+
+  @IsUUID()
+  placeId!: string;
+}
+
+export class UpdateUserFavoriteDto {
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  placeId?: string;
 }

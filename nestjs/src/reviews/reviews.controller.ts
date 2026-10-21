@@ -1,34 +1,47 @@
-import { Controller,Get,Post,Param,Patch,ParseUUIDPipe, Body, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { CreateReviewDto, ReviewsQueryDto, UpdateReviewDto } from './dto/reviews.dto.js';
+import { reviewsentity } from './entities/reviews.entity.js';
 import { ReviewsService } from './reviews.service.js';
-import { CreateReviewDto } from './dto/reviews.dto.js';
 
 @Controller('reviews')
 export class ReviewsController {
-    constructor(private readonly review:ReviewsService){}
+  constructor(private readonly reviewsService: ReviewsService) {}
 
-    @Get()
-    async findAll(){
-        return await this.review.findAll()
-    }
+  @Get()
+  async findAll(@Query() query?: ReviewsQueryDto): Promise<reviewsentity[]> {
+    return await this.reviewsService.findAll(query);
+  }
 
-    @Get(':id')
-    async findOne(@Param('id', ParseUUIDPipe) id: string){
-        return await this.review.findOne(id);
-    }
+  @Get(':id')
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<reviewsentity> {
+    return await this.reviewsService.findOne(id);
+  }
 
-    @Post()
-    async create(@Body()createreviw: CreateReviewDto){
-        return await this.review.create(createreviw);
-    }
+  @Post()
+  async create(@Body() createReviewDto: CreateReviewDto): Promise<reviewsentity> {
+    return await this.reviewsService.create(createReviewDto);
+  }
 
-    @Patch(':id')
-    async update(@Param('id') id:string, @Body() bod:CreateReviewDto){
-        return await this.review.update(String(id),bod);
-    }
+  @Patch(':id')
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateReviewDto: UpdateReviewDto,
+  ): Promise<reviewsentity> {
+    return await this.reviewsService.update(id, updateReviewDto);
+  }
 
-    @Delete(':id')
-    async remove(@Param('id') id: string){
-        return this.review.remove(String(id));
-    }
-
+  @Delete(':id')
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<reviewsentity> {
+    return await this.reviewsService.remove(id);
+  }
 }

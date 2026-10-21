@@ -8,19 +8,17 @@ import {
 	IsNumber,
 	IsOptional,
 	IsString,
-	IsUrl,
 	IsUUID,
 	Max,
 	MaxLength,
 	Min,
 	MinLength,
 } from 'class-validator';
+import { PriceRange } from '../entities/places.entity.js';
 
-export enum PlacePriceRange {
-	CHEAP = 'CHEAP',
-	MODERATE = 'MODERATE',
-	EXPENSIVE = 'EXPENSIVE',
-}
+const PlacePriceRange = PriceRange;
+type PlacePriceRange = PriceRange;
+export { PlacePriceRange, PriceRange };
 
 export class CreatePlaceDto {
 	@IsString()
@@ -72,11 +70,15 @@ export class CreatePlaceDto {
 	@IsOptional()
 	@IsArray()
 	@ArrayMaxSize(10)
-	@IsUrl({}, { each: true })
+	@IsString({ each: true })
 	images?: string[];
 
 	@IsUUID()
 	categoryId!: string;
+
+	@IsOptional()
+	@IsUUID()
+	authorId?: string;
 
 	@IsOptional()
 	@IsBoolean()
@@ -152,12 +154,16 @@ export class UpdatePlaceDto {
 	@IsOptional()
 	@IsArray()
 	@ArrayMaxSize(10)
-	@IsUrl({}, { each: true })
+	@IsString({ each: true })
 	images?: string[];
 
 	@IsOptional()
 	@IsUUID()
 	categoryId?: string;
+
+	@IsOptional()
+	@IsUUID()
+	authorId?: string;
 
 	@IsOptional()
 	@IsBoolean()

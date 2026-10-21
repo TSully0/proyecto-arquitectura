@@ -1,80 +1,108 @@
 import { Type } from 'class-transformer';
 import {
-	IsBoolean,
-	IsEmail,
-	IsEnum,
-	IsInt,
-	IsOptional,
-	IsString,
-	MinLength,
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  MinLength,
 } from 'class-validator';
+import { Role } from '../entities/users.entity.js';
 
-export enum UserRole {
-	STUDENT = 'STUDENT',
-	MODERATOR = 'MODERATOR',
-	ADMIN = 'ADMIN',
+const UserRole = Role;
+type UserRole = Role;
+export { UserRole, Role };
+
+export class CreateUserDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(6)
+  password!: string;
+
+  @IsString()
+  @MinLength(3)
+  fullName!: string;
+
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class RegisterUserDto {
-	@IsEmail()
-	email!: string;
+  @IsEmail()
+  email!: string;
 
-	@IsString()
-	@MinLength(8)
-	password!: string;
+  @IsString()
+  @MinLength(8)
+  password!: string;
 
-	@IsString()
-	@MinLength(3)
-	fullName!: string;
+  @IsString()
+  @MinLength(3)
+  fullName!: string;
 }
 
 export class LoginUserDto {
-	@IsEmail()
-	email!: string;
+  @IsEmail()
+  email!: string;
 
-	@IsString()
-	@MinLength(1)
-	password!: string;
+  @IsString()
+  @MinLength(1)
+  password!: string;
 }
 
 export class UpdateUserDto {
-	@IsOptional()
-	@IsEmail()
-	email?: string;
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 
-	@IsOptional()
-	@IsString()
-	@MinLength(3)
-	fullName?: string;
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  fullName?: string;
 
-	@IsOptional()
-	@IsString()
-	@MinLength(8)
-	password?: string;
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
+
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class UpdateUserRoleDto {
-	@IsEnum(UserRole)
-	role!: UserRole;
+  @IsEnum(UserRole)
+  role!: UserRole;
 }
 
 export class UpdateUserStatusDto {
-	@IsBoolean()
-	isActive!: boolean;
+  @IsBoolean()
+  isActive!: boolean;
 }
 
 export class UsersQueryDto {
-	@IsOptional()
-	@IsEnum(UserRole)
-	role?: UserRole;
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
 
-	@IsOptional()
-	@Type(() => Number)
-	@IsInt()
-	page?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  page?: number;
 
-	@IsOptional()
-	@Type(() => Number)
-	@IsInt()
-	limit?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  limit?: number;
 }
