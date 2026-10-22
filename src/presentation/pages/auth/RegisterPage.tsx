@@ -1,83 +1,265 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { initialUsers, syncUserToSupabase } from '../../../data/repositories/users';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { validateName, validateEmail, getPasswordStrength, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from '../../../business/services/registerValidation';
+import { RegisterProgress } from '../../components/auth/RegisterProgress';
+import { RegisterAccountFields } from '../../components/auth/RegisterAccountFields';
+import { RegisterSecurityFields } from '../../components/auth/RegisterSecurityFields';
+import { RegisterTerms } from '../../components/auth/RegisterTerms';
+import { RegisterActions } from '../../components/auth/RegisterActions';
+import '../../../styles/auth/auth-register.css';
+
+// =====================================================
+// PROPIEDADES DEL COMPONENTE
+// =====================================================
 
 interface RegisterPageProps {
   onNavigateToLogin: () => void;
 }
 
-// 🔹 lee los usuarios con la MISMA lógica que el login
-const getUsers = (): any[] => {
+// =====================================================
+// TIPO DE USUARIO
+// Representa los datos necesarios para comprobar
+// si un correo o nombre ya está registrado.
+// =====================================================
+
+type ExistingUser = {
+  id?: string;
+  name?: string;
+  email?: string;
+  password?: string;
+  role?: string;
+  banned?: boolean;
+};
+
+// =====================================================
+// OBTENER USUARIOS REGISTRADOS
+// Primero consulta localStorage.
+// Si no hay datos válidos, utiliza los usuarios iniciales.
+// =====================================================
+
+const getUsers = (): ExistingUser[] => {
   try {
     const stored = localStorage.getItem('app_users');
-    const parsed = stored ? JSON.parse(stored) : [];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : initialUsers;
+    const parsed: unknown = stored ? JSON.parse(stored) : [];
+
+    return Array.isArray(parsed) && parsed.length > 0
+      ? (parsed as ExistingUser[])
+      : initialUsers;
   } catch {
     return initialUsers;
   }
 };
 
-export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
+// =====================================================
+// COMPONENTE PRINCIPAL DEL REGISTRO
+// =====================================================
 
+export function RegisterPage({
+  onNavigateToLogin
+}: RegisterPageProps) {
+  // Paso 1: nombre y correo.
+  // Paso 2: contraseña y aceptación de términos.
+  const [step, setStep] = useState(1);
+
+  // Datos de la cuenta.
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Control de visibilidad de las contraseñas.
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Estados de aceptación, error y éxito.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  // Calcular la seguridad utilizando el servicio externo.
+  const strength = getPasswordStrength(password);
 
-    // evita registrar dos veces si se pulsa de nuevo
-    if (success) return;
+  const strengthLabel =
+    strength === 0 ? 'Sin contraseña' :
+    strength === 1 ? 'Débil' :
+    strength === 2 ? 'Media' :
+    'Fuerte';
 
-    // 🔹 limpiar espacios
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanName = name.trim();
+  // ===================================================
+  // VALIDAR PRIMER PASO
+  // Comprueba nombre, correo y duplicados.
+  // ===================================================
 
-    // 🔹 SOLO 3 DOMINIOS PERMITIDOS
-    const validDomains = ['@gmail.com', '@hotmail.com', '@email.com'];
-    const isValid = validDomains.some(d => cleanEmail.endsWith(d));
+  const validateStepOne = (): boolean => {
+    // Validar el nombre mediante registerValidation.ts.
+    const nameError = validateName(name);
 
-    if (!isValid) {
-      setError('Correo inválido (usa Gmail, Hotmail o Email.com)');
-      return;
+    if (nameError) {
+      setError(nameError);
+      return false;
     }
 
-    // 🔹 validación básica
-    if (cleanName.length < 3) {
-      setError('El nombre debe tener al menos 3 caracteres');
-      return;
+    // Validar el correo electrónico.
+    const emailError = validateEmail(email);
+
+    if (emailError) {
+      setError(emailError);
+      return false;
     }
 
-    if (password.length < 4) {
-      setError('La contraseña debe tener mínimo 4 caracteres');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
-
+    // Obtener los usuarios existentes.
     const users = getUsers();
 
-    // 🔹 CORREO ÚNICO (el nombre sí puede repetirse)
+    // Normalizar el correo para evitar duplicados
+    // causados por diferencias entre mayúsculas y minúsculas.
+    const cleanEmail = email.trim().toLowerCase();
+
     const emailExists = users.some(
-      (u: any) => (u.email || '').trim().toLowerCase() === cleanEmail
+      (user) =>
+        (user.email || '').trim().toLowerCase() === cleanEmail
     );
 
     if (emailExists) {
-      setError('Este correo ya está registrado');
+      setError('Este correo ya está registrado.');
+      return false;
+    }
+
+    // Comparar nombres sin distinguir mayúsculas,
+    // minúsculas ni espacios sobrantes en datos antiguos.
+    const nameExists = users.some(
+      (user) =>
+        (user.name || '').trim().toLowerCase() ===
+        name.toLowerCase()
+    );
+
+    if (nameExists) {
+      setError('Este nombre de usuario ya está registrado.');
+      return false;
+    }
+
+    setError('');
+    return true;
+  };
+
+  // ===================================================
+  // VALIDAR SEGUNDO PASO
+  // Comprueba contraseña, confirmación y términos.
+  // ===================================================
+
+  const validateStepTwo = (): boolean => {
+    // Comprobar longitud mínima.
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(
+        `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
+      );
+      return false;
+    }
+
+    // Comprobar longitud máxima.
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      setError(
+        `La contraseña no puede superar los ${MAX_PASSWORD_LENGTH} caracteres.`
+      );
+      return false;
+    }
+
+    // Exigir una seguridad mínima.
+    if (strength < 2) {
+      setError(
+        'La contraseña es demasiado débil. Combina mayúsculas, minúsculas y números o símbolos.'
+      );
+      return false;
+    }
+
+    // Comprobar coincidencia de contraseñas.
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      return false;
+    }
+
+    // Comprobar aceptación de los términos.
+    if (!acceptedTerms) {
+      setError(
+        'Debes aceptar los términos y condiciones para registrarte.'
+      );
+      return false;
+    }
+    setError('');
+    return true;
+  };
+
+  // ===================================================
+  // AVANZAR AL SEGUNDO PASO
+  // ===================================================
+  const handleNext = () => {
+    if (validateStepOne()) {
+      setStep(2);
+      setError('');
+    }
+  };
+
+  // ===================================================
+  // REGRESAR AL PRIMER PASO
+  // ===================================================
+  const handleBack = () => {
+    setStep(1);
+    setError('');
+  };
+
+  // ===================================================
+  // REGISTRAR USUARIO
+  // Guarda localmente e intenta sincronizar con Supabase.
+  // ===================================================
+
+  const handleRegister = async (
+    e: FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    setError('');
+
+    // Evitar registros repetidos después del éxito.
+    if (success) return;
+    // Validar contraseña, confirmación y términos.
+    if (!validateStepTwo()) return;
+
+    // Volver a validar nombre y correo antes de guardar.
+    const nameError = validateName(name);
+    if (nameError) {
+      setError(nameError);
+      setStep(1);
+      return;
+    }
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setError(emailError);
+      setStep(1);
       return;
     }
 
+    // Consultar nuevamente los usuarios actuales.
+    const users = getUsers();
+    // Normalizar el correo que se guardará.
+    const cleanEmail = email.trim().toLowerCase();
+    // Conservar el nombre original, ya validado.
+    const cleanName = name;
+
+    // Comprobar duplicados nuevamente antes de guardar.
+    const duplicate = users.some(
+      (user) =>
+        (user.email || '').trim().toLowerCase() === cleanEmail ||
+        (user.name || '').trim().toLowerCase() ===
+          cleanName.toLowerCase()
+    );
+
+    if (duplicate) {
+      setError(
+        'El correo o nombre de usuario ya está registrado. Revisa los datos.'
+      );
+      setStep(1);
+      return;
+    }
+
+    // Construir el nuevo usuario.
     const newUser = {
       id: Date.now().toString(),
       name: cleanName,
@@ -87,105 +269,127 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
       banned: false
     };
 
+    // Preparar la lista actualizada.
     const updated = [...users, newUser];
-    localStorage.setItem('app_users', JSON.stringify(updated));
 
-    // Sincronizar en Supabase en segundo plano
-    syncUserToSupabase(newUser).catch((err) =>
-      console.warn('Background Supabase user sync:', err)
-    );
+    // Guardar en localStorage.
+    try {
+      localStorage.setItem('app_users', JSON.stringify(updated));
+    } catch {
+      setError('No se pudo guardar la cuenta en este dispositivo.');
+      return;
+    }
 
+    // Mostrar confirmación de registro.
     setSuccess(true);
 
-    // limpiar campos
-    setName('');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
+    // Intentar sincronizar con Supabase.
+    // Si falla, la cuenta local se conserva.
+    try {
+      const synced = await syncUserToSupabase(newUser);
 
-    setTimeout(() => {
+      if (!synced) {
+        console.warn(
+          'El usuario se guardó localmente, pero no se confirmó la sincronización con Supabase.'
+        );
+      }
+    } catch (err) {
+      console.warn(
+        'Error al sincronizar el usuario con Supabase:',
+        err
+      );
+    }
+
+    // Volver al inicio de sesión después de mostrar el éxito.
+    window.setTimeout(() => {
       onNavigateToLogin();
     }, 1500);
   };
+
+  // ===================================================
+  // INTERFAZ DEL REGISTRO
+  // Se conservan los componentes existentes.
+  // ===================================================
 
   return (
     <div className="auth-container">
       <h2>Crear Cuenta</h2>
 
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">Usuario creado correctamente</p>}
+      {/* Indicador del paso actual. */}
+      <RegisterProgress step={step} />
 
-      <form onSubmit={handleRegister}>
+      {/* Mostrar errores de validación. */}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
 
-        <div>
-          <label>Nombre</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
+      {/* Mostrar confirmación cuando el registro finaliza. */}
+      {success && (
+        <p className="success" role="status">
+          Usuario creado correctamente. Volviendo al inicio de sesión...
+        </p>
+      )}
+
+      <form
+        className="register-form"
+        onSubmit={handleRegister}
+        noValidate
+      >
+        {step === 1 ? (
+          // Primer paso: nombre y correo.
+          <RegisterAccountFields
+            name={name}
+            email={email}
+            onNameChange={setName}
+            onEmailChange={setEmail}
+            onContinue={handleNext}
           />
-        </div>
-
-        <div>
-          <label>Correo</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label>Contraseña</label>
-
-          <div className="password-wrapper">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+        ) : (
+          <>
+            {/* Segundo paso: contraseñas. */}
+            <RegisterSecurityFields
+              password={password}
+              confirmPassword={confirmPassword}
+              showPassword={showPassword}
+              showConfirmPassword={showConfirmPassword}
+              strength={strength}
+              strengthLabel={strengthLabel}
+              minPasswordLength={MIN_PASSWORD_LENGTH}
+              maxPasswordLength={MAX_PASSWORD_LENGTH}
+              onPasswordChange={setPassword}
+              onConfirmPasswordChange={setConfirmPassword}
+              onTogglePassword={() =>
+                setShowPassword((previous) => !previous)
+              }
+              onToggleConfirmPassword={() =>
+                setShowConfirmPassword((previous) => !previous)
+              }
             />
 
-            <button
-              type="button"
-              className="eye-icon"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label>Confirmar contraseña</label>
-
-          <div className="password-wrapper">
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
+            {/* Términos y condiciones. */}
+            <RegisterTerms
+              acceptedTerms={acceptedTerms}
+              onAcceptedChange={setAcceptedTerms}
             />
 
-            <button
-              type="button"
-              className="eye-icon"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
-        </div>
-
-        <button type="submit" disabled={success}>
-          Registrarse
-        </button>
+            {/* Botones para volver o registrar. */}
+            <RegisterActions
+              success={success}
+              onBack={handleBack}
+            />
+          </>
+        )}
       </form>
 
-      <p>
+      {/* Enlace para usuarios que ya tienen una cuenta. */}
+      <p className="register-login-link">
         ¿Ya tienes cuenta?{' '}
-        <button type="button" onClick={onNavigateToLogin}>
+        <button
+          type="button"
+          onClick={onNavigateToLogin}
+        >
           Inicia sesión
         </button>
       </p>

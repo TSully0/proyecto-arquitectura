@@ -1,5 +1,12 @@
-import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  BrowserRouter,
+  Navigate,
+  Routes,
+  Route,
+  useNavigate,
+} from "react-router-dom";
+
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
@@ -7,37 +14,79 @@ import { ForgotPasswordPage } from "../pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "../pages/auth/ResetPasswordPage";
 import { AdminRolesPage } from "../pages/admin/AdminRolesPage";
 import { AdminUsersPage } from "../pages/admin/AdminUsersPage";
-import { AdminLayout } from "../pages/admin/AdminLayout";                       // 👈 NUEVO
-import { AdminOverviewPage, AdminActivityPage, AdminReportsPage } from "../pages/admin/AdminSections";
+import { AdminLayout } from "../pages/admin/AdminLayout";
+import {
+  AdminOverviewPage,
+  AdminActivityPage,
+  AdminReportsPage,
+} from "../pages/admin/AdminSections";
 import { ModerationPage } from "../pages/ModerationPage";
 import { MyProfilePage } from "../pages/MyProfilePage";
 
 import type { User } from "../../business/types/user";
 import { RoleRoute } from "./RoleRoute";
-import { MessengerWidget } from "../components/chat/MessengerWidget";   // 👈 NUEVO
+import { MessengerWidget } from "../components/chat/MessengerWidget";
+import { subscribeToAccountStatus } from "../../business/services/accountStatus";
 
-export const AppRouter = () => {
+const SESSION_KEY = "user";
+
+/* =========================
+   NORMALIZAR ROL
+========================= */
+const normalizeRole = (role: string) =>
+  String(role || "").toLowerCase().trim();
+
+/* =========================
+   LANDING SEGÚN ROL
+========================= */
+const getLandingPath = (role?: string) => {
+  const r = normalizeRole(role || "");
+
+  if (r === "admin") return "/admin";
+  if (r === "moderator") return "/moderacion";
+  return "/";
+};
+
+/* =========================
+   RUTAS (usa useNavigate, por eso va DENTRO de BrowserRouter)
+========================= */
+const AppRoutes = () => {
+  const navigate = useNavigate();
+
   const [user, setUser] = useState<User | null>(() => {
-    const raw = localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      return raw ? (JSON.parse(raw) as User) : null;
+    } catch {
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
   });
 
-  /* =========================
-     NORMALIZAR ROL
-  ========================= */
-  const normalizeRole = (role: string) =>
-    String(role || "").toLowerCase().trim();
+  // Mensaje que se muestra cuando una cuenta es baneada o suspendida.
+  const [blockMessage, setBlockMessage] = useState("");
 
   /* =========================
-     LANDING SEGÚN ROL
+     DETECTAR BANEOS / SUSPENSIONES CON LA SESIÓN ABIERTA
+     (también comprueba al cargar la página, por ejemplo con F5)
   ========================= */
-  const getLandingPath = (role?: string) => {
-    const r = normalizeRole(role || "");
+  useEffect(() => {
+    if (!user) return;
 
-    if (r === "admin") return "/admin";
-    if (r === "moderator") return "/moderacion";
-    return "/";
-  };
+    return subscribeToAccountStatus(user, (message) => {
+      setBlockMessage(message);
+      setUser(null);
+      navigate("/login", { replace: true });
+    });
+  }, [user, navigate]);
+
+  // Ocultar el aviso automáticamente después de 12 segundos.
+  useEffect(() => {
+    if (!blockMessage) return;
+
+    const timer = window.setTimeout(() => setBlockMessage(""), 12_000);
+    return () => window.clearTimeout(timer);
+  }, [blockMessage]);
 
   /* =========================
      LOGIN
@@ -48,7 +97,8 @@ export const AppRouter = () => {
       role: normalizeRole(loggedInUser.role) as User["role"],
     };
 
-    localStorage.setItem("user", JSON.stringify(cleanUser));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(cleanUser));
+    setBlockMessage("");
     setUser(cleanUser);
   };
 
@@ -56,14 +106,14 @@ export const AppRouter = () => {
      LOGOUT
   ========================= */
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem(SESSION_KEY);
     setUser(null);
+    navigate("/login", { replace: true });
   };
 
   return (
-    <BrowserRouter>
+    <>
       <Routes>
-
         {/* =========================
             HOME (el admin NO entra aquí: va a su panel)
         ========================= */}
@@ -72,7 +122,7 @@ export const AppRouter = () => {
           element={
             user ? (
               normalizeRole(user.role) === "admin" ? (
-                <Navigate to="/admin" replace />          // 👈 CAMBIO
+                <Navigate to="/admin" replace />
               ) : (
                 <HomePage user={user} onLogout={handleLogout} />
               )
@@ -93,9 +143,9 @@ export const AppRouter = () => {
             ) : (
               <LoginPage
                 onLoginSuccess={handleLogin}
-                onNavigateToRegister={() => (window.location.href = "/register")}
+                onNavigateToRegister={() => navigate("/register")}
                 onNavigateToForgotPassword={() =>
-                  (window.location.href = "/forgot-password")
+                  navigate("/forgot-password")
                 }
               />
             )
@@ -108,9 +158,7 @@ export const AppRouter = () => {
         <Route
           path="/register"
           element={
-            <RegisterPage
-              onNavigateToLogin={() => (window.location.href = "/login")}
-            />
+            <RegisterPage onNavigateToLogin={() => navigate("/login")} />
           }
         />
 
@@ -120,9 +168,7 @@ export const AppRouter = () => {
         <Route
           path="/forgot-password"
           element={
-            <ForgotPasswordPage
-              onBack={() => (window.location.href = "/login")}
-            />
+            <ForgotPasswordPage onBack={() => navigate("/login")} />
           }
         />
 
@@ -132,20 +178,14 @@ export const AppRouter = () => {
         <Route
           path="/reset-password"
           element={
-            <ResetPasswordPage
-              onFinish={() => (window.location.href = "/login")}
-            />
+            <ResetPasswordPage onFinish={() => navigate("/login")} />
           }
         />
 
         {/* =========================
             PERFIL (solo user y moderator, el admin NO)
         ========================= */}
-        <Route
-          element={
-            <RoleRoute allowedRoles={["user", "moderator"]} />
-          }
-        >
+        <Route element={<RoleRoute allowedRoles={["user", "moderator"]} />}>
           <Route
             path="/perfil"
             element={
@@ -161,16 +201,12 @@ export const AppRouter = () => {
         {/* =========================
             MODERACIÓN (solo moderator)
         ========================= */}
-        <Route
-          element={
-            <RoleRoute allowedRoles={["moderator"]} />
-          }
-        >
+        <Route element={<RoleRoute allowedRoles={["moderator"]} />}>
           <Route path="/moderacion" element={<ModerationPage />} />
         </Route>
 
         {/* =========================
-            PANEL DE ADMIN (menú propio + subpáginas)  👈 NUEVO
+            PANEL DE ADMIN (menú propio + subpáginas)
         ========================= */}
         <Route element={<RoleRoute allowedRoles={["admin"]} />}>
           <Route
@@ -194,14 +230,71 @@ export const AppRouter = () => {
         {/* =========================
             FALLBACK
         ========================= */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-
+        <Route
+          path="*"
+          element={
+            user ? (
+              <Navigate to={getLandingPath(user.role)} replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
       </Routes>
 
-      {/* 💬 CHAT FLOTANTE (apagado hasta que se pulse el botón; el admin no lo usa) 👈 NUEVO */}
+      {/* 💬 CHAT FLOTANTE (el admin no lo usa) */}
       {user && normalizeRole(user.role) !== "admin" && (
         <MessengerWidget key={user.id} me={user} />
       )}
-    </BrowserRouter>
+
+      {/* Aviso de cuenta baneada o suspendida (se ve sobre el login) */}
+      {blockMessage && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          style={{
+            position: "fixed",
+            bottom: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            width: "min(92%, 520px)",
+            padding: "14px 18px",
+            borderRadius: 10,
+            background: "#fff1f0",
+            color: "#a12622",
+            border: "1px solid #f0b8b5",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setBlockMessage("")}
+            aria-label="Cerrar mensaje"
+            style={{
+              float: "right",
+              marginLeft: 12,
+              border: 0,
+              background: "transparent",
+              color: "inherit",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            ×
+          </button>
+          {blockMessage}
+        </div>
+      )}
+    </>
   );
 };
+
+/* =========================
+   EXPORT: sigue llamándose AppRouter, así App.tsx NO cambia
+========================= */
+export const AppRouter = () => (
+  <BrowserRouter>
+    <AppRoutes />
+  </BrowserRouter>
+);

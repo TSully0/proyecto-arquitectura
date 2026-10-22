@@ -1,3 +1,9 @@
+/* ==================================================
+   AUTENTICACIÓN GENERAL
+   HUECAS MANABAS - MANTACAMPUS
+================================================== */
+
+/* VARIABLES */
 :root {
   --primary: #A75F37;
   --primary-hover: #8C4B27;
@@ -14,184 +20,204 @@
   box-sizing: border-box;
 }
 
+/* FONDO GENERAL */
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
+  color: var(--text-main);
   background:
-    linear-gradient(rgba(44,110,145,0.45), rgba(167,95,55,0.25)),
+    linear-gradient(
+      rgba(44, 110, 145, 0.45),
+      rgba(167, 95, 55, 0.25)
+    ),
     url('../../assets/manta-bg.jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
 }
 
-/* CONTENEDOR */
+/* CONTENEDOR DE AUTENTICACIÓN */
 .auth-container {
-  width: min(420px, 90%);
+  width: min(420px, calc(100% - 24px));
   margin: 60px auto;
   padding: 35px;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(5px);
 }
 
-/* TITULO */
-h2 {
-  text-align: center;
-  margin-bottom: 25px;
+/* TÍTULOS */
+.auth-container h2 {
+  margin: 0 0 25px;
   color: var(--text-main);
+  text-align: center;
 }
 
 /* LABELS */
-label {
+.auth-container label {
+  color: var(--text-main);
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-main);
 }
 
-/* INPUTS */
-input {
+/* INPUTS GENERALES */
+.auth-container input {
   width: 100%;
-  padding: 12px;
   margin-top: 5px;
   margin-bottom: 15px;
-  border-radius: 8px;
+  padding: 12px;
   border: 1px solid #d1c2b5;
+  border-radius: 8px;
+  outline: none;
   background: #f9f9f9;
   color: var(--text-main);
-  outline: none;
-  transition: 0.2s;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-input:focus {
+.auth-container input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(167,95,55,0.2);
+  box-shadow: 0 0 0 2px rgba(167, 95, 55, 0.2);
 }
 
-/* PASSWORD */
+/* CONTENEDOR DE CONTRASEÑA */
 .password-wrapper {
   position: relative;
+  width: 100%;
 }
 
 .password-wrapper input {
   padding-right: 45px;
 }
 
-/* 👁 ICONO */
-.eye-icon {
+/* ICONO PARA MOSTRAR / OCULTAR CONTRASEÑA */
+.password-wrapper .eye-icon {
   position: absolute;
-  right: 15px;
   top: 50%;
-  transform: translateY(-50%);
-
+  right: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 5px;
+  transform: translateY(-50%);
   border: none;
-  cursor: pointer;
-
-  font-size: 18px;
+  border-radius: 5px;
+  background: transparent;
+  box-shadow: none;
   color: var(--primary);
-
-  transition: 0.2s;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
 }
 
-.eye-icon:hover {
-  background: rgba(167,95,55,0.2);
-  transform: translateY(-50%) scale(1.1);
-  opacity: 0.6;
+.password-wrapper .eye-icon:hover {
+  transform: translateY(-50%);
+  background: rgba(167, 95, 55, 0.12);
+  color: var(--primary-hover);
+  box-shadow: none;
 }
 
-.eye-icon:active {
+.password-wrapper .eye-icon:active {
   transform: translateY(-50%) scale(0.95);
 }
 
-/* ===== BOTÓN PRINCIPAL (grande, café) =====
-   - "Entrar" del login (type="submit")
-   - Botones que están directo en el contenedor: Enviar código,
-     Verificar código, Cambiar contraseña */
-button[type="submit"],
+/* BOTÓN PRINCIPAL DEL LOGIN Y RECUPERACIÓN */
+.auth-container button[type="submit"],
 .auth-container > button {
   width: 100%;
   padding: 14px;
-  border-radius: 8px;
   border: none;
-  background: linear-gradient(135deg, #A75F37, #8C4B27);
-  color: white;
+  border-radius: 8px;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--primary-hover)
+  );
+  color: #fff;
   font-family: inherit;
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
-  transition: 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-button[type="submit"]:hover,
+.auth-container button[type="submit"]:hover,
 .auth-container > button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* MENSAJES */
-.error {
+.auth-container .error {
+  margin: 0 0 10px;
   color: var(--error-red);
   text-align: center;
   font-size: 13px;
-  margin-bottom: 10px;
+  line-height: 1.5;
+  white-space: pre-line;
 }
 
-.success {
+.auth-container .success {
+  margin: 0 0 10px;
   color: #16a34a;
   text-align: center;
   font-size: 13px;
-  margin-bottom: 10px;
+  line-height: 1.5;
+  white-space: pre-line;
 }
 
-/* LINKS */
-p {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 14px;
+/* PÁRRAFOS Y ENLACES */
+.auth-container p {
   margin-top: 15px;
-}
-
-p button {
-  background: none;
-  border: none;
-  color: var(--accent-blue);
-  font-weight: bold;
-  cursor: pointer;
-  padding: 0;
+  color: var(--text-muted);
+  text-align: center;
   font-size: 14px;
 }
 
-p button:hover {
+.auth-container p button {
+  width: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent-blue);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-container p button:hover {
+  transform: none;
+  background: transparent;
+  box-shadow: none;
   color: var(--primary);
   text-decoration: underline;
 }
 
-/* ===== "Volver al login" = link azul, no botón grande =====
-   Es el último botón del contenedor cuando hay otro botón antes.
-   (En Nueva contraseña hay un solo botón, por eso no le afecta.) */
+/* BOTÓN VOLVER AL LOGIN EN RECUPERACIÓN */
 .auth-container > button:not(:only-of-type):last-of-type {
   display: block;
   width: auto;
   margin: 15px auto 0;
   padding: 0;
-  background: none;
   border-radius: 0;
+  background: transparent;
   box-shadow: none;
   color: var(--accent-blue);
   font-size: 14px;
 }
 
 .auth-container > button:not(:only-of-type):last-of-type:hover {
-  background: none;
+  transform: none;
+  background: transparent;
+  box-shadow: none;
   color: var(--primary);
   text-decoration: underline;
-  transform: none;
-  box-shadow: none;
 }
 
 /* RESPONSIVE */
@@ -208,11 +234,11 @@ p button:hover {
     padding: 22px 18px;
   }
 
-  input {
+  .auth-container input {
     font-size: 16px;
   }
 
-  button[type="submit"],
+  .auth-container button[type="submit"],
   .auth-container > button {
     min-height: 44px;
   }

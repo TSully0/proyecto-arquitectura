@@ -2,14 +2,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { User } from "../../../business/types/user";
-import {
-  SanctionModal,
-  type SanctionType,
-} from "../../components/admin/SanctionModal";
-import {
-  UserCard,
-  type UserStatus,
-} from "../../components/admin/UserCard";
+import { SanctionModal, type SanctionType } from "../../components/admin/SanctionModal";
+import { UserCard, type UserStatus } from "../../components/admin/UserCard";
 import "../../../styles/admin/admin-users.css";
 
 type Role = "admin" | "moderator" | "user";
@@ -20,37 +14,41 @@ type ManagedUser = User & {
   sanctionReason?: string;
 };
 
-export const AdminUsersPage = () => {
-  const [users, setUsers] = useState<ManagedUser[]>(() => {
-    try {
-      const stored = localStorage.getItem("app_users");
+const USERS_KEY = "app_users";
+const SESSION_KEY = "user";
+const ACCOUNT_STATUS_EVENT = "account-status-changed";
 
-      if (!stored) return [];
+function normalizeUsers(data: unknown): ManagedUser[] {
+  if (!Array.isArray(data)) return [];
 
-      const parsed: unknown = JSON.parse(stored);
+  return data.map((item): ManagedUser => {
+    const user = item as Partial<ManagedUser>;
 
-      if (!Array.isArray(parsed)) return [];
-
-      return parsed.map((item): ManagedUser => {
-        const user = item as Partial<ManagedUser>;
-
-        return {
-          ...user,
-          id: String(user.id ?? ""),
-          name: String(user.name ?? ""),
-          email: String(user.email ?? ""),
-          role: (String(user.role ?? "user").toLowerCase().trim() as Role),
-          banned: user.banned ?? false,
-          suspendedUntil: user.suspendedUntil ?? null,
-          sanctionReason: user.sanctionReason ?? "",
-        } as ManagedUser;
-      });
-    } catch (error) {
-      console.error("No se pudieron cargar los usuarios:", error);
-      return [];
-    }
+    return {
+      ...user,
+      id: String(user.id ?? ""),
+      name: String(user.name ?? ""),
+      email: String(user.email ?? ""),
+      role: String(user.role ?? "user").toLowerCase().trim() as Role,
+      banned: user.banned ?? false,
+      suspendedUntil: user.suspendedUntil ?? null,
+      sanctionReason: user.sanctionReason ?? "",
+    } as ManagedUser;
   });
+}
 
+function readStoredUsers(): ManagedUser[] {
+  try {
+    const raw = localStorage.getItem(USERS_KEY);
+    return raw ? normalizeUsers(JSON.parse(raw)) : [];
+  } catch (error) {
+    console.error("No se pudieron cargar los usuarios:", error);
+    return [];
+  }
+}
+
+export const AdminUsersPage = () => {
+  const [users, setUsers] = useState<ManagedUser[]>(readStoredUsers);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | Role>("all");
@@ -62,7 +60,7 @@ export const AdminUsersPage = () => {
 
   const navigate = useNavigate();
 
-  // Actualiza los estados cuando una suspensión llega a su fin.
+  // Actualizar suspensiones y estados periódicamente.
   useEffect(() => {
     const timer = window.setInterval(() => {
       setCurrentTime(Date.now());
@@ -71,13 +69,66 @@ export const AdminUsersPage = () => {
     return () => window.clearInterval(timer);
   }, []);
 
-  // Guarda los cambios y actualiza la lista.
+  // Sincronizar la lista si otra pestaña modifica app_users.
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === USERS_KEY) {
+        setUsers(readStoredUsers());
+        setCurrentTime(Date.now());
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  // Guardar los usuarios y notificar a las sesiones abiertas.
   const saveUsers = (updated: ManagedUser[]) => {
     try {
-      localStorage.setItem("app_users", JSON.stringify(updated));
+      localStorage.setItem(USERS_KEY, JSON.stringify(updated));
+
       setUsers(updated);
+      setCurrentTime(Date.now());
+
+      // Actualizar la sesión local si pertenece a una cuenta sancionada.
+      const rawSession = localStorage.getItem(SESSION_KEY);
+
+      if (rawSession) {
+        try {
+          const session = JSON.parse(rawSession) as User;
+
+          const updatedSessionUser = updated.find(
+            (item) => String(item.id) === String(session.id)
+          );
+
+          if (updatedSessionUser) {
+            localStorage.setItem(
+              SESSION_KEY,
+              JSON.stringify({
+                ...session,
+                banned: updatedSessionUser.banned ?? false,
+                suspendedUntil: updatedSessionUser.suspendedUntil ?? null,
+                sanctionReason: updatedSessionUser.sanctionReason ?? "",
+              })
+            );
+          }
+        } catch (error) {
+          console.error("No se pudo actualizar la sesión:", error);
+        }
+      }
+
+      // El evento personalizado funciona dentro de esta misma pestaña.
+      window.dispatchEvent(
+        new CustomEvent(ACCOUNT_STATUS_EVENT, {
+          detail: { users: updated },
+        })
+      );
     } catch (error) {
       console.error("No se pudieron guardar los usuarios:", error);
+
       window.alert(
         "No se pudieron guardar los cambios. Comprueba el almacenamiento del navegador."
       );
@@ -103,7 +154,11 @@ export const AdminUsersPage = () => {
     saveUsers(
       users.map((user) =>
         user.id === id
-          ? { ...user, banned: false, sanctionReason: "" }
+          ? {
+              ...user,
+              banned: false,
+              sanctionReason: "",
+            }
           : user
       )
     );
@@ -132,7 +187,7 @@ export const AdminUsersPage = () => {
     setSanctionUserId(null);
   };
 
-  // El modal valida el motivo y lo entrega a esta función.
+  // Aplicar el baneo o la suspensión.
   const confirmSanction = (reason: string) => {
     if (!sanctionUserId || !reason.trim()) return;
 
@@ -161,7 +216,6 @@ export const AdminUsersPage = () => {
     });
 
     saveUsers(updated);
-    setCurrentTime(Date.now());
     closeSanctionModal();
   };
 
