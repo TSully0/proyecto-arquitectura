@@ -1,12 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  BrowserRouter,
-  Navigate,
-  Routes,
-  Route,
-  useNavigate,
-} from "react-router-dom";
-
+import { BrowserRouter, Navigate, Routes, Route, useNavigate } from "react-router-dom";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
@@ -15,20 +8,14 @@ import { ResetPasswordPage } from "../pages/auth/ResetPasswordPage";
 import { AdminRolesPage } from "../pages/admin/AdminRolesPage";
 import { AdminUsersPage } from "../pages/admin/AdminUsersPage";
 import { AdminLayout } from "../pages/admin/AdminLayout";
-import {
-  AdminOverviewPage,
-  AdminActivityPage,
-  AdminReportsPage,
-} from "../pages/admin/AdminSections";
+import { AdminOverviewPage, AdminActivityPage, AdminReportsPage } from "../pages/admin/AdminSections";
 import { ModerationPage } from "../pages/ModerationPage";
 import { MyProfilePage } from "../pages/MyProfilePage";
-
 import type { User } from "../../business/types/user";
 import { RoleRoute } from "./RoleRoute";
 import { MessengerWidget } from "../components/chat/MessengerWidget";
 import { subscribeToAccountStatus } from "../../business/services/accountStatus";
-
-const SESSION_KEY = "user";
+import { useAuth } from "../auth/AuthContext";
 
 /* =========================
    NORMALIZAR ROL
@@ -53,15 +40,8 @@ const getLandingPath = (role?: string) => {
 const AppRoutes = () => {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      return raw ? (JSON.parse(raw) as User) : null;
-    } catch {
-      localStorage.removeItem(SESSION_KEY);
-      return null;
-    }
-  });
+  // La sesión ahora vive en AuthContext (única fuente de verdad).
+  const { user, login, logout } = useAuth();
 
   // Mensaje que se muestra cuando una cuenta es baneada o suspendida.
   const [blockMessage, setBlockMessage] = useState("");
@@ -75,10 +55,10 @@ const AppRoutes = () => {
 
     return subscribeToAccountStatus(user, (message) => {
       setBlockMessage(message);
-      setUser(null);
+      logout();
       navigate("/login", { replace: true });
     });
-  }, [user, navigate]);
+  }, [user, navigate, logout]);
 
   // Ocultar el aviso automáticamente después de 12 segundos.
   useEffect(() => {
@@ -92,22 +72,15 @@ const AppRoutes = () => {
      LOGIN
   ========================= */
   const handleLogin = (loggedInUser: User) => {
-    const cleanUser: User = {
-      ...loggedInUser,
-      role: normalizeRole(loggedInUser.role) as User["role"],
-    };
-
-    localStorage.setItem(SESSION_KEY, JSON.stringify(cleanUser));
     setBlockMessage("");
-    setUser(cleanUser);
+    login(loggedInUser); // el contexto normaliza el rol y guarda la sesión
   };
 
   /* =========================
      LOGOUT
   ========================= */
   const handleLogout = () => {
-    localStorage.removeItem(SESSION_KEY);
-    setUser(null);
+    logout();
     navigate("/login", { replace: true });
   };
 

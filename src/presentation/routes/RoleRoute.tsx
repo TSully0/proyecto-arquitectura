@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 type Role = "admin" | "moderator" | "user";
 
@@ -8,27 +9,15 @@ type Props = {
 
 export const RoleRoute = ({ allowedRoles }: Props) => {
   const location = useLocation();
+  const { user } = useAuth();
 
-  const rawUser = localStorage.getItem("user");
-
-  if (!rawUser) {
+  if (!user) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  let user: any;
+  const role = String(user.role || "").toLowerCase().trim() as Role;
 
-  try {
-    user = JSON.parse(rawUser);
-  } catch {
-    localStorage.removeItem("user");
-    return <Navigate to="/login" replace />;
-  }
-
-  const role = String(user?.role || "")
-    .toLowerCase()
-    .trim() as Role;
-
-  // 🚫 SOLO REDIRECCIÓN, NO BORRAR SESIÓN
+  // Solo redirige, no borra la sesión.
   if (!allowedRoles.includes(role)) {
     return <Navigate to="/" replace />;
   }

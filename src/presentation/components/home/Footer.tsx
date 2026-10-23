@@ -1,6 +1,18 @@
 import uleamLogo from '../../../assets/uleam.png';
 import '../../../styles/ui/footer.css';
 
+// ---------------------------------------------------------------
+// DATOS
+// ---------------------------------------------------------------
+
+// Docente de la materia
+const teacher = {
+  name: 'ING. CARLOS EDUARDO ANCHUNDIA BETANCOURT',
+  github: 'TSully0', // prueba: cámbialo por el GitHub del docente
+  url: 'https://github.com/TSully0', // prueba: cámbialo también
+};
+
+// Integrantes del equipo de desarrollo
 const teamMembers = [
   {
     name: 'DELGADO MONCAYO ELLERY RICARDO',
@@ -29,6 +41,7 @@ const teamMembers = [
   },
 ];
 
+// Redes sociales oficiales de ULEAM
 const socialNetworks = [
   {
     name: 'Instagram',
@@ -70,12 +83,20 @@ const socialNetworks = [
   },
 ];
 
+// Ícono de GitHub (path reutilizado en docente y equipo)
+const githubIconPath =
+  'M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.53v-2.08c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15.99 1.7 2.59 1.21 3.22.93.1-.72.39-1.21.7-1.49-2.48-.28-5.09-1.24-5.09-5.52 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.15a10.6 10.6 0 0 1 5.55 0c2.11-1.45 3.05-1.15 3.05-1.15.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.29-2.62 5.23-5.11 5.51.4.35.75 1.03.75 2.08V22c0 .29.2.63.76.52A11.1 11.1 0 0 0 12 .9Z';
+
+// ---------------------------------------------------------------
+// COMPONENTE
+// ---------------------------------------------------------------
 export function Footer() {
   return (
     <footer className="campus-footer">
+      {/* El contenedor tiene 3 columnas: marca | información | equipo */}
       <div className="footer-container">
 
-        {/* Identidad institucional y del proyecto */}
+        {/* COLUMNA 1: Identidad institucional y del proyecto */}
         <section className="footer-brand">
           <div className="footer-university">
             <img
@@ -124,42 +145,77 @@ export function Footer() {
           </div>
         </section>
 
-        {/* Información académica y contacto */}
+        {/* COLUMNA 2: Información académica
+            (una sola lista con materia, docente y datos académicos,
+            alineada al mismo nivel que las otras columnas) */}
         <section className="footer-contact">
-          <h2>Información académica</h2>
+          <div className="footer-info-block">
+            <h2>Información académica</h2>
 
-          <p className="footer-academic-subtitle">
-            ARQUITECTURA DEL SOFTWARE 5B
-          </p>
+            <ul className="footer-team-list">
+              {/* Materia */}
+              <li className="footer-team-member">
+                <span className="footer-info-text">Materia</span>
+                <span className="footer-member-name">
+                  ARQUITECTURA DEL SOFTWARE 5B
+                </span>
+              </li>
 
-          <p>
-            <strong>ULEAM - 2026</strong>
-          </p>
+              {/* Docente y su GitHub */}
+              <li className="footer-team-member">
+                <span className="footer-info-text">Docente</span>
+                <span className="footer-member-name">{teacher.name}</span>
 
-          <p>
-            <strong>FACIVITEC</strong>
-          </p>
+                <a
+                  href={teacher.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="footer-github-link"
+                  aria-label={`GitHub de ${teacher.name}`}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d={githubIconPath} />
+                  </svg>
 
-          <p>Software</p>
+                  <span>{teacher.github}</span>
+                </a>
+              </li>
 
-          <div className="footer-university-contact">
-            <p>
-              <strong>Dirección</strong>
-              <br />
-              Av. Circunvalación Vía a San Mateo
-            </p>
+              {/* Facultad y universidad */}
+              <li className="footer-team-member">
+                <span className="footer-member-name">FACIVITEC - SOFTWARE</span>
+                <span className="footer-info-text">ULEAM - 2026</span>
+              </li>
 
-            <p>
-              <strong>Correo electrónico</strong>
-              <br />
-              <a href="mailto:incidencias.diit@uleam.edu.ec">
-                incidencias.diit@uleam.edu.ec
-              </a>
-            </p>
+              {/* Dirección */}
+              <li className="footer-team-member">
+                <span className="footer-info-text">Dirección</span>
+                <span className="footer-member-name">
+                  AV. CIRCUNVALACIÓN VÍA A SAN MATEO
+                </span>
+              </li>
+
+              {/* Correo */}
+              <li className="footer-team-member">
+                <span className="footer-info-text">Correo electrónico</span>
+                <a
+                  href="mailto:incidencias.diit@uleam.edu.ec"
+                  className="footer-github-link"
+                >
+                  incidencias.diit@uleam.edu.ec
+                </a>
+              </li>
+            </ul>
           </div>
         </section>
 
-        {/* Equipo de desarrollo */}
+        {/* COLUMNA 3: Equipo de desarrollo */}
         <section className="footer-team">
           <h2>Equipo de desarrollo</h2>
 
@@ -184,7 +240,7 @@ export function Footer() {
                     fill="currentColor"
                     aria-hidden="true"
                   >
-                    <path d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.53v-2.08c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15.99 1.7 2.59 1.21 3.22.93.1-.72.39-1.21.7-1.49-2.48-.28-5.09-1.24-5.09-5.52 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.15a10.6 10.6 0 0 1 5.55 0c2.11-1.45 3.05-1.15 3.05-1.15.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.29-2.62 5.23-5.11 5.51.4.35.75 1.03.75 2.08V22c0 .29.2.63.76.52A11.1 11.1 0 0 0 12 .9Z" />
+                    <path d={githubIconPath} />
                   </svg>
 
                   <span>{member.github}</span>

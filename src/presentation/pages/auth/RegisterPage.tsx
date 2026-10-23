@@ -147,6 +147,13 @@ export function RegisterPage({
   // ===================================================
 
   const validateStepTwo = (): boolean => {
+    // btoa() solo admite caracteres Latin-1. Un emoji u otro carácter
+    // fuera de ese rango haría fallar el registro sin mostrar mensaje.
+    if (/[^\u0000-ÿ]/.test(password)) {
+      setError('La contraseña contiene caracteres no admitidos.');
+      return false;
+    }
+
     // Comprobar longitud mínima.
     if (password.length < MIN_PASSWORD_LENGTH) {
       setError(

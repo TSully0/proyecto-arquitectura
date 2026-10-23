@@ -34,7 +34,7 @@ export function RegisterAccountFields({
         />
 
         <small className="register-help">
-          De 3 a 30 caracteres, sin espacios ni /, &amp; o ;
+          De 3 a 30 caracteres. Puedes usar un espacio entre palabras. No uses /, &amp; ni ;
         </small>
       </div>
 
@@ -50,11 +50,13 @@ export function RegisterAccountFields({
           onChange={(e) => onEmailChange(e.target.value)}
           placeholder="usuario@gmail.com"
           autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
           required
         />
 
         <small className="register-help">
-          Se admite Gmail, Hotmail, Outlook y Email.com.
+          Solo minúsculas, números, _ y punto. Se admite Gmail, Hotmail, Outlook y Email.com.
         </small>
       </div>
 

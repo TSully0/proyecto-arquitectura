@@ -27,17 +27,18 @@ html body .campus-footer *::after {
 html body .campus-footer .footer-container,
 html body .campus-footer .footer-brand,
 html body .campus-footer .footer-contact,
+html body .campus-footer .footer-info-block,
 html body .campus-footer .footer-team,
 html body .campus-footer .footer-university,
 html body .campus-footer .footer-university-text,
 html body .campus-footer .footer-project-brand,
-html body .campus-footer .footer-university-contact,
 html body .campus-footer .footer-team-member {
   background-color: transparent !important;
 }
 
 /* =========================================
-   DISTRIBUCIÓN PRINCIPAL
+   DISTRIBUCIÓN PRINCIPAL (3 columnas)
+   1) Marca  2) Materia + Académica  3) Equipo
 ========================================= */
 
 html body .campus-footer .footer-container {
@@ -215,10 +216,12 @@ html body .campus-footer .footer-description {
 }
 
 /* =========================================
-   TÍTULOS DE LAS SECCIONES
+   TÍTULOS ROJOS DE LAS SECCIONES
+   (Información de la materia, Información
+   académica y Equipo de desarrollo)
 ========================================= */
 
-html body .campus-footer .footer-contact h2,
+html body .campus-footer .footer-info-block h2,
 html body .campus-footer .footer-team h2 {
   margin: 0 0 22px;
   color: #f0646b !important;
@@ -228,46 +231,16 @@ html body .campus-footer .footer-team h2 {
 }
 
 /* =========================================
-   INFORMACIÓN ACADÉMICA
+   COLUMNA 2: MATERIA + ACADÉMICA
 ========================================= */
 
-html body .campus-footer .footer-contact p {
-  margin: 0 0 13px;
-  color: #cccccc !important;
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-html body .campus-footer .footer-contact strong {
-  color: #ffffff !important;
-  font-weight: 700;
-}
-
-html body .campus-footer .footer-academic-subtitle {
-  color: #99d6ff !important;
-  font-weight: 700;
-}
-
-html body .campus-footer .footer-university-contact {
-  margin-top: 23px;
-  padding-top: 18px;
-  border-top: 1px solid #444444 !important;
-}
-
-html body .campus-footer .footer-university-contact a {
-  color: #99d6ff !important;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  overflow-wrap: anywhere;
-  transition: color 0.2s ease;
-}
-
-html body .campus-footer .footer-university-contact a:hover {
-  color: #c47b50 !important;
+/* Espacio entre "Información de la materia" y "Información académica" */
+html body .campus-footer .footer-info-block + .footer-info-block {
+  margin-top: 40px;
 }
 
 /* =========================================
-   EQUIPO DE DESARROLLO
+   LISTAS (columna 2 y columna 3)
 ========================================= */
 
 html body .campus-footer .footer-team-list {
@@ -289,14 +262,28 @@ html body .campus-footer .footer-team-member {
   border-bottom: 1px solid #444444 !important;
 }
 
+/* Etiquetas y textos secundarios: Materia, Docente, Dirección,
+   Correo electrónico, ULEAM - 2026 (todos del mismo tamaño) */
+html body .campus-footer .footer-info-text {
+  display: block;
+  color: #cccccc !important;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Nombres en mayúscula (equipo, docente, materia, dirección) */
 html body .campus-footer .footer-member-name {
+  display: block;
   color: #eeeeee !important;
   font-size: 12px;
   font-weight: 600;
   line-height: 1.6;
+  text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
+/* Enlaces: GitHub y correo */
 html body .campus-footer .footer-github-link {
   display: inline-flex;
   align-items: center;
@@ -304,6 +291,7 @@ html body .campus-footer .footer-github-link {
   color: #99d6ff !important;
   font-size: 13px;
   text-decoration: none;
+  overflow-wrap: anywhere;
   transition: color 0.2s ease;
 }
 
@@ -395,14 +383,18 @@ html body .campus-footer .footer-github-link:hover {
     letter-spacing: 1.5px;
   }
 
-  html body .campus-footer .footer-contact h2,
+  html body .campus-footer .footer-info-block h2,
   html body .campus-footer .footer-team h2 {
     margin-bottom: 16px;
     font-size: 23px;
   }
 
-  html body .campus-footer .footer-contact p {
-    font-size: 13px;
+  html body .campus-footer .footer-info-block + .footer-info-block {
+    margin-top: 32px;
+  }
+
+  html body .campus-footer .footer-info-text {
+    font-size: 12px;
   }
 
   html body .campus-footer .footer-member-name {
@@ -416,8 +408,7 @@ html body .campus-footer .footer-github-link:hover {
 
 @media (prefers-reduced-motion: reduce) {
   html body .campus-footer .footer-socials a,
-  html body .campus-footer .footer-github-link,
-  html body .campus-footer .footer-university-contact a {
+  html body .campus-footer .footer-github-link {
     transition: none;
   }
 }

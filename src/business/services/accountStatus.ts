@@ -1,4 +1,3 @@
-
 import type { User } from "../types/user";
 
 type ManagedAccount = User & {
@@ -79,6 +78,25 @@ export function getAccountBlockMessage(sessionUser: User): string {
 }
 
 /**
+ * Borra la sesión guardada SOLO si pertenece a la cuenta sancionada.
+ * Las pestañas del mismo navegador comparten localStorage: si en otra
+ * pestaña hay otra persona (por ejemplo un administrador), no se debe
+ * borrar su sesión.
+ */
+function clearSessionIfOwnedBy(sessionUser: User): void {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    const stored = raw ? JSON.parse(raw) : null;
+
+    if (!stored || String(stored.id) === String(sessionUser.id)) {
+      localStorage.removeItem(SESSION_KEY);
+    }
+  } catch {
+    localStorage.removeItem(SESSION_KEY);
+  }
+}
+
+/**
  * Escucha cambios de sanciones y permite que la aplicación
  * cierre la sesión cuando la cuenta actual quede bloqueada.
  */
@@ -95,7 +113,7 @@ export function subscribeToAccountStatus(
 
     const message = getAccountBlockMessage(sessionUser);
 
-    localStorage.removeItem(SESSION_KEY);
+    clearSessionIfOwnedBy(sessionUser);
     onBlocked(message || "Tu cuenta ya no tiene acceso.");
   };
 
@@ -117,6 +135,6 @@ export function subscribeToAccountStatus(
 
   return () => {
     window.removeEventListener("storage", handleStorage);
-    window.removeEventListener("account-status-changed", handleCustomEvent);
+    window.removeEventListener(ACCOUNT_STATUS_EVENT, handleCustomEvent);
   };
 }
