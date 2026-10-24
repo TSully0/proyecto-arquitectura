@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   Bell,
@@ -23,7 +24,6 @@ interface HeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onCreateReview: () => void;
-  onOpenAdmin: (tab: 'admin' | 'moderator') => void;
   notifications: NotificationItem[];
   onMarkAllNotificationsAsRead: () => void;
   onLogoClick?: () => void;
@@ -35,12 +35,12 @@ export function Header({
   searchQuery,
   onSearchChange,
   onCreateReview,
-  onOpenAdmin,
   notifications,
   onMarkAllNotificationsAsRead,
   onLogoClick
 }: HeaderProps) {
 
+  const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -148,7 +148,7 @@ export function Header({
                     className="dropdown-item"
                     onClick={() => {
                       setShowDropdown(false);
-                      onOpenAdmin('admin');
+                      navigate('/admin');
                     }}
                   >
                     <LayoutDashboard size={16} />
@@ -162,7 +162,7 @@ export function Header({
                     className="dropdown-item"
                     onClick={() => {
                       setShowDropdown(false);
-                      onOpenAdmin('moderator');
+                      navigate('/moderacion');
                     }}
                   >
                     <Wrench size={16} />

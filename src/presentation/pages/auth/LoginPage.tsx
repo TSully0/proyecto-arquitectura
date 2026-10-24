@@ -178,80 +178,82 @@ export function LoginPage({
   };
 
   return (
-    <div className="auth-container">
-      <h2>Iniciar Sesión</h2>
+    <div className="auth-fixed">
+      <div className="auth-container">
+        <h2>Iniciar Sesión</h2>
 
-      {error && (
-        <p className="error" role="alert" style={{ whiteSpace: 'pre-line' }}>
-          {error}
+        {error && (
+          <p className="error" role="alert" style={{ whiteSpace: 'pre-line' }}>
+            {error}
 
-          {remainingSeconds > 0 && (
-            <span>
-              {'\n'}Puedes intentarlo nuevamente en{' '}
-              <strong>{remainingSeconds} s</strong>.
-            </span>
-          )}
-        </p>
-      )}
+            {remainingSeconds > 0 && (
+              <span>
+                {'\n'}Puedes intentarlo nuevamente en{' '}
+                <strong>{remainingSeconds} s</strong>.
+              </span>
+            )}
+          </p>
+        )}
 
-      <form onSubmit={handleLogin}>
-        <div>
-          <label htmlFor="login-identifier">Correo o usuario</label>
+        <form onSubmit={handleLogin}>
+          <div>
+            <label htmlFor="login-identifier">Correo o usuario</label>
 
-          <input
-            id="login-identifier"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="usuario@ejemplo.com"
-            autoComplete="username"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="login-password">Contraseña</label>
-
-          <div className="password-wrapper">
             <input
-              id="login-password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••"
-              autoComplete="current-password"
+              id="login-identifier"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="usuario@ejemplo.com"
+              autoComplete="username"
               required
             />
-
-            <button
-              type="button"
-              className="eye-icon"
-              onClick={() => setShowPassword((previous) => !previous)}
-              aria-label={
-                showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
-              }
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
           </div>
-        </div>
 
-        <button type="submit" disabled={remainingSeconds > 0}>
-          {remainingSeconds > 0 ? `Bloqueado (${remainingSeconds}s)` : 'Entrar'}
-        </button>
-      </form>
+          <div>
+            <label htmlFor="login-password">Contraseña</label>
 
-      <p>
-        <button type="button" onClick={onNavigateToForgotPassword}>
-          ¿Olvidaste tu contraseña?
-        </button>
-      </p>
+            <div className="password-wrapper">
+              <input
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••"
+                autoComplete="current-password"
+                required
+              />
 
-      <p>
-        ¿No tienes cuenta?{' '}
-        <button type="button" onClick={onNavigateToRegister}>
-          Regístrate
-        </button>
-      </p>
+              <button
+                type="button"
+                className="eye-icon"
+                onClick={() => setShowPassword((previous) => !previous)}
+                aria-label={
+                  showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                }
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" disabled={remainingSeconds > 0}>
+            {remainingSeconds > 0 ? `Bloqueado (${remainingSeconds}s)` : 'Entrar'}
+          </button>
+        </form>
+
+        <p>
+          <button type="button" onClick={onNavigateToForgotPassword}>
+            ¿Olvidaste tu contraseña?
+          </button>
+        </p>
+
+        <p>
+          ¿No tienes cuenta?{' '}
+          <button type="button" onClick={onNavigateToRegister}>
+            Regístrate
+          </button>
+        </p>
+      </div>
     </div>
   );
 }

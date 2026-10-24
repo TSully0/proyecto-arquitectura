@@ -18,7 +18,8 @@ import { CategoryNav } from '../components/home/CategoryNav';
 import { Sidebar } from '../components/home/Sidebar';
 import { FacebookFeed } from '../components/home/FacebookFeed';
 import { ReviewModal } from '../components/home/ReviewModal';
-import { AdminPanelModal } from '../components/home/AdminPanelModal';
+// Estilos globales de modales que otras ventanas siguen usando (antes los cargaba AdminPanelModal).
+import '../../styles/admin/admin-modal.css';
 import { Footer } from '../components/home/Footer';
 
 interface HomePageProps {
@@ -35,10 +36,6 @@ export function HomePage({ user, onLogout }: HomePageProps) {
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [adminModal, setAdminModal] = useState<{ isOpen: boolean; type: 'admin' | 'moderator' }>({
-    isOpen: false,
-    type: 'admin'
-  });
 
   // Notificaciones interactivas
   const [notifications, setNotifications] = useState<NotificationItem[]>([
@@ -244,7 +241,6 @@ export function HomePage({ user, onLogout }: HomePageProps) {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onCreateReview={() => setIsReviewModalOpen(true)}
-        onOpenAdmin={(type) => setAdminModal({ isOpen: true, type })}
         notifications={notifications}
         onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
         onLogoClick={() => {
@@ -317,14 +313,6 @@ export function HomePage({ user, onLogout }: HomePageProps) {
         places={places}
         onSubmitReview={handleSubmitReview}
         onSubmit={handleRecommendPlace}
-      />
-
-      {/* Admin / Moderator Modal */}
-      <AdminPanelModal
-        isOpen={adminModal.isOpen}
-        type={adminModal.type}
-        user={user}
-        onClose={() => setAdminModal({ ...adminModal, isOpen: false })}
       />
     </div>
   );

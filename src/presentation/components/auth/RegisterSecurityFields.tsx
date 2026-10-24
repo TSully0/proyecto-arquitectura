@@ -1,4 +1,5 @@
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { PasswordStrengthMeter } from './PasswordStrengthMeter';
 
 interface RegisterSecurityFieldsProps {
   password: string;
@@ -69,31 +70,10 @@ export function RegisterSecurityFields({
           Se recomienda combinar mayúsculas, minúsculas, números y símbolos.
         </small>
 
-        <div
-          className="register-strength-bars"
-          aria-label={`Seguridad de la contraseña: ${strengthLabel}`}
-        >
-          {[1, 2, 3].map((level) => (
-            <div
-              key={level}
-              className="register-strength-bar"
-              style={{
-                background:
-                  strength >= level
-                    ? level === 1
-                      ? '#ef4444'
-                      : level === 2
-                        ? '#f59e0b'
-                        : '#10b981'
-                    : '#e5e7eb'
-              }}
-            />
-          ))}
-        </div>
-
-        <small className="register-help">
-          Seguridad: {strengthLabel}
-        </small>
+        <PasswordStrengthMeter
+          strength={strength}
+          strengthLabel={strengthLabel}
+        />
       </div>
 
       <div className="register-field">

@@ -1,13 +1,23 @@
 import { useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { PasswordStrengthMeter } from "../../components/auth/PasswordStrengthMeter";
+import {
+  MIN_PASSWORD_LENGTH,
+  MAX_PASSWORD_LENGTH,
+  getPasswordStrength
+} from "../../../business/services/passwordStrength";
 
 export function ResetPasswordPage({ onFinish }: { onFinish: () => void }) {
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // 🔥 email seguro: se lee una sola vez al crear el estado (sin useEffect)
   const [email] = useState<string | null>(() =>
     localStorage.getItem("reset_email")
   );
+
+  const { strength, strengthLabel } = getPasswordStrength(newPassword);
 
   const findUserIndex = (users: any[], email: string) => {
     return users.findIndex(
@@ -23,8 +33,10 @@ export function ResetPasswordPage({ onFinish }: { onFinish: () => void }) {
       return;
     }
 
-    if (newPassword.trim().length < 4) {
-      setMessage("❌ La contraseña es muy corta");
+    if (newPassword.trim().length < MIN_PASSWORD_LENGTH) {
+      setMessage(
+        `❌ La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`
+      );
       return;
     }
 
@@ -59,36 +71,66 @@ export function ResetPasswordPage({ onFinish }: { onFinish: () => void }) {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-fixed">
+      <div className="auth-container">
 
-      <h2>Nueva contraseña</h2>
+        <h2>Nueva contraseña</h2>
 
-      {message && <p className="success">{message}</p>}
+        {message && <p className="success">{message}</p>}
 
-      {!email ? (
-        <p style={{ color: "red" }}>
-          No hay proceso de recuperación activo
-        </p>
-      ) : (
-        <>
-          <p style={{ fontSize: "13px" }}>
-            Recuperando cuenta de: <b>{email}</b>
+        {!email ? (
+          <p style={{ color: "red" }}>
+            No hay proceso de recuperación activo
           </p>
+        ) : (
+          <>
+            <p style={{ fontSize: "13px" }}>
+              Recuperando cuenta de: <b>{email}</b>
+            </p>
 
-          <label>Nueva contraseña</label>
+            <div className="register-field" style={{ marginBottom: 15 }}>
+              <label htmlFor="reset-password">Nueva contraseña</label>
 
-          <input
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Escribe tu nueva contraseña"
-          />
+              <div className="password-wrapper">
+                <input
+                  id="reset-password"
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Escribe tu nueva contraseña"
+                  autoComplete="new-password"
+                  maxLength={MAX_PASSWORD_LENGTH}
+                />
 
-          <button onClick={handleReset}>
-            Cambiar contraseña
-          </button>
-        </>
-      )}
+                <button
+                  type="button"
+                  className="eye-icon"
+                  onClick={() => setShowPassword((previous) => !previous)}
+                  aria-label={
+                    showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  }
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+
+              <small className="register-help">
+                Entre {MIN_PASSWORD_LENGTH} y {MAX_PASSWORD_LENGTH} caracteres.
+                Se recomienda combinar mayúsculas, minúsculas, números y símbolos.
+              </small>
+
+              <PasswordStrengthMeter
+                strength={strength}
+                strengthLabel={strengthLabel}
+              />
+            </div>
+
+            <button onClick={handleReset}>
+              Cambiar contraseña
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

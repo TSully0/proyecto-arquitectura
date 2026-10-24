@@ -9,7 +9,8 @@ import { AdminRolesPage } from "../pages/admin/AdminRolesPage";
 import { AdminUsersPage } from "../pages/admin/AdminUsersPage";
 import { AdminLayout } from "../pages/admin/AdminLayout";
 import { AdminOverviewPage, AdminActivityPage, AdminReportsPage } from "../pages/admin/AdminSections";
-import { ModerationPage } from "../pages/ModerationPage";
+import { ModerationPage } from "../pages/moderation/ModerationPage";
+import { ModeratorLayout } from "../pages/moderation/ModeratorLayout";
 import { MyProfilePage } from "../pages/MyProfilePage";
 import type { User } from "../../business/types/user";
 import { RoleRoute } from "./RoleRoute";
@@ -172,10 +173,21 @@ const AppRoutes = () => {
         </Route>
 
         {/* =========================
-            MODERACIÓN (solo moderator)
+            PANEL DE MODERACIÓN (solo moderator, menú propio como el del admin)
         ========================= */}
         <Route element={<RoleRoute allowedRoles={["moderator"]} />}>
-          <Route path="/moderacion" element={<ModerationPage />} />
+          <Route
+            path="/moderacion"
+            element={
+              user ? (
+                <ModeratorLayout user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          >
+            <Route index element={<ModerationPage />} />
+          </Route>
         </Route>
 
         {/* =========================

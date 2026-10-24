@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Plataforma web social para descubrir lugares, compartir reseñas y conectar con la comunidad universitaria de Manta, Ecuador.
+  Plataforma web social para descubrir lugares, compartir reseñas y conectar con la comunidad universitaria y local de Manta, Manabí, Ecuador.
 </p>
 
 <p align="center">
@@ -14,315 +14,158 @@
   <img src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white" alt="Vite" />
   <img src="https://img.shields.io/badge/React_Router-CA4245?logo=reactrouter&logoColor=white" alt="React Router" />
   <img src="https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white" alt="CSS3" />
-  <img src="https://img.shields.io/badge/Frontend-Web-orange" alt="Frontend" />
 </p>
 
 ---
 
 ## 📖 Descripción
 
-**Huecas Manabas – MantaCampus** es una aplicación web desarrollada con React, TypeScript y Vite, orientada al descubrimiento de lugares gastronómicos, turísticos y recreativos de Manta, Manabí, Ecuador.
+**Huecas Manabas – MantaCampus** es una aplicación web desarrollada con React, TypeScript y Vite. Su objetivo es facilitar el descubrimiento de lugares gastronómicos, turísticos y recreativos de Manta, además de ofrecer funciones sociales para compartir experiencias con la comunidad.
 
-La plataforma busca conectar a la comunidad universitaria y local mediante una experiencia social en la que los usuarios pueden explorar lugares, consultar publicaciones, compartir reseñas y acceder a distintas funcionalidades comunitarias.
+El frontend incluye módulos para autenticación, perfiles, publicaciones y reseñas, mensajería, notificaciones, administración y moderación. La aplicación está organizada por capas para separar la presentación, las reglas de negocio y el acceso a los datos.
 
-El frontend incorpora módulos de autenticación, perfiles de usuario, mensajería, notificaciones, moderación de contenido y administración de cuentas.
-
-La arquitectura organiza el código en capas de presentación, negocio y datos, separando las interfaces visuales, las reglas de negocio y los mecanismos de acceso a la información.
-
-**Tipo de proyecto:** aplicación web frontend.
+> **Estado actual:** el frontend continúa en desarrollo. Algunas funciones utilizan `localStorage` o datos locales de prueba. El backend y la persistencia centralizada en una base de datos todavía deben completarse y verificarse. La existencia de `src/data/supabase.ts` no significa, por sí sola, que Supabase esté conectado o que todos los módulos lo utilicen.
 
 ## 🎯 Objetivos
 
 - Promover el descubrimiento de huecas manabas, restaurantes y lugares turísticos.
 - Facilitar el intercambio de recomendaciones y experiencias.
-- Proporcionar funcionalidades sociales para publicaciones, comentarios y reseñas.
-- Gestionar la navegación de acuerdo con los roles de usuario.
+- Ofrecer interfaces para publicaciones, comentarios y reseñas.
+- Organizar la navegación según los roles de usuario.
 - Incorporar herramientas de administración y moderación.
-- Ofrecer una interfaz adaptable a computadoras, tabletas y dispositivos móviles.
-- Mantener una arquitectura modular que facilite el mantenimiento y la integración con servicios externos.
+- Mantener una interfaz adaptable a computadoras, tabletas y móviles.
+- Facilitar el mantenimiento y la futura integración con un backend y una base de datos.
 
----
+## ✨ Funcionalidades del frontend
 
-## ✨ Funcionalidades
-
-### 🏠 1. Inicio y feed social
-
-- Visualización de publicaciones sobre lugares y experiencias.
-- Presentación de lugares mediante tarjetas informativas.
+### 🏠 Inicio y exploración
+- Feed social y tarjetas de lugares.
 - Navegación por categorías.
-- Acceso a las secciones principales de la aplicación.
-- Interacción con los componentes sociales disponibles.
+- Secciones para comida típica, entretenimiento, playas, naturaleza, lugares históricos y actividades locales.
+- Referencias a lugares como Playa Murciélago, Mall del Pacífico, Tarqui, ULEAM, Centro de Manta y San Mateo.
 
-### 🍔 2. Exploración por categorías
+### ⭐ Publicaciones, comentarios y reseñas
+- Componentes de presentación para publicaciones y lugares.
+- Interfaces para comentarios y reseñas.
+- Elementos para consultar y compartir experiencias.
+- La persistencia y sincronización de estas interacciones dependen de la implementación de cada módulo.
 
-La aplicación contempla categorías relacionadas con las experiencias que ofrece Manta:
+### 🔐 Registro, inicio y recuperación de contraseña
+- Páginas de registro e inicio de sesión.
+- Validaciones de formularios y reglas para los datos de registro.
+- Indicador visual de fortaleza de contraseña mediante `PasswordStrengthMeter.tsx`.
+- Flujos de recuperación y restablecimiento de contraseña.
+- Contexto de autenticación en `AuthContext.tsx`.
 
-- Comida típica y huecas manabas.
-- Cines y entretenimiento.
-- Naturaleza y playas.
-- Lugares históricos.
-- Deportes extremos.
-- Actividades y experiencias locales.
+**Importante:** mientras se utilicen mecanismos locales, estos flujos son una implementación de frontend y no equivalen a autenticación segura en un servidor. La recuperación real debe utilizar un servicio de autenticación, tokens seguros y un mecanismo de envío de correo. No se deben almacenar contraseñas en texto plano ni confiar en validaciones exclusivamente del navegador.
 
-### 🗺️ 3. Lugares y ubicaciones
+### 👤 Perfil y comunidad
+- Visualización del perfil.
+- Edición del nombre y gestión de la foto de perfil.
+- Publicaciones, estadísticas y secciones de comunidad.
+- Componentes y hooks para seguir usuarios.
 
-La plataforma está orientada a descubrir sitios destacados de Manta y sus alrededores, entre ellos:
+### 🛡️ Administración
+El frontend contiene páginas y componentes para organizar:
+- Vista general del panel.
+- Gestión de usuarios y roles.
+- Actividad administrativa.
+- Reportes.
+- Sanciones y herramientas relacionadas.
 
-- Playa Murciélago.
-- Mall del Pacífico.
-- Tarqui.
-- Universidad Laica Eloy Alfaro de Manabí (ULEAM).
-- Centro de Manta.
-- San Mateo.
+La disponibilidad real de cada acción debe verificarse en el código y en las rutas registradas. Las acciones sensibles deben autorizarse en el backend cuando se implemente.
 
-La consulta de ubicaciones y la apertura de mapas dependen de los enlaces y las integraciones disponibles en cada módulo.
+### 🧑‍⚖️ Moderación
+- Página de moderación y layout para el rol moderador.
+- Estilos específicos para el módulo.
+- Organización de la interfaz para revisar contenido y ejecutar las acciones que estén implementadas.
 
-### ⭐ 4. Comentarios y reseñas
+### 💬 Chat y notificaciones
+- Componentes para conversaciones, mensajes y composición de mensajes.
+- Vista previa de archivos adjuntos y contenido multimedia.
+- Presentación de enlaces.
+- Componente desplegable de notificaciones.
 
-- Interfaces para consultar y registrar comentarios.
-- Presentación de opiniones y experiencias de visita.
-- Calificaciones mediante estrellas, según el módulo.
-- Componentes para revisar el contenido comunitario.
-- Acceso a las herramientas de moderación disponibles.
+La entrega de mensajes, las notificaciones entre usuarios y la sincronización entre dispositivos requieren almacenamiento y servicios compartidos; no deben considerarse funciones remotas completas hasta verificar su integración.
 
-### 🔐 5. Autenticación y gestión de cuentas
+### 📱 Diseño adaptable
+Los estilos están separados por módulos: autenticación, inicio, perfil, chat, administración, moderación y componentes de interfaz reutilizables.
 
-El proyecto dispone de páginas y componentes para gestionar los flujos de acceso:
+## 🧰 Tecnologías
 
-- Inicio de sesión.
-- Registro de usuarios.
-- Validación de formularios.
-- Validación de correo electrónico y contraseñas.
-- Recuperación de contraseña.
-- Restablecimiento de contraseña.
-- Navegación entre formularios de autenticación.
-- Gestión del estado de autenticación mediante `AuthContext.tsx`.
-
-La implementación de los formularios y la gestión de sesión del frontend no sustituyen un sistema de autenticación seguro en el servidor. La recuperación de credenciales y las operaciones sensibles deben validarse mediante un servicio de autenticación adecuado.
-
-### 👤 6. Perfil de usuario
-
-- Consulta de la información del perfil.
-- Edición del nombre mediante componentes específicos.
-- Gestión de fotografías de perfil.
-- Visualización de publicaciones y estadísticas disponibles.
-- Listados y secciones relacionados con la comunidad.
-- Funciones para seguir usuarios.
-- Acceso condicionado por las reglas de navegación implementadas.
-
-### 🛡️ 7. Panel administrativo
-
-El módulo administrativo está organizado en páginas y componentes especializados para facilitar la gestión de la plataforma.
-
-Entre sus funcionalidades se contemplan:
-
-- Vista general del panel administrativo.
-- Gestión y consulta de usuarios.
-- Administración de roles.
-- Consulta de actividad administrativa.
-- Visualización de reportes.
-- Aplicación y levantamiento de sanciones.
-- Registro de motivos de sanción.
-- Gestión de suspensiones, según la implementación disponible.
-
-Las acciones administrativas deben contar con controles de autorización en el backend cuando se integren servicios remotos.
-
-### 🧑‍⚖️ 8. Moderación de contenido
-
-La página `ModerationPage.tsx` está destinada a las funciones de moderación comunitaria.
-
-El módulo contempla la organización de herramientas para:
-
-- Revisar contenido comunitario.
-- Gestionar reseñas y publicaciones según los permisos disponibles.
-- Consultar elementos que requieren revisión.
-- Aplicar las acciones de moderación implementadas.
-
-La disponibilidad de cada operación depende de la lógica presente en el módulo y de la conexión con el sistema de datos.
-
-### 🔔 9. Notificaciones
-
-El proyecto incluye `NotificationsDropdown.tsx`, un componente de presentación de notificaciones.
-
-La generación de eventos, la persistencia de las notificaciones y su sincronización dependen de la lógica y los servicios conectados.
-
-### 💬 10. Chat y mensajería
-
-La aplicación incorpora un conjunto de componentes para la experiencia de mensajería:
-
-- Ventana de chat.
-- Encabezado de conversación.
-- Visualización de mensajes.
-- Compositor de mensajes.
-- Vista previa de archivos adjuntos.
-- Visualización de contenido multimedia.
-- Detección y presentación de enlaces.
-- Widget de mensajería.
-
-La entrega de mensajes entre usuarios, su persistencia y la sincronización entre dispositivos requieren un mecanismo de almacenamiento y comunicación compartido.
-
-### 📱 11. Diseño adaptable
-
-Las hojas de estilo están organizadas por módulos para facilitar el mantenimiento visual de la aplicación.
-
-Se contemplan estilos específicos para:
-
-- Autenticación y registro.
-- Inicio y feed social.
-- Perfil de usuario.
-- Chat y mensajería.
-- Administración.
-- Moderación.
-- Componentes visuales reutilizables.
-- Avatares y pie de página.
-
----
-
-## 🧰 Tecnologías utilizadas
-
-| Tecnología | Propósito |
+| Tecnología | Uso |
 |---|---|
 | React | Construcción de interfaces mediante componentes. |
-| TypeScript | Tipado estático y organización del código. |
-| Vite | Servidor de desarrollo y compilación para producción. |
-| React Router DOM | Gestión de rutas y navegación. |
-| CSS3 | Diseño, estilos y adaptación a diferentes pantallas. |
-| Lucide React | Iconografía de la interfaz. |
-| React Hooks | Gestión de estado, efectos y ciclo de vida de los componentes. |
-| Context API | Compartición del estado de autenticación mediante `AuthContext.tsx`. |
-| localStorage | Persistencia local utilizada por determinados módulos. |
-| Supabase | Preparación para servicios externos mediante `data/supabase.ts`; la integración efectiva depende de cada módulo. |
+| TypeScript | Tipado estático del código. |
+| Vite | Servidor de desarrollo y compilación. |
+| React Router DOM | Navegación y definición de rutas. |
+| CSS | Estilos y diseño adaptable. |
+| Lucide React | Iconografía, donde se utiliza. |
+| React Hooks y Context API | Estado y lógica reutilizable de la interfaz. |
+| `localStorage` | Persistencia local temporal utilizada por algunos módulos. |
+| Supabase | Hay un archivo de configuración (`src/data/supabase.ts`); la conexión efectiva debe comprobarse. |
 
-> Las tecnologías enumeradas describen la estructura y las herramientas previstas o utilizadas en el frontend. La presencia de un archivo de configuración no implica que todos los servicios estén conectados y funcionando.
+## 🏗️ Arquitectura y estructura
 
----
-
-## 🏗️ Arquitectura del frontend
-
-El proyecto utiliza una organización por capas para separar la presentación, la lógica de negocio y el acceso a los datos.
-
-### 📂 Estructura del proyecto
-
-La siguiente estructura refleja los archivos y directorios identificados en el proyecto:
+El código se organiza en capas y módulos. La siguiente estructura se basa en el árbol de archivos compartido durante el desarrollo; puede cambiar conforme avance el proyecto.
 
 ```text
-proyecto-arquitectura/
-│
-├── src/
-│   │
-│   ├── assets/
-│   │   ├── manta-bg.jpg
-│   │   ├── uleam.png
-│   │   ├── uleam-alter.png
-│   │   ├── react.svg
-│   │   └── vite.svg
-│   │
-│   ├── business/
-│   │   ├── services/
-│   │   │   ├── accountStatus.ts
-│   │   │   ├── imageTools.ts
-│   │   │   ├── loginGuard.ts
-│   │   │   ├── nameChange.ts
-│   │   │   └── registerValidation.ts
-│   │   │
-│   │   └── types/
-│   │       ├── follow.ts
-│   │       ├── place.ts
-│   │       ├── profile.ts
-│   │       └── user.ts
-│   │
-│   ├── data/
-│   │   ├── api/
-│   │   ├── repositories/
-│   │   │   ├── activity.ts
-│   │   │   ├── follow.ts
-│   │   │   ├── followStore.ts
-│   │   │   ├── messages.ts
-│   │   │   ├── places.ts
-│   │   │   ├── profile.ts
-│   │   │   ├── profilePhoto.ts
-│   │   │   └── users.ts
-│   │   └── supabase.ts
-│   │
-│   ├── presentation/
+src/
+├── assets/
+│   ├── manta-bg.jpg
+│   ├── uleam.png
+│   ├── uleam-alter.png
+│   ├── react.svg
+│   └── vite.svg
+├── business/
+│   ├── services/
+│   │   ├── accountStatus.ts
+│   │   ├── imageTools.ts
+│   │   ├── loginGuard.ts
+│   │   ├── nameChange.ts
+│   │   ├── passwordStrength.ts
+│   │   └── registerValidation.ts
+│   └── types/
+│       ├── follow.ts
+│       ├── place.ts
+│       ├── profile.ts
+│       └── user.ts
+├── data/
+│   ├── api/
+│   ├── repositories/
+│   │   ├── activity.ts
+│   │   ├── follow.ts
+│   │   ├── followStore.ts
+│   │   ├── messages.ts
+│   │   ├── places.ts
+│   │   ├── profile.ts
+│   │   ├── profilePhoto.ts
+│   │   └── users.ts
+│   └── supabase.ts
+├── presentation/
+│   ├── auth/
+│   │   └── AuthContext.tsx
+│   ├── components/
+│   │   ├── admin/
 │   │   ├── auth/
-│   │   │   └── AuthContext.tsx
-│   │   │
-│   │   ├── components/
-│   │   │   ├── admin/
-│   │   │   │   ├── admin-utils.ts
-│   │   │   │   ├── FilterTabs.tsx
-│   │   │   │   ├── PageHeader.tsx
-│   │   │   │   ├── RankingTable.tsx
-│   │   │   │   ├── ReportSheet.tsx
-│   │   │   │   ├── SanctionModal.tsx
-│   │   │   │   ├── StatCard.tsx
-│   │   │   │   └── UserCard.tsx
-│   │   │   │
-│   │   │   ├── auth/
-│   │   │   │   ├── RegisterAccountFields.tsx
-│   │   │   │   ├── RegisterActions.tsx
-│   │   │   │   ├── RegisterProgress.tsx
-│   │   │   │   ├── RegisterSecurityFields.tsx
-│   │   │   │   └── RegisterTerms.tsx
-│   │   │   │
-│   │   │   ├── chat/
-│   │   │   │   ├── ChatAttachmentPreview.tsx
-│   │   │   │   ├── ChatBox.tsx
-│   │   │   │   ├── ChatComposer.tsx
-│   │   │   │   ├── ChatHeader.tsx
-│   │   │   │   ├── ChatMediaViewer.tsx
-│   │   │   │   ├── ChatMessages.tsx
-│   │   │   │   ├── LinkifiedText.tsx
-│   │   │   │   └── MessengerWidget.tsx
-│   │   │   │
-│   │   │   ├── home/
-│   │   │   │   ├── AdminPanelModal.tsx
-│   │   │   │   ├── BrandLogo.tsx
-│   │   │   │   ├── CategoryNav.tsx
-│   │   │   │   ├── CommentModal.tsx
-│   │   │   │   ├── FacebookFeed.tsx
-│   │   │   │   ├── Footer.tsx
-│   │   │   │   ├── Header.tsx
-│   │   │   │   ├── NotificationsDropdown.tsx
-│   │   │   │   ├── PlaceCard.tsx
-│   │   │   │   ├── ReviewModal.tsx
-│   │   │   │   └── Sidebar.tsx
-│   │   │   │
-│   │   │   ├── profile/
-│   │   │   │   ├── CommunityList.tsx
-│   │   │   │   ├── CommunitySection.tsx
-│   │   │   │   ├── EditNameModal.tsx
-│   │   │   │   ├── FollowButton.tsx
-│   │   │   │   ├── PostGrid.tsx
-│   │   │   │   ├── ProfileAbout.tsx
-│   │   │   │   ├── ProfileHeader.tsx
-│   │   │   │   ├── ProfilePhotoModal.tsx
-│   │   │   │   ├── ProfilePosts.tsx
-│   │   │   │   ├── ProfileStats.tsx
-│   │   │   ├──   ProfileTypes.ts
-│   │   │   └──   index.ts
-│   │   │   │
-│   │   └──   ui/
-│   │       ├── Avatar.tsx
-│   │       ├── Button.tsx
-│   │       ├── Modal.tsx
-│   │       ├── toast-context.ts
-│   │       ├── ToastProvider.tsx
-│   │       └── UserAvatar.tsx
-│   │
+│   │   │   ├── PasswordStrengthMeter.tsx
+│   │   │   ├── RegisterAccountFields.tsx
+│   │   │   ├── RegisterActions.tsx
+│   │   │   ├── RegisterProgress.tsx
+│   │   │   ├── RegisterSecurityFields.tsx
+│   │   │   └── RegisterTerms.tsx
+│   │   ├── chat/
+│   │   ├── home/
+│   │   ├── profile/
+│   │   └── ui/
 │   ├── hooks/
 │   │   ├── useFollows.ts
 │   │   ├── useMyProfile.ts
 │   │   └── useProfilePhoto.ts
-│   │
 │   ├── layouts/
-│   │
 │   ├── pages/
 │   │   ├── HomePage.tsx
-│   │   ├── ModerationPage.tsx
 │   │   ├── MyProfilePage.tsx
-│   │   │
 │   │   ├── admin/
 │   │   │   ├── AdminActivityPage.tsx
 │   │   │   ├── AdminLayout.tsx
@@ -331,157 +174,88 @@ proyecto-arquitectura/
 │   │   │   ├── AdminRolesPage.tsx
 │   │   │   ├── AdminSections.tsx
 │   │   │   └── AdminUsersPage.tsx
-│   │   │
-│   │   └── auth/
-│   │       ├── ForgotPasswordPage.tsx
-│   │       ├── LoginPage.tsx
-│   │       ├── RegisterPage.tsx
-│   │       └── ResetPasswordPage.tsx
-│   │
-│   ├── routes/
-│   │   ├── AppRouter.tsx
-│   │   ├── index.ts
-│   │   └── RoleRoute.tsx
-│   │
-│   ├── styles/
-│   │   ├── admin/
-│   │   │   ├── admin-dashboard.css
-│   │   │   ├── admin-modal.css
-│   │   │   └── admin-users.css
 │   │   ├── auth/
-│   │   │   ├── auth-register.css
-│   │   │   └── auth.css
-│   │   ├── chat/
-│   │   │   └── chat.css
-│   │   ├── home/
-│   │   │   └── home.css
-│   │   ├── moderation/
-│   │   │   └── moderation.css
-│   │   ├── profile/
-│   │   │   └── profile.css
-│   │   └── ui/
-│   │       ├── avatar.css
-│   │       ├── footer.css
-│   │       └── ui.css
-│   │
-│   ├── App.css
-│   ├── App.tsx
-│   ├── index.css
-│   └── main.tsx
-│
-├── index.html
-├── package.json
-├── package-lock.json
-├── tsconfig.json
-├── vite.config.ts
-└── README.md
+│   │   │   ├── ForgotPasswordPage.tsx
+│   │   │   ├── LoginPage.tsx
+│   │   │   ├── RegisterPage.tsx
+│   │   │   └── ResetPasswordPage.tsx
+│   │   └── moderation/
+│   │       ├── ModerationPage.tsx
+│   │       └── ModeratorLayout.tsx
+│   └── routes/
+│       ├── AppRouter.tsx
+│       ├── index.ts
+│       └── RoleRoute.tsx
+├── styles/
+│   ├── admin/
+│   │   ├── admin-dashboard.css
+│   │   ├── admin-modal.css
+│   │   └── admin-users.css
+│   ├── auth/
+│   │   ├── auth-register.css
+│   │   └── auth.css
+│   ├── chat/
+│   │   └── chat.css
+│   ├── home/
+│   │   └── home.css
+│   ├── moderation/
+│   │   ├── moderation-panel.css
+│   │   └── moderation.css
+│   ├── profile/
+│   │   └── profile.css
+│   └── ui/
+│       ├── avatar.css
+│       ├── footer.css
+│       └── ui.css
+├── App.css
+├── App.tsx
+├── index.css
+└── main.tsx
 ```
 
-> **Nota:** la estructura se basa en el listado de archivos proporcionado durante el desarrollo. Conviene verificar los nombres y la ubicación exactos antes de actualizarla si se reorganizan carpetas. Los directorios vacíos, como `presentation/layouts/` y `data/api/`, se mantienen porque forman parte de la estructura actual.
+### Responsabilidad de las capas
 
-### 🧩 Responsabilidades de las capas
+- **`presentation/`:** páginas, componentes, formularios, layouts y navegación.
+- **`business/`:** tipos, validaciones y reglas de negocio.
+- **`data/`:** repositorios y preparación del acceso a fuentes de datos.
+- **`hooks/`:** lógica reutilizable de React.
+- **`styles/`:** hojas de estilo globales y por módulo.
+- **`assets/`:** imágenes y otros recursos gráficos.
 
-**Presentation**
+`AppRouter.tsx` define la navegación y `RoleRoute.tsx` permite aplicar restricciones de acceso desde el frontend. Estas restricciones mejoran el flujo de la interfaz, pero no reemplazan la autorización del servidor.
 
-Contiene las páginas, los componentes visuales, los formularios, los elementos reutilizables y las interfaces de usuario.
+## 👥 Roles previstos
 
-**Business**
+- **Administrador (`admin`):** gestión administrativa, usuarios, roles y reportes, según las funciones habilitadas.
+- **Moderador (`moderator`):** revisión y moderación de contenido, según sus permisos.
+- **Usuario (`user`):** exploración de lugares y participación en las funciones comunitarias disponibles.
 
-Agrupa los tipos y servicios que contienen reglas de negocio, validaciones y operaciones auxiliares, como la gestión del estado de una cuenta y la validación del registro.
+Los roles guardados en el navegador no son una fuente confiable de autorización. El backend debe comprobar la identidad y los permisos de cada operación protegida.
 
-**Data**
+## 🧭 Rutas
 
-Contiene los repositorios que gestionan el acceso y la persistencia de la información, además del archivo de configuración de Supabase.
+Las rutas exactas deben confirmarse en `src/presentation/routes/AppRouter.tsx`. El proyecto contiene páginas para los siguientes flujos:
 
-**Hooks**
+| Página o flujo | Archivo relacionado |
+|---|---|
+| Inicio | `presentation/pages/HomePage.tsx` |
+| Inicio de sesión | `presentation/pages/auth/LoginPage.tsx` |
+| Registro | `presentation/pages/auth/RegisterPage.tsx` |
+| Recuperación de contraseña | `presentation/pages/auth/ForgotPasswordPage.tsx` |
+| Restablecimiento de contraseña | `presentation/pages/auth/ResetPasswordPage.tsx` |
+| Perfil | `presentation/pages/MyProfilePage.tsx` |
+| Administración | `presentation/pages/admin/` |
+| Moderación | `presentation/pages/moderation/` |
 
-Centraliza lógica reutilizable de React relacionada con perfiles, seguimientos y fotografías de usuario.
-
-**Routes**
-
-Define la navegación de la aplicación y las reglas de acceso a las rutas mediante los componentes de enrutamiento.
-
-**Styles**
-
-Organiza las hojas de estilo globales y específicas de cada módulo para reducir el acoplamiento entre las interfaces.
-
-**Assets**
-
-Almacena imágenes y recursos gráficos utilizados por la aplicación.
-
-### 🔐 Gestión de autenticación y rutas
-
-`AuthContext.tsx` centraliza el contexto de autenticación para que los componentes que lo consumen puedan acceder al estado de sesión compartido.
-
-`AppRouter.tsx` organiza las rutas y conecta las páginas con el sistema de navegación.
-
-`RoleRoute.tsx` permite aplicar restricciones de acceso según las reglas de roles definidas en el frontend.
-
-Esta separación ayuda a evitar que cada página implemente por separado toda la lógica de sesión y navegación.
-
-**Importante:** la protección de rutas en React es un control de interfaz, no una barrera de seguridad suficiente. El backend debe validar la identidad, los permisos y cada operación protegida.
-
-### 🛡️ Organización del módulo administrativo
-
-El módulo administrativo se encuentra en `presentation/pages/admin/` y utiliza componentes reutilizables de `presentation/components/admin/`.
-
-Entre sus responsabilidades están la visualización de estadísticas, la gestión de usuarios, los roles, los reportes y la actividad administrativa.
-
-`AdminLayout.tsx` proporciona la estructura visual del área administrativa. Por su parte, `presentation/layouts/` permanece disponible para futuros layouts compartidos entre páginas.
-
----
-
-## 🧭 Rutas de navegación
-
-Las páginas existentes permiten organizar los siguientes flujos. La disponibilidad efectiva de cada URL debe comprobarse en `src/presentation/routes/AppRouter.tsx`.
-
-| Ruta prevista | Descripción | Acceso previsto |
-|---|---|---|
-| `/` | Inicio y feed social | Usuario autenticado |
-| `/login` | Inicio de sesión | Público |
-| `/register` | Registro de usuarios | Público |
-| `/forgot-password` | Recuperación de contraseña | Público |
-| `/reset-password` | Restablecimiento de contraseña | Público |
-| `/perfil` | Perfil de usuario | Según las reglas implementadas |
-| `/moderacion` | Panel de moderación | Moderador autorizado |
-| `/admin` | Panel administrativo | Administrador |
-| `/admin/users` | Gestión de usuarios | Administrador |
-| `/admin/roles` | Gestión de roles | Administrador |
-| `/admin/activity` | Actividad administrativa | Administrador |
-| `/admin/reports` | Reportes | Administrador |
-
-> Las rutas de esta tabla representan el esquema de navegación previsto para el proyecto. Que exista una página o un componente no garantiza que su URL esté registrada actualmente ni que todas sus acciones estén conectadas a un backend.
-
----
-
-## 👥 Roles de usuario
-
-La aplicación contempla tres roles principales:
-
-### Administrador — `admin`
-
-Orientado a la administración de usuarios, roles, reportes y otras funciones administrativas autorizadas.
-
-### Moderador — `moderator`
-
-Orientado a la revisión y gestión del contenido comunitario, dentro de los permisos asignados.
-
-### Usuario — `user`
-
-Orientado a la exploración de lugares, la participación en la comunidad y las funciones sociales habilitadas.
-
-Los roles y permisos deben comprobarse tanto en la navegación del frontend como en el servidor cuando se integren operaciones protegidas.
-
----
+La existencia de una página no garantiza que una URL concreta esté registrada ni que todas sus operaciones estén conectadas a servicios remotos.
 
 ## ⚙️ Instalación y ejecución
 
-### Requisitos previos
-
-- Node.js en una versión compatible con las dependencias del proyecto.
+### Requisitos
+- Node.js compatible con las dependencias del proyecto.
 - npm.
-- Git, si se va a clonar el repositorio.
-- Visual Studio Code u otro editor compatible.
+- Git (opcional, para clonar el repositorio).
+- Un editor como Visual Studio Code.
 
 ### 1. Clonar el repositorio
 
@@ -490,11 +264,9 @@ git clone <URL_DEL_REPOSITORIO>
 cd proyecto-arquitectura
 ```
 
-Sustituye `<URL_DEL_REPOSITORIO>` por la URL real del repositorio.
+Reemplaza `<URL_DEL_REPOSITORIO>` por la dirección real del repositorio.
 
 ### 2. Instalar dependencias
-
-Ejecuta el siguiente comando en el directorio donde se encuentra `package.json`:
 
 ```bash
 npm install
@@ -506,17 +278,15 @@ npm install
 npm run dev
 ```
 
-Vite mostrará en la terminal la dirección local para abrir la aplicación. Habitualmente es:
+Abre la dirección local que muestre Vite en la terminal (normalmente `http://localhost:5173`).
 
-`http://localhost:5173`
-
-### 4. Generar la compilación de producción
+### 4. Comprobar y compilar
 
 ```bash
 npm run build
 ```
 
-En la configuración actual, este comando ejecuta la comprobación de TypeScript mediante `tsc -b` y después genera la compilación de producción con Vite.
+Según la configuración compartida del proyecto, este comando ejecuta `tsc -b` y luego `vite build`. Debe finalizar correctamente antes de considerar validada la compilación.
 
 ### 5. Previsualizar la compilación
 
@@ -524,99 +294,58 @@ En la configuración actual, este comando ejecuta la comprobación de TypeScript
 npm run preview
 ```
 
-Este comando permite revisar localmente el resultado de la compilación.
+## 🧪 Pruebas recomendadas
 
----
+Antes de dar por terminado un cambio, comprobar:
 
-## 🧪 Validación y pruebas
-
-Durante el desarrollo se recomienda comprobar los siguientes escenarios:
-
-- Registro con información válida e inválida.
+- Registro con datos válidos e inválidos.
 - Validación de correo y contraseña.
+- Indicador de fortaleza de contraseña.
 - Inicio y cierre de sesión.
-- Persistencia y recuperación del estado de autenticación.
+- Recuperación y restablecimiento de contraseña.
 - Navegación entre páginas públicas y privadas.
-- Acceso a rutas según los roles.
-- Restricciones del área administrativa.
+- Acceso a las áreas de administración y moderación según el rol.
 - Gestión de usuarios, roles y sanciones.
-- Acciones de moderación.
-- Edición del perfil y gestión de fotografías.
-- Envío y visualización de mensajes.
-- Visualización de notificaciones.
-- Comportamiento adaptable en dispositivos móviles.
+- Perfil, fotografías y seguimiento de usuarios.
+- Publicaciones, comentarios y reseñas.
+- Chat y notificaciones.
+- Diseño en pantallas pequeñas.
 - Manejo de errores y estados de carga.
-- Compilación de producción con `npm run build`.
+- Resultado de `npm run build`.
 
-Si el proyecto incorpora pruebas automatizadas, deben ejecutarse mediante el script correspondiente definido en `package.json`.
+No se incluye aquí un resultado de compilación actual: ejecuta el comando después de tus últimos cambios para verificar el estado real del proyecto.
 
-### Última compilación comprobada
+## 🚧 Estado actual y próximos pasos
 
-En la salida compartida durante el desarrollo, `npm run build` terminó correctamente.
-
-| Elemento | Resultado |
-|---|---:|
-| Herramienta de compilación | Vite 8.3.0 |
-| Módulos transformados | 2030 |
-| CSS generado | 99.06 kB |
-| JavaScript generado | 630.73 kB |
-| Resultado | Compilación exitosa |
-
-Estos valores corresponden a la compilación reportada y pueden cambiar con futuras modificaciones.
-
-El archivo JavaScript generado tiene un tamaño considerable, por lo que conviene evaluar la carga diferida de páginas y la división del código en módulos cuando se optimice el rendimiento.
-
----
-
-## 🚧 Estado actual del proyecto
-
-MantaCampus se encuentra en desarrollo incremental. El estado de cada funcionalidad depende de su implementación específica y de las integraciones disponibles.
-
-| Área | Estado documentado |
+| Área | Estado que puede afirmarse a partir de la estructura compartida |
 |---|---|
-| React y TypeScript | Configurados |
-| Vite y compilación | Configurados; última compilación compartida exitosa |
-| Organización por capas | Implementada en la estructura del frontend |
-| Contexto de autenticación | Existe `AuthContext.tsx` |
-| Enrutamiento | Existe `AppRouter.tsx` |
-| Protección por roles | Existe `RoleRoute.tsx` |
-| Formularios de autenticación | Páginas y componentes disponibles |
-| Feed y categorías | Componentes disponibles |
-| Perfil de usuario | Página, hooks y componentes disponibles |
-| Administración | Páginas y componentes disponibles |
-| Moderación | Página y estilos disponibles |
-| Chat | Componentes y repositorio de mensajes disponibles |
-| Notificaciones | Componente de interfaz disponible |
-| Persistencia de datos | Repositorios implementados; el mecanismo varía según el módulo |
-| Integración con Supabase | Existe `data/supabase.ts`; debe verificarse la conexión efectiva |
-| Backend y autorización segura | Requieren validación según las integraciones implementadas |
+| React, TypeScript y Vite | Configurados en el proyecto. |
+| Organización por capas | Estructura de carpetas implementada. |
+| Autenticación y formularios | Existen páginas, componentes y contexto; la seguridad depende de la implementación. |
+| Fortaleza de contraseña | Existe servicio y componente visual. |
+| Administración y moderación | Existen páginas, componentes y estilos; se deben probar las acciones y rutas. |
+| Persistencia local | Algunos módulos utilizan `localStorage` o repositorios locales. |
+| Supabase | Existe `src/data/supabase.ts`; falta confirmar la conexión efectiva y su uso por los módulos. |
+| Backend y base de datos centralizada | Pendiente de completar y verificar. |
+| Autorización segura en el servidor | Necesaria para proteger operaciones sensibles. |
 
-La presencia de componentes, páginas o repositorios no garantiza por sí sola que todas las funcionalidades estén terminadas, que los datos se compartan entre usuarios o que exista persistencia remota.
+### Mejoras previstas
 
----
-
-## 🛣️ Mejoras previstas
-
-- Centralizar el consumo de servicios externos mediante una capa de API.
-- Completar la integración entre los repositorios y el backend.
-- Consolidar la gestión de sesión y los estados de autenticación.
-- Validar permisos y operaciones sensibles en el servidor.
-- Mejorar el manejo de errores, las notificaciones y los estados de carga.
-- Incorporar pruebas automatizadas para componentes, rutas y flujos de usuario.
-- Mejorar la accesibilidad y la navegación con teclado.
-- Optimizar la carga de imágenes y dividir el código para reducir el JavaScript inicial.
-- Revisar la persistencia y sincronización de mensajes, notificaciones y sanciones.
-- Mantener una presentación visual coherente entre inicio, perfil, administración y moderación.
-- Ampliar las pruebas en diferentes tamaños de pantalla.
-
----
+1. Verificar el estado de compilación y corregir errores.
+2. Definir el modelo de datos y la estrategia de autenticación.
+3. Conectar los repositorios a Supabase o al backend que se elija.
+4. Migrar progresivamente la persistencia desde `localStorage` hacia servicios compartidos.
+5. Implementar recuperación de contraseña mediante un flujo seguro.
+6. Validar roles y permisos en el servidor.
+7. Añadir pruebas automatizadas y mejorar el manejo de errores.
+8. Optimizar carga de imágenes, accesibilidad y división del código.
 
 ## 👨‍💻 Información académica
 
-**Proyecto:** Huecas Manabas – MantaCampus  
-**Institución:** Universidad Laica Eloy Alfaro de Manabí (ULEAM)  
-**Área:** Desarrollo de Software / Arquitectura de Software  
-**Ubicación:** Manta, Manabí, Ecuador 🇪🇨
+- **Proyecto:** Huecas Manabas – MantaCampus
+- **Institución:** Universidad Laica Eloy Alfaro de Manabí (ULEAM)
+- **Área:** Desarrollo de Software / Arquitectura de Software
+- **Ubicación:** Manta, Manabí, Ecuador 🇪🇨
 
 ---
 

@@ -1,0 +1,91 @@
+/* ====== PANEL DE MODERACIÓN ======
+   Usa el diseño del panel de admin (admin-dashboard.css) y solo añade
+   lo propio de las reseñas. Todas las clases empiezan con "mod-". */
+
+.mod-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-page .mod-toolbar h2 {
+  margin: 0;
+}
+
+.mod-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.mod-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.mod-card.approved {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.mod-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mod-card-head strong,
+.mod-card-head span {
+  display: block;
+}
+
+.mod-card-head strong {
+  color: #292421;
+  font-size: 14px;
+}
+
+.mod-status {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.mod-status.ok {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.mod-avatar {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2C6E91, #A75F37);
+  color: #fff;
+  font-weight: 800;
+}
+
+.admin-page .mod-text {
+  margin: 0;
+  color: #3f3f46;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.mod-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}

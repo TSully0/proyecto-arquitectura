@@ -39,12 +39,31 @@ body {
 /* CONTENEDOR DE AUTENTICACIÓN */
 .auth-container {
   width: min(420px, calc(100% - 24px));
-  margin: 60px auto;
+  margin: 20px auto;
   padding: 35px;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(5px);
+}
+
+/* LOGIN FIJO: ocupa la ventana, sin scroll de página.
+   Solo aparece scroll interno si la ventana es demasiado baja. */
+html:has(.auth-fixed),
+html:has(.auth-fixed) body {
+  overflow: hidden;
+}
+
+.auth-fixed {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  padding: 20px 0;
+  overflow-y: auto;
+}
+
+.auth-fixed > .auth-container {
+  margin: auto;
 }
 
 /* TÍTULOS */
@@ -151,6 +170,41 @@ body {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
+/* CASILLAS DE CÓDIGO (6 dígitos) */
+.auth-container .otp-group {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 8px 0 20px;
+}
+
+.auth-container .otp-input {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 52px;
+  height: 56px;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  caret-color: var(--primary);
+}
+
+.auth-container .otp-input.filled {
+  border-color: var(--primary);
+  background: #fff;
+}
+
+/* BOTÓN DESHABILITADO */
+.auth-container button:disabled,
+.auth-container button:disabled:hover {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* MENSAJES */
 .auth-container .error {
   margin: 0 0 10px;
@@ -230,7 +284,7 @@ body {
   .auth-container {
     width: calc(100% - 24px);
     max-width: 420px;
-    margin: 20px auto;
+    margin: 12px auto;
     padding: 22px 18px;
   }
 
