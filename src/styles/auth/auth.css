@@ -274,6 +274,118 @@ html:has(.auth-fixed) body {
   text-decoration: underline;
 }
 
+/* AVISO DE CUENTA SUSPENDIDA (login) */
+.auth-container .suspension-notice {
+  margin: 0 0 18px;
+  padding: 16px;
+  text-align: left;
+  background: #fff8e6;
+  border: 1px solid #f3d9a4;
+  border-left: 5px solid #f59e0b;
+  border-radius: 12px;
+}
+
+.auth-container .suspension-title {
+  margin: 0 0 10px;
+  color: #92400e;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.auth-container .suspension-tag {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.auth-container .suspension-reason,
+.auth-container .suspension-duration {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.auth-container .suspension-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #f3d9a4;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.auth-container .suspension-countdown span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.auth-container .suspension-countdown strong {
+  color: #92400e;
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+
+.auth-container .suspension-countdown small {
+  color: #a69a8d;
+  font-size: 11px;
+}
+
+/* AVISO DE SUSPENSIÓN TERMINADA (variante verde) */
+.auth-container .lifted-notice {
+  background: #f0fdf4;
+  border-color: #b7e4c7;
+  border-left-color: #16a34a;
+}
+
+.auth-container .lifted-notice .suspension-title {
+  margin-bottom: 6px;
+  color: #166534;
+}
+
+.auth-container .lifted-notice .suspension-reason {
+  margin-bottom: 0;
+  color: #3f6b4f;
+}
+
+/* AVISO DE CUENTA BANEADA (variante roja del aviso de suspensión) */
+.auth-container .ban-notice {
+  background: #fff4f4;
+  border-color: #f5c2c2;
+  border-left-color: #dc2626;
+}
+
+.auth-container .ban-notice .suspension-title {
+  color: #991b1b;
+}
+
+.auth-container .ban-notice .suspension-tag {
+  background: #dc2626;
+}
+
+.auth-container .ban-notice .suspension-countdown {
+  border-color: #f5c2c2;
+}
+
+.auth-container .ban-notice .suspension-countdown strong {
+  color: #b91c1c;
+  font-size: 24px;
+  letter-spacing: 0.5px;
+}
+
 /* RESPONSIVE */
 @media (max-width: 500px) {
   body {
@@ -290,6 +402,10 @@ html:has(.auth-fixed) body {
 
   .auth-container input {
     font-size: 16px;
+  }
+
+  .auth-container .suspension-countdown strong {
+    font-size: 26px;
   }
 
   .auth-container button[type="submit"],

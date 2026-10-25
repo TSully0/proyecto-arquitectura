@@ -16,7 +16,18 @@ interface LoginPageProps {
 }
 
 // Solo añade lo que User no tiene. Ideal: mover sanctionReason a la interfaz User.
-type UserWithSanction = User & { sanctionReason?: string };
+type UserWithSanction = User & {
+  sanctionReason?: string;
+  sanctionCategory?: string;
+  suspensionLabel?: string;
+};
+
+interface SuspensionNotice {
+  until: number;
+  label: string;
+  category: string;
+  reason: string;
+}
 
 const LOCK_SECONDS = 60;
 const LOGIN_ATTEMPTS_KEY = 'login_attempts';
@@ -40,6 +51,16 @@ const getRemainingSeconds = (key: string): number => {
   }
 };
 
+// Formato horas:minutos:segundos. Los días se cuentan como 24 h (2 días = 48:00:00).
+const formatCountdown = (ms: number): string => {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+
+  return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
 const encodePassword = (value: string): string | null => {
   try {
     return btoa(value);
@@ -59,6 +80,33 @@ export function LoginPage({
   const [error, setError] = useState('');
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [guardKey, setGuardKey] = useState('');
+  const [suspension, setSuspension] = useState<SuspensionNotice | null>(null);
+  const [suspensionLeft, setSuspensionLeft] = useState(0);
+  const [banReason, setBanReason] = useState<string | null>(null);
+  const [suspensionEnded, setSuspensionEnded] = useState(false);
+
+  // Cuenta regresiva de la suspensión (cada segundo).
+  useEffect(() => {
+    if (!suspension) return;
+
+    const tick = () => {
+      const left = suspension.until - Date.now();
+
+      if (left <= 0) {
+        setSuspension(null);
+        setSuspensionLeft(0);
+        setSuspensionEnded(true);
+        return;
+      }
+
+      setSuspensionLeft(left);
+    };
+
+    tick();
+    const interval = window.setInterval(tick, 250);
+
+    return () => window.clearInterval(interval);
+  }, [suspension]);
 
   // Actualiza la cuenta regresiva del bloqueo.
   useEffect(() => {
@@ -88,6 +136,9 @@ export function LoginPage({
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+    setSuspension(null);
+    setBanReason(null);
+    setSuspensionEnded(false);
 
     const cleanIdentifier = identifier.trim().toLowerCase();
 
@@ -150,12 +201,17 @@ export function LoginPage({
     const reason = user.sanctionReason?.trim() || DEFAULT_REASON;
 
     if (user.banned) {
-      setError(`Cuenta bloqueada permanentemente.\nMotivo: ${reason}`);
+      setBanReason(reason);
       return;
     }
 
     if (user.suspendedUntil && user.suspendedUntil > Date.now()) {
-      setError(`Cuenta suspendida temporalmente.\nMotivo: ${reason}`);
+      setSuspension({
+        until: user.suspendedUntil,
+        label: user.suspensionLabel?.trim() || '',
+        category: user.sanctionCategory?.trim() || '',
+        reason
+      });
       return;
     }
 
@@ -193,6 +249,58 @@ export function LoginPage({
               </span>
             )}
           </p>
+        )}
+
+        {suspensionEnded && (
+          <div className="suspension-notice lifted-notice" role="status">
+            <p className="suspension-title">✓ Suspensión finalizada</p>
+
+            <p className="suspension-reason">
+              Tu cuenta ya está activa. Ya puedes iniciar sesión.
+            </p>
+          </div>
+        )}
+
+        {banReason !== null && (
+          <div className="suspension-notice ban-notice" role="alert">
+            <p className="suspension-title">Cuenta bloqueada permanentemente</p>
+
+            <span className="suspension-tag">Baneo permanente</span>
+
+            <p className="suspension-reason">Motivo: {banReason}</p>
+
+            <div className="suspension-countdown">
+              <span>Duración de la sanción</span>
+              <strong>Permanente</strong>
+              <small>Esta sanción no tiene fecha de finalización</small>
+            </div>
+          </div>
+        )}
+
+        {suspension && (
+          <div className="suspension-notice" role="alert">
+            <p className="suspension-title">Cuenta suspendida temporalmente</p>
+
+            {suspension.category && (
+              <span className="suspension-tag">{suspension.category}</span>
+            )}
+
+            {suspension.reason !== suspension.category && (
+              <p className="suspension-reason">Motivo: {suspension.reason}</p>
+            )}
+
+            {suspension.label && (
+              <p className="suspension-duration">
+                Duración de la suspensión: <strong>{suspension.label}</strong>
+              </p>
+            )}
+
+            <div className="suspension-countdown">
+              <span>Tiempo restante</span>
+              <strong>{formatCountdown(suspensionLeft)}</strong>
+              <small>horas : minutos : segundos</small>
+            </div>
+          </div>
         )}
 
         <form onSubmit={handleLogin}>

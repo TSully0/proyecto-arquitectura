@@ -11,6 +11,7 @@ import { AdminLayout } from "../pages/admin/AdminLayout";
 import { AdminOverviewPage, AdminActivityPage, AdminReportsPage } from "../pages/admin/AdminSections";
 import { ModerationPage } from "../pages/moderation/ModerationPage";
 import { ModeratorLayout } from "../pages/moderation/ModeratorLayout";
+import { ModeratorUsersPage } from "../pages/moderation/ModeratorUsersPage";
 import { MyProfilePage } from "../pages/MyProfilePage";
 import type { User } from "../../business/types/user";
 import { RoleRoute } from "./RoleRoute";
@@ -187,6 +188,7 @@ const AppRoutes = () => {
             }
           >
             <Route index element={<ModerationPage />} />
+            <Route path="usuarios" element={<ModeratorUsersPage />} />
           </Route>
         </Route>
 

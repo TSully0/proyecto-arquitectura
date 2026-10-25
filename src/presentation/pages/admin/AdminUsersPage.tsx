@@ -1,8 +1,11 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { User } from "../../../business/types/user";
-import { SanctionModal, type SanctionType } from "../../components/admin/SanctionModal";
+import {
+  SanctionModal,
+  type SanctionType,
+  type SanctionConfirmPayload,
+} from "../../components/admin/SanctionModal";
 import { UserCard, type UserStatus } from "../../components/admin/UserCard";
 import "../../../styles/admin/admin-users.css";
 
@@ -12,6 +15,8 @@ type ManagedUser = User & {
   banned?: boolean;
   suspendedUntil?: number | null;
   sanctionReason?: string;
+  sanctionCategory?: string;
+  suspensionLabel?: string;
 };
 
 const USERS_KEY = "app_users";
@@ -33,6 +38,8 @@ function normalizeUsers(data: unknown): ManagedUser[] {
       banned: user.banned ?? false,
       suspendedUntil: user.suspendedUntil ?? null,
       sanctionReason: user.sanctionReason ?? "",
+      sanctionCategory: user.sanctionCategory ?? "",
+      suspensionLabel: user.suspensionLabel ?? "",
     } as ManagedUser;
   });
 }
@@ -47,7 +54,16 @@ function readStoredUsers(): ManagedUser[] {
   }
 }
 
-export const AdminUsersPage = () => {
+interface AdminUsersPageProps {
+  /**
+   * "admin": ve todos los usuarios, puede banear y suspender.
+   * "moderator": solo ve usuarios con rol "user" y solo puede suspender.
+   */
+  mode?: "admin" | "moderator";
+}
+
+export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
+  const isModerator = mode === "moderator";
   const [users, setUsers] = useState<ManagedUser[]>(readStoredUsers);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [search, setSearch] = useState("");
@@ -56,7 +72,6 @@ export const AdminUsersPage = () => {
   const [sanctionModalOpen, setSanctionModalOpen] = useState(false);
   const [sanctionUserId, setSanctionUserId] = useState<string | null>(null);
   const [sanctionType, setSanctionType] = useState<SanctionType>("ban");
-  const [sanctionHours, setSanctionHours] = useState(1);
 
   const navigate = useNavigate();
 
@@ -112,6 +127,8 @@ export const AdminUsersPage = () => {
                 banned: updatedSessionUser.banned ?? false,
                 suspendedUntil: updatedSessionUser.suspendedUntil ?? null,
                 sanctionReason: updatedSessionUser.sanctionReason ?? "",
+                sanctionCategory: updatedSessionUser.sanctionCategory ?? "",
+                suspensionLabel: updatedSessionUser.suspensionLabel ?? "",
               })
             );
           }
@@ -135,22 +152,20 @@ export const AdminUsersPage = () => {
     }
   };
 
-  const openSanctionModal = (
-    id: string,
-    type: SanctionType,
-    hours = 1
-  ) => {
+  const openSanctionModal = (id: string, type: SanctionType) => {
     setSanctionUserId(id);
     setSanctionType(type);
-    setSanctionHours(hours);
     setSanctionModalOpen(true);
   };
 
   const handleBan = (id: string) => {
+    if (isModerator) return;
     openSanctionModal(id, "ban");
   };
 
   const handleUnban = (id: string) => {
+    if (isModerator) return;
+
     saveUsers(
       users.map((user) =>
         user.id === id
@@ -158,14 +173,16 @@ export const AdminUsersPage = () => {
               ...user,
               banned: false,
               sanctionReason: "",
+              sanctionCategory: "",
+              suspensionLabel: "",
             }
           : user
       )
     );
   };
 
-  const handleSuspend = (id: string, hours: number) => {
-    openSanctionModal(id, "suspend", hours);
+  const handleSuspend = (id: string) => {
+    openSanctionModal(id, "suspend");
   };
 
   const handleUnsuspend = (id: string) => {
@@ -176,6 +193,8 @@ export const AdminUsersPage = () => {
               ...user,
               suspendedUntil: null,
               sanctionReason: "",
+              sanctionCategory: "",
+              suspensionLabel: "",
             }
           : user
       )
@@ -188,12 +207,27 @@ export const AdminUsersPage = () => {
   };
 
   // Aplicar el baneo o la suspensión.
-  const confirmSanction = (reason: string) => {
+  const confirmSanction = ({
+    reason,
+    category,
+    detail,
+    durationLabel,
+    durationMinutes,
+  }: SanctionConfirmPayload) => {
     if (!sanctionUserId || !reason.trim()) return;
+    if (sanctionType === "suspend" && !durationMinutes) return;
+
+    // El moderador no banea y solo puede sancionar a usuarios normales sin baneo.
+    if (isModerator) {
+      const target = users.find((user) => user.id === sanctionUserId);
+
+      if (sanctionType === "ban" || !target || target.role !== "user" || target.banned) {
+        return;
+      }
+    }
 
     const cleanReason = reason.trim();
-    const suspensionEnd =
-      Date.now() + sanctionHours * 60 * 60 * 1000;
+    const suspensionEnd = Date.now() + (durationMinutes ?? 0) * 60 * 1000;
 
     const updated = users.map((user) => {
       if (user.id !== sanctionUserId) return user;
@@ -204,6 +238,8 @@ export const AdminUsersPage = () => {
           banned: true,
           suspendedUntil: null,
           sanctionReason: cleanReason,
+          sanctionCategory: "",
+          suspensionLabel: "",
         };
       }
 
@@ -211,7 +247,10 @@ export const AdminUsersPage = () => {
         ...user,
         banned: false,
         suspendedUntil: suspensionEnd,
-        sanctionReason: cleanReason,
+        // Etiqueta y detalle se guardan por separado para mostrarlos en el login.
+        sanctionReason: detail?.trim() || category || cleanReason,
+        sanctionCategory: category ?? "",
+        suspensionLabel: durationLabel ?? "",
       };
     });
 
@@ -242,7 +281,9 @@ export const AdminUsersPage = () => {
     const matchesFilter =
       filter === "all" || user.role === filter;
 
-    return matchesSearch && matchesFilter;
+    const matchesScope = !isModerator || user.role === "user";
+
+    return matchesSearch && matchesFilter && matchesScope;
   });
 
   const selectedUser =
@@ -250,15 +291,24 @@ export const AdminUsersPage = () => {
 
   return (
     <div className="users-container">
-      <button
-        type="button"
-        className="btn-back"
-        onClick={() => navigate(-1)}
-      >
-        ← Volver
-      </button>
+      {!isModerator && (
+        <button
+          type="button"
+          className="btn-back"
+          onClick={() => navigate(-1)}
+        >
+          ← Volver
+        </button>
+      )}
 
-      <h1>👥 Gestión de Usuarios</h1>
+      <h1>{isModerator ? "👥 Usuarios" : "👥 Gestión de Usuarios"}</h1>
+
+      {isModerator && (
+        <p className="users-subtitle">
+          Puedes suspender usuarios por un tiempo. El baneo permanente solo lo
+          aplica un administrador.
+        </p>
+      )}
 
       <div className="users-toolbar">
         <input
@@ -270,6 +320,8 @@ export const AdminUsersPage = () => {
           aria-label="Buscar usuarios"
         />
 
+        {!isModerator && (
+          <>
         <button
           type="button"
           className={`filter-btn ${filter === "all" ? "active" : ""}`}
@@ -301,6 +353,8 @@ export const AdminUsersPage = () => {
         >
           Usuarios
         </button>
+          </>
+        )}
       </div>
 
       <div className="users-grid">
@@ -313,6 +367,7 @@ export const AdminUsersPage = () => {
             onUnban={handleUnban}
             onSuspend={handleSuspend}
             onUnsuspend={handleUnsuspend}
+            canBan={!isModerator}
           />
         ))}
       </div>
@@ -325,7 +380,6 @@ export const AdminUsersPage = () => {
         isOpen={sanctionModalOpen}
         user={selectedUser}
         type={sanctionType}
-        hours={sanctionHours}
         onClose={closeSanctionModal}
         onConfirm={confirmSanction}
       />

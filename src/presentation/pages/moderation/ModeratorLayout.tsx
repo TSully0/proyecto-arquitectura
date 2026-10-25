@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { MessageSquare, Home, LogOut } from "lucide-react";
+import { MessageSquare, Users, Home, LogOut } from "lucide-react";
 
 import type { User } from "../../../business/types/user";
 import "../../../styles/admin/admin-dashboard.css";
@@ -12,6 +12,7 @@ interface ModeratorLayoutProps {
 
 const MENU = [
   { to: "/moderacion", label: "Reseñas", icon: MessageSquare },
+  { to: "/moderacion/usuarios", label: "Usuarios", icon: Users },
   { to: "/", label: "Volver al Home", icon: Home }
 ];
 

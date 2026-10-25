@@ -1,4 +1,3 @@
-
 /* ==========================================
    PANEL DE GESTIÓN DE USUARIOS
    ========================================== */
@@ -489,6 +488,105 @@
 }
 
 /* ==========================================
+   DURACIÓN Y ETIQUETAS (SUSPENSIÓN)
+   ========================================== */
+
+.sanction-duration {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sanction-unit-tabs {
+  display: flex;
+  overflow: hidden;
+  background: #fdfbf8;
+  border: 1px solid #d6cfc2;
+  border-radius: 12px;
+}
+
+.sanction-unit-tab {
+  min-height: 44px;
+  padding: 9px 16px;
+  color: #4a2f1d;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.sanction-unit-tab:hover {
+  background: #f1e9dd;
+}
+
+.sanction-unit-tab.active {
+  color: #fff;
+  background: #a75f37;
+}
+
+.sanction-select {
+  flex: 1;
+  min-width: 140px;
+  min-height: 44px;
+  padding: 9px 12px;
+  color: #3b2f25;
+  background: #fdfbf8;
+  border: 1px solid #d6cfc2;
+  border-radius: 12px;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sanction-select:focus {
+  border-color: #2c6e91;
+  box-shadow: 0 0 0 4px rgba(44, 110, 145, 0.12);
+}
+
+.sanction-range-hint {
+  margin: 8px 0 22px;
+  color: #81766b;
+  font-size: 12px;
+}
+
+.sanction-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sanction-tag {
+  min-height: 36px;
+  padding: 7px 14px;
+  color: #4a2f1d;
+  background: #fdfbf8;
+  border: 1px solid #d6cfc2;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.sanction-tag:hover {
+  background: #f1e9dd;
+  border-color: #c89b6d;
+}
+
+.sanction-tag.active {
+  color: #fff;
+  background: #a75f37;
+  border-color: #a75f37;
+}
+
+/* ==========================================
    BOTONES DEL MODAL
    ========================================== */
 
@@ -560,6 +658,34 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* ==========================================
+   MODO MODERADOR
+   ========================================== */
+
+.users-subtitle {
+  margin: -10px 0 20px;
+  color: #7b6a58;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.user-note {
+  width: 100%;
+  margin: 0;
+  padding: 9px 10px;
+  color: #991b1b;
+  background: #fdeaea;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.user-note-admin {
+  color: #4a2f1d;
+  background: #f1e9dd;
 }
 
 /* ==========================================
@@ -683,6 +809,19 @@
 
   .sanction-helper {
     font-size: 11px;
+  }
+
+  .sanction-unit-tabs {
+    width: 100%;
+  }
+
+  .sanction-unit-tab {
+    flex: 1;
+    padding: 9px 6px;
+  }
+
+  .sanction-select {
+    flex: 1 1 100%;
   }
 }
 
