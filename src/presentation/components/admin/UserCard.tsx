@@ -15,6 +15,10 @@ interface UserCardProps {
   onUnsuspend: (id: string) => void;
   /** false para moderadores: no ven Banear ni Desbanear. */
   canBan?: boolean;
+  /** Cantidad de notas internas del equipo sobre este usuario. */
+  noteCount?: number;
+  /** Si se pasa, aparece el botón "Notas". */
+  onNotes?: (id: string) => void;
 }
 
 export const UserCard = ({
@@ -25,6 +29,8 @@ export const UserCard = ({
   onSuspend,
   onUnsuspend,
   canBan = true,
+  noteCount = 0,
+  onNotes,
 }: UserCardProps) => {
   const normalizedStatus = status.toLowerCase();
 
@@ -95,6 +101,16 @@ export const UserCard = ({
                 onClick={() => onSuspend(user.id)}
               >
                 Suspender
+              </button>
+            )}
+
+            {onNotes && (
+              <button
+                type="button"
+                className="btn-notes"
+                onClick={() => onNotes(user.id)}
+              >
+                📝 Notas{noteCount > 0 ? ` (${noteCount})` : ""}
               </button>
             )}
           </>

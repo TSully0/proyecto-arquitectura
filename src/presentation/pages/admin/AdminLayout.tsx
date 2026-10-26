@@ -1,9 +1,12 @@
+import { Suspense } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { PageLoader } from "../../components/ui/PageLoader";
 import {
   LayoutDashboard,
   Users,
   Shield,
   TrendingUp,
+  History,
   FileDown,
   LogOut
 } from "lucide-react";
@@ -21,6 +24,7 @@ const MENU = [
   { to: "/admin/users", label: "Usuarios", icon: Users, end: false },
   { to: "/admin/roles", label: "Roles", icon: Shield, end: false },
   { to: "/admin/activity", label: "Actividad", icon: TrendingUp, end: false },
+  { to: "/admin/history", label: "Historial", icon: History, end: false },
   { to: "/admin/reports", label: "Informes", icon: FileDown, end: false }
 ];
 
@@ -73,7 +77,9 @@ export function AdminLayout({ user, onLogout }: AdminLayoutProps) {
 
       {/* ========== CONTENIDO ========== */}
       <main className="admin-content">
-        <Outlet />
+        <Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </Suspense>
       </main>
 
     </div>

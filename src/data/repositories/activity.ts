@@ -12,11 +12,28 @@ export type AppUser = {
 
 export type ActivityType = "post" | "comment" | "like" | "follow" | "moderation";
 
+/* Acciones de moderación que quedan en el historial */
+export type ModerationAction =
+  | "ban"
+  | "unban"
+  | "suspend"
+  | "unsuspend"
+  | "review_delete"
+  | "review_restore";
+
 export type ActivityItem = {
   id: string;
-  userId: string;
+  userId: string; // quien hizo la acción
   type: ActivityType;
   at: string;
+  // Solo para type === "moderation" (los datos de ejemplo no los traen)
+  action?: ModerationAction;
+  actorName?: string;
+  actorRole?: string;
+  targetId?: string;
+  targetName?: string;
+  reason?: string;
+  duration?: string; // por ejemplo "2 días"
 };
 
 const ACTIVITY_KEY = "app_activity";
@@ -68,7 +85,80 @@ export const logActivity = (userId: string, type: ActivityType) => {
   localStorage.setItem(ACTIVITY_KEY, JSON.stringify(items));
 };
 
-export const clearActivity = () => localStorage.removeItem(ACTIVITY_KEY);
+/* =========================
+   HISTORIAL DE MODERACIÓN
+========================= */
+export type ModerationLogInput = {
+  action: ModerationAction;
+  targetId?: string;
+  targetName?: string;
+  reason?: string;
+  duration?: string;
+};
+
+// Quien está logueado ahora (la sesión se guarda en localStorage "user")
+const readSessionActor = (): { id: string; name: string; role: string } => {
+  try {
+    const raw = localStorage.getItem("user");
+    const s = raw ? JSON.parse(raw) : null;
+    if (s?.id) {
+      return {
+        id: String(s.id),
+        name: String(s.name ?? "Desconocido"),
+        role: String(s.role ?? "").toLowerCase().trim()
+      };
+    }
+  } catch {
+    /* sin sesión legible */
+  }
+  return { id: "desconocido", name: "Desconocido", role: "" };
+};
+
+// 👉 llámala cuando alguien banea, suspende, desbanea, elimina una reseña, etc.
+export const logModeration = (input: ModerationLogInput) => {
+  const actor = readSessionActor();
+  const items = getActivity();
+  items.push({
+    id: crypto.randomUUID(),
+    userId: actor.id,
+    type: "moderation",
+    at: new Date().toISOString(),
+    actorName: actor.name,
+    actorRole: actor.role,
+    ...input
+  });
+  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(items));
+};
+
+// Solo las acciones reales (sin los datos de ejemplo), la más reciente primero
+export const getModerationLog = (): ActivityItem[] =>
+  getActivity()
+    .filter((i) => i.type === "moderation" && i.action)
+    .sort((a, b) => b.at.localeCompare(a.at));
+
+export const ACTION_LABELS: Record<ModerationAction, string> = {
+  ban: "Baneo",
+  unban: "Desbaneo",
+  suspend: "Suspensión",
+  unsuspend: "Suspensión quitada",
+  review_delete: "Reseña eliminada",
+  review_restore: "Reseña restaurada"
+};
+
+// Borra la actividad (publicaciones, comentarios, datos de ejemplo...), pero conserva
+// el historial de moderación (items con "action"): es un registro que no debe perderse.
+export const clearActivity = () => {
+  const moderationLog = getActivity().filter(
+    (item) => item.type === "moderation" && item.action
+  );
+
+  if (moderationLog.length === 0) {
+    localStorage.removeItem(ACTIVITY_KEY);
+    return;
+  }
+
+  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(moderationLog));
+};
 
 // datos de ejemplo para ver cómo luce el ranking
 export const seedDemoActivity = (users: AppUser[]) => {

@@ -1,0 +1,173 @@
+/* =====================================================
+   CHAT — RESPONSIVE: móviles, pantallas pequeñas y accesibilidad (secciones 14-15)
+   Parte de src/styles/chat/chat.css (ver índice)
+===================================================== */
+
+/* =====================================================
+   14. MÓVILES Y PANTALLAS PEQUEÑAS
+===================================================== */
+
+@media (max-width: 768px) {
+  .msg-fab {
+    right: 16px;
+    bottom: 16px;
+
+    width: 54px;
+    height: 54px;
+    min-height: 54px;
+  }
+
+  .msg-panel {
+    right: 10px;
+    bottom: 80px;
+    left: 10px;
+
+    width: auto;
+    height: 500px;
+    min-width: 0;
+    min-height: 0;
+    max-width: none;
+
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
+  }
+
+  .chat-box {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+  }
+
+  .chat-header {
+    padding: 10px 12px;
+  }
+
+  .chat-messages {
+    padding: 12px;
+  }
+
+  .chat-bubble {
+    max-width: 88%;
+  }
+
+  .chat-composer {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .chat-input,
+  .chat-box input,
+  .chat-box textarea {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 16px;
+  }
+
+  .chat-attach-menu {
+    max-width: calc(100vw - 32px);
+  }
+}
+
+@media (max-width: 480px) {
+  .msg-panel {
+    right: 6px;
+    bottom: 72px;
+    left: 6px;
+
+    max-height: calc(100vh - 88px);
+    max-height: calc(100dvh - 88px);
+  }
+
+  .chat-header {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .chat-avatar {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .chat-title {
+    font-size: 14px;
+  }
+
+  .chat-subtitle {
+    font-size: 11px;
+  }
+
+  .chat-messages {
+    padding: 10px;
+  }
+
+  .chat-bubble {
+    max-width: 90%;
+  }
+
+  /* Menú del clip adaptado al móvil */
+  .chat-attach-menu {
+    left: -4px;
+    bottom: calc(100% + 10px);
+
+    width: 265px;
+    max-width: calc(100vw - 24px);
+    padding: 6px;
+  }
+
+  .chat-attach-menu > .chat-attach-option {
+    min-height: 57px;
+    padding: 8px;
+    gap: 10px;
+  }
+
+  .chat-attach-menu .chat-attach-option-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .chat-attach-menu .chat-attach-option-icon svg {
+    width: 19px;
+    height: 19px;
+    flex-basis: 19px;
+  }
+
+  .chat-attach-menu .chat-attach-option strong {
+    font-size: 12.5px;
+  }
+
+  .chat-attach-menu .chat-attach-option small {
+    font-size: 11px;
+  }
+
+  .chat-document-info strong {
+    max-width: 150px;
+  }
+
+  .chat-video {
+    max-width: 100%;
+  }
+
+  .chat-pending-file {
+    max-width: 100%;
+  }
+}
+
+/* =====================================================
+   15. ACCESIBILIDAD Y ANIMACIONES
+===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-panel,
+  .msg-fab,
+  .chat-attach-menu,
+  .chat-attach,
+  .chat-attach-menu > .chat-attach-option,
+  .chat-send {
+    animation: none;
+    transition: none;
+  }
+}

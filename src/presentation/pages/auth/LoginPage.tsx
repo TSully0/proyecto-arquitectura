@@ -8,6 +8,19 @@ import {
   clearLoginAttempts
 } from '../../../business/services/loginGuard';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import {
+  BanNotice,
+  LiftedNotice,
+  SuspensionCard,
+  type SuspensionNotice
+} from '../../components/auth/SanctionNotices';
+import {
+  DEFAULT_REASON,
+  MSG_LOCKED,
+  MSG_LOCKED_NOW,
+  encodePassword,
+  getRemainingSeconds
+} from '../../../business/services/loginHelpers';
 
 interface LoginPageProps {
   onNavigateToRegister: () => void;
@@ -20,53 +33,8 @@ type UserWithSanction = User & {
   sanctionReason?: string;
   sanctionCategory?: string;
   suspensionLabel?: string;
-};
-
-interface SuspensionNotice {
-  until: number;
-  label: string;
-  category: string;
-  reason: string;
-}
-
-const LOCK_SECONDS = 60;
-const LOGIN_ATTEMPTS_KEY = 'login_attempts';
-const DEFAULT_REASON = 'Incumplimiento de las normas de la comunidad.';
-
-const MSG_LOCKED = 'Tu cuenta está bloqueada temporalmente por seguridad.';
-const MSG_LOCKED_NOW =
-  'Has alcanzado 5 intentos fallidos. El inicio de sesión está bloqueado temporalmente.';
-
-// Segundos restantes de bloqueo según la hora real de desbloqueo.
-const getRemainingSeconds = (key: string): number => {
-  try {
-    const store = JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '{}');
-    const lockedUntil = store[key]?.lockedUntil;
-
-    return typeof lockedUntil === 'number'
-      ? Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000))
-      : LOCK_SECONDS;
-  } catch {
-    return LOCK_SECONDS;
-  }
-};
-
-// Formato horas:minutos:segundos. Los días se cuentan como 24 h (2 días = 48:00:00).
-const formatCountdown = (ms: number): string => {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const seconds = total % 60;
-
-  return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-};
-
-const encodePassword = (value: string): string | null => {
-  try {
-    return btoa(value);
-  } catch {
-    return null;
-  }
+  liftedNotice?: 'suspension' | 'ban';
+  liftedBy?: string;
 };
 
 export function LoginPage({
@@ -81,32 +49,9 @@ export function LoginPage({
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [guardKey, setGuardKey] = useState('');
   const [suspension, setSuspension] = useState<SuspensionNotice | null>(null);
-  const [suspensionLeft, setSuspensionLeft] = useState(0);
   const [banReason, setBanReason] = useState<string | null>(null);
   const [suspensionEnded, setSuspensionEnded] = useState(false);
-
-  // Cuenta regresiva de la suspensión (cada segundo).
-  useEffect(() => {
-    if (!suspension) return;
-
-    const tick = () => {
-      const left = suspension.until - Date.now();
-
-      if (left <= 0) {
-        setSuspension(null);
-        setSuspensionLeft(0);
-        setSuspensionEnded(true);
-        return;
-      }
-
-      setSuspensionLeft(left);
-    };
-
-    tick();
-    const interval = window.setInterval(tick, 250);
-
-    return () => window.clearInterval(interval);
-  }, [suspension]);
+  const [liftedMessage, setLiftedMessage] = useState<string | null>(null);
 
   // Actualiza la cuenta regresiva del bloqueo.
   useEffect(() => {
@@ -139,6 +84,7 @@ export function LoginPage({
     setSuspension(null);
     setBanReason(null);
     setSuspensionEnded(false);
+    setLiftedMessage(null);
 
     const cleanIdentifier = identifier.trim().toLowerCase();
 
@@ -215,6 +161,32 @@ export function LoginPage({
       return;
     }
 
+    // Si alguien le quitó una sanción, se avisa una sola vez antes de entrar.
+    if (user.liftedNotice) {
+      const who = user.liftedBy === 'moderator' ? 'Un moderador' : 'Un administrador';
+      const what = user.liftedNotice === 'ban' ? 'tu baneo' : 'tu suspensión';
+
+      try {
+        localStorage.setItem(
+          'app_users',
+          JSON.stringify(
+            users.map((u) =>
+              u.id === user.id
+                ? { ...u, liftedNotice: undefined, liftedBy: undefined }
+                : u
+            )
+          )
+        );
+      } catch {
+        /* si no se puede guardar, el aviso saldrá otra vez */
+      }
+
+      clearLoginAttempts(key);
+      setRemainingSeconds(0);
+      setLiftedMessage(`${who} levantó ${what}.`);
+      return;
+    }
+
     // Limpiar intentos después de un inicio de sesión correcto.
     clearLoginAttempts(key);
     setRemainingSeconds(0);
@@ -251,56 +223,30 @@ export function LoginPage({
           </p>
         )}
 
+        {liftedMessage && (
+          <LiftedNotice
+            title={liftedMessage}
+            text="Tu cuenta ya está activa. Vuelve a presionar «Entrar» para iniciar sesión."
+          />
+        )}
+
         {suspensionEnded && (
-          <div className="suspension-notice lifted-notice" role="status">
-            <p className="suspension-title">✓ Suspensión finalizada</p>
-
-            <p className="suspension-reason">
-              Tu cuenta ya está activa. Ya puedes iniciar sesión.
-            </p>
-          </div>
+          <LiftedNotice
+            title="Suspensión finalizada"
+            text="Tu cuenta ya está activa. Ya puedes iniciar sesión."
+          />
         )}
 
-        {banReason !== null && (
-          <div className="suspension-notice ban-notice" role="alert">
-            <p className="suspension-title">Cuenta bloqueada permanentemente</p>
-
-            <span className="suspension-tag">Baneo permanente</span>
-
-            <p className="suspension-reason">Motivo: {banReason}</p>
-
-            <div className="suspension-countdown">
-              <span>Duración de la sanción</span>
-              <strong>Permanente</strong>
-              <small>Esta sanción no tiene fecha de finalización</small>
-            </div>
-          </div>
-        )}
+        {banReason !== null && <BanNotice reason={banReason} />}
 
         {suspension && (
-          <div className="suspension-notice" role="alert">
-            <p className="suspension-title">Cuenta suspendida temporalmente</p>
-
-            {suspension.category && (
-              <span className="suspension-tag">{suspension.category}</span>
-            )}
-
-            {suspension.reason !== suspension.category && (
-              <p className="suspension-reason">Motivo: {suspension.reason}</p>
-            )}
-
-            {suspension.label && (
-              <p className="suspension-duration">
-                Duración de la suspensión: <strong>{suspension.label}</strong>
-              </p>
-            )}
-
-            <div className="suspension-countdown">
-              <span>Tiempo restante</span>
-              <strong>{formatCountdown(suspensionLeft)}</strong>
-              <small>horas : minutos : segundos</small>
-            </div>
-          </div>
+          <SuspensionCard
+            notice={suspension}
+            onEnd={() => {
+              setSuspension(null);
+              setSuspensionEnded(true);
+            }}
+          />
         )}
 
         <form onSubmit={handleLogin}>

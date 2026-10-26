@@ -25,7 +25,7 @@
 
 La aplicación incluye módulos de autenticación, perfiles, lugares y reseñas, favoritos, seguimiento de usuarios, mensajería, notificaciones, administración y moderación. El código está organizado por capas para separar la presentación, las reglas de negocio y el acceso a los datos.
 
-> **Estado actual:** el proyecto usa **Supabase** como base de datos para los lugares, las reseñas, los favoritos y el seguimiento de usuarios. Las cuentas, la sesión, los roles, las sanciones, el chat y la actividad administrativa todavía se guardan en `localStorage` (consulta [Persistencia de datos](#-persistencia-de-datos)). Migrar esas partes a Supabase Auth y a tablas compartidas es el siguiente paso del proyecto.
+> **Estado actual:** el proyecto usa **Supabase** como base de datos para los lugares, las reseñas, los favoritos y el seguimiento de usuarios. Las cuentas, la sesión, los roles, las sanciones, el historial de moderación, las notas internas, el chat y la actividad administrativa todavía se guardan en `localStorage` (consulta [Persistencia de datos](#-persistencia-de-datos)). Migrar esas partes a Supabase Auth y a tablas compartidas es el siguiente paso del proyecto.
 
 ## 🎯 Objetivos
 
@@ -33,7 +33,7 @@ La aplicación incluye módulos de autenticación, perfiles, lugares y reseñas,
 - Facilitar el intercambio de recomendaciones y experiencias.
 - Ofrecer interfaces para publicaciones, comentarios y reseñas.
 - Organizar la navegación según los roles de usuario.
-- Incorporar herramientas de administración y moderación.
+- Incorporar herramientas de administración y moderación con trazabilidad de las acciones.
 - Mantener una interfaz adaptable a computadoras, tabletas y móviles.
 - Facilitar el mantenimiento y la migración progresiva a un backend centralizado.
 
@@ -53,11 +53,11 @@ La aplicación incluye módulos de autenticación, perfiles, lugares y reseñas,
 - Modales de reseña y comentario (`ReviewModal`, `CommentModal`).
 
 ### 🔐 Registro, inicio de sesión y recuperación de contraseña
-- Registro con validación de nombre (3–30 caracteres), correo y contraseña (8–64 caracteres).
+- Registro con validación de nombre (3–30 caracteres), correo y contraseña (8–64 caracteres). La lógica de creación de la cuenta está en `registerAccount.ts`.
 - Solo se aceptan correos de Gmail, Hotmail, Outlook y Email.com.
 - Indicador de fortaleza de contraseña (`PasswordStrengthMeter.tsx`) y servicio `passwordStrength.ts`.
 - Protección contra fuerza bruta en el login (`loginGuard.ts`): 5 intentos fallidos consecutivos bloquean el acceso durante 1 minuto, por cuenta y por navegador.
-- Mensajes específicos cuando la cuenta está baneada o suspendida, con el motivo registrado.
+- Avisos claros en el login para cuentas sancionadas o recién liberadas (consulta [Sistema de sanciones](#️-sistema-de-sanciones)).
 - Recuperación de contraseña en dos pasos: código de verificación de 6 dígitos y pantalla de restablecimiento.
 - Al registrarse, la cuenta se guarda en `localStorage` y se intenta sincronizar con la tabla `users` de Supabase; si falla, la cuenta local se conserva.
 - Contexto de sesión en `AuthContext.tsx` (única fuente de verdad de la sesión).
@@ -72,15 +72,20 @@ La aplicación incluye módulos de autenticación, perfiles, lugares y reseñas,
 - Secciones de comunidad (`CommunitySection`, `CommunityList`).
 
 ### 🛡️ Administración (`/admin`)
-- **Resumen**, **Actividad** e **Informes** del sistema.
-- **Usuarios**: ver todos los usuarios, filtrar por rol, **banear** (permanente) y **suspender** (temporal), y revertir ambas sanciones.
-- **Roles**: cambio de rol entre `user`, `moderator` y `admin`.
-- Al sancionar a una cuenta con sesión abierta, esta se cierra automáticamente y se muestra el motivo en el login (`accountStatus.ts`).
+- **Resumen:** tarjetas con las estadísticas del sistema. La tarjeta «Baneados o suspendidos» es un enlace que abre **Usuarios** ya filtrado por sancionados. Incluye también la tarjeta **Últimas acciones** con los movimientos recientes de moderación (`RecentModerationCard`).
+- **Usuarios:** ver todos los usuarios con buscador, filtro por rol y filtro por estado (activos, sancionados, suspendidos, baneados), con contadores. Permite **banear** (permanente), **suspender** (temporal), revertir ambas sanciones y abrir las **notas internas** de cada usuario.
+- **Roles:** cambio de rol entre `user` y `moderator` con botones de color (verde para subir, rojo para bajar). Incluye buscador por nombre o correo y botones **Todos / Moderadores / Usuarios**. Los administradores no son editables.
+- **Actividad:** ranking de los usuarios más activos y acciones de moderación por moderador.
+- **Historial:** registro de cada baneo, suspensión y levantamiento de sanción (consulta [Historial de moderación](#-historial-de-moderación)).
+- **Informes:** descarga de informes del sistema.
+- Al sancionar a una cuenta con sesión abierta, se le avisa en pantalla con el detalle de la sanción y la sesión se cierra automáticamente (`accountStatus.ts`, `AccountBlockToast.tsx`).
 
 ### 🧑‍⚖️ Moderación (`/moderacion`)
-- Panel propio con menú lateral (`ModeratorLayout`).
-- **Panel de moderación**: cola de reseñas con filtros (todas, pendientes, aprobadas), aprobar y eliminar. Actualmente trabaja con datos de ejemplo; todavía no está conectada a las reseñas reales de Supabase.
-- **Usuarios** (`/moderacion/usuarios`): reutiliza la pantalla del administrador en modo moderador. El moderador **solo ve usuarios con rol `user`** y **solo puede suspender**; no puede banear ni desbanear.
+- Panel propio con menú lateral (`ModeratorLayout`): **Reseñas**, **Usuarios**, **Historial** y **Volver al Home**.
+- **Panel de moderación:** cola de reseñas con filtros (todas, pendientes, aprobadas), aprobar y eliminar. Actualmente trabaja con datos de ejemplo; todavía no está conectada a las reseñas reales de Supabase.
+- **Usuarios** (`/moderacion/usuarios`): reutiliza la pantalla del administrador en modo moderador. El moderador **solo ve usuarios con rol `user`** y **solo puede suspender**; no puede banear ni desbanear. También puede usar las notas internas.
+- **Historial** (`/moderacion/historial`): la misma pantalla de historial que ve el administrador.
+- Una nota informativa sobre los permisos del moderador se puede cerrar y no vuelve a aparecer (`moderator_note_dismissed`).
 
 ### ⏱️ Sistema de sanciones
 Las sanciones se configuran en `SanctionModal.tsx`:
@@ -92,13 +97,32 @@ Las sanciones se configuran en `SanctionModal.tsx`:
 
 - Cada sanción exige un motivo, con categorías predefinidas: *Spam, Contenido sensible, Contenido ilegal, Contenido inapropiado, Publicación improbable, Tema no relacionado* y *Otro*.
 - Una suspensión se guarda como fecha de vencimiento (`suspendedUntil`) y termina sola; al vencer, la cuenta vuelve a poder iniciar sesión.
+- Al intentar iniciar sesión, el usuario sancionado ve un aviso con el motivo y la duración. En una suspensión aparece una **cuenta regresiva** (horas : minutos : segundos); en un baneo, el aviso de bloqueo permanente (`SanctionNotices.tsx`).
+- Cuando un administrador o un moderador **quita una sanción**, se pide un motivo **opcional** (`LiftSanctionModal`). El usuario recibe un aviso verde de una sola vez la próxima vez que entra, que indica quién levantó la sanción. Si la suspensión termina sola, también se muestra el aviso de «Suspensión finalizada».
 - El estado de las cuentas se comparte entre pestañas del mismo navegador mediante eventos de `localStorage`.
+
+### 🕘 Historial de moderación
+- Cada baneo, desbaneo, suspensión y suspensión quitada queda registrado con **quién lo hizo, su rol, a quién, cuándo y por qué** (`logModeration` en `activity.ts`). Está preparado para registrar también la eliminación y la restauración de reseñas.
+- Disponible para administradores (`/admin/history`) y moderadores (`/moderacion/historial`).
+- Búsqueda por persona o motivo, filtro por tipo de acción y **filtro por fecha**: todas, hoy, últimos 7 días, últimos 30 días, un día concreto o un mes concreto.
+- Muestra cuántas acciones se ven del total y permite **descargar el resultado filtrado en CSV**.
+- «Borrar actividad» en el panel de administración limpia los datos de ejemplo del ranking, pero **conserva el historial de moderación**.
+
+### 📝 Notas internas por usuario
+- Admin y moderadores pueden dejar notas sobre un usuario desde su tarjeta (botón **📝 Notas**, con la cantidad de notas). **El usuario nunca las ve.**
+- Cada nota se crea con una **etiqueta rápida** (Advertido por chat, Reincidente, Lenguaje ofensivo, Spam, Cuenta sospechosa, Revisar en 7 días u Otro) y un detalle opcional. Con **Otro** el texto es obligatorio.
+- Cada nota guarda autor, rol y fecha. Cada persona puede borrar sus propias notas y el administrador puede borrar cualquiera.
+- La lógica está en `userNotes.ts`; al migrar a Supabase solo habrá que cambiar el cuerpo de esas funciones.
 
 ### 💬 Chat y notificaciones
 - Widget flotante de mensajería (`MessengerWidget`) disponible para `user` y `moderator`; el administrador no lo usa.
 - Conversaciones, composición de mensajes (máx. 500 caracteres), adjuntos, vista previa de imágenes y archivos, y enlaces automáticos (`LinkifiedText`).
 - Menú desplegable de notificaciones (`NotificationsDropdown`).
 - Los mensajes se guardan en `localStorage`, por lo que **no se sincronizan entre dispositivos ni entre usuarios en equipos distintos**.
+
+### ⚡ Rendimiento
+- Las páginas de administración y de moderación se cargan **bajo demanda** con `React.lazy` y `Suspense` (`PageLoader.tsx`). Un usuario normal no descarga el código ni los estilos de los paneles.
+- Los archivos largos de código y de CSS están divididos en partes de menos de unas 700 líneas para facilitar el mantenimiento.
 
 ### 📱 Diseño adaptable
 Estilos separados por módulo: autenticación, inicio, perfil, chat, administración, moderación y componentes de interfaz reutilizables.
@@ -115,7 +139,7 @@ Estilos separados por módulo: autenticación, inicio, perfil, chat, administrac
 | CSS | Estilos y diseño adaptable. |
 | Lucide React y React Icons | Iconografía. |
 | React Hooks y Context API | Estado y lógica reutilizable de la interfaz. |
-| `localStorage` / `sessionStorage` | Cuentas, sesión, sanciones, chat, actividad y avisos temporales. |
+| `localStorage` / `sessionStorage` | Cuentas, sesión, sanciones, historial, notas, chat, actividad y avisos temporales. |
 | oxlint | Análisis estático del código (`npm run lint`). |
 | Vercel | Despliegue; `vercel.json` redirige todas las rutas a `index.html` para la SPA. |
 
@@ -143,12 +167,15 @@ El código se organiza en capas y módulos:
     │   └── vite.svg
     ├── business/
     │   ├── services/
-    │   │   ├── accountStatus.ts
+    │   │   ├── accountStatus.ts       # Avisos y estado de cuentas sancionadas
     │   │   ├── imageTools.ts
     │   │   ├── loginGuard.ts
+    │   │   ├── loginHelpers.ts        # Apoyo del login (cuenta regresiva, bloqueos)
     │   │   ├── nameChange.ts
     │   │   ├── passwordStrength.ts
-    │   │   └── registerValidation.ts
+    │   │   ├── registerAccount.ts     # Creación de la cuenta al registrarse
+    │   │   ├── registerValidation.ts
+    │   │   └── userNotes.ts           # Notas internas del equipo
     │   └── types/
     │       ├── follow.ts
     │       ├── place.ts
@@ -158,7 +185,7 @@ El código se organiza en capas y módulos:
     │   ├── supabase.ts
     │   ├── api/
     │   └── repositories/
-    │       ├── activity.ts
+    │       ├── activity.ts            # Actividad, ranking e historial de moderación
     │       ├── follow.ts
     │       ├── followStore.ts
     │       ├── messages.ts
@@ -173,19 +200,25 @@ El código se organiza en capas y módulos:
     │   │   ├── admin/
     │   │   │   ├── admin-utils.ts
     │   │   │   ├── FilterTabs.tsx
+    │   │   │   ├── LiftSanctionModal.tsx
     │   │   │   ├── PageHeader.tsx
     │   │   │   ├── RankingTable.tsx
+    │   │   │   ├── RecentModerationCard.tsx
     │   │   │   ├── ReportSheet.tsx
     │   │   │   ├── SanctionModal.tsx
     │   │   │   ├── StatCard.tsx
-    │   │   │   └── UserCard.tsx
+    │   │   │   ├── user-types.ts
+    │   │   │   ├── UserCard.tsx
+    │   │   │   ├── UserNotesModal.tsx
+    │   │   │   └── UsersFilters.tsx
     │   │   ├── auth/
     │   │   │   ├── PasswordStrengthMeter.tsx
     │   │   │   ├── RegisterAccountFields.tsx
     │   │   │   ├── RegisterActions.tsx
     │   │   │   ├── RegisterProgress.tsx
     │   │   │   ├── RegisterSecurityFields.tsx
-    │   │   │   └── RegisterTerms.tsx
+    │   │   │   ├── RegisterTerms.tsx
+    │   │   │   └── SanctionNotices.tsx   # Avisos de baneo, suspensión y levantamiento
     │   │   ├── chat/
     │   │   │   ├── ChatAttachmentPreview.tsx
     │   │   │   ├── ChatBox.tsx
@@ -223,11 +256,13 @@ El código se organiza en capas y módulos:
     │   │       ├── Avatar.tsx
     │   │       ├── Button.tsx
     │   │       ├── Modal.tsx
+    │   │       ├── PageLoader.tsx        # Indicador de carga de las páginas lazy
     │   │       ├── toast-context.ts
     │   │       ├── ToastProvider.tsx
     │   │       └── UserAvatar.tsx
     │   ├── hooks/
     │   │   ├── useFollows.ts
+    │   │   ├── useManagedUsers.ts        # Usuarios con sanciones (admin y moderador)
     │   │   ├── useMyProfile.ts
     │   │   └── useProfilePhoto.ts
     │   ├── layouts/
@@ -236,6 +271,7 @@ El código se organiza en capas y módulos:
     │   │   ├── MyProfilePage.tsx
     │   │   ├── admin/
     │   │   │   ├── AdminActivityPage.tsx
+    │   │   │   ├── AdminHistoryPage.tsx
     │   │   │   ├── AdminLayout.tsx
     │   │   │   ├── AdminOverviewPage.tsx
     │   │   │   ├── AdminReportsPage.tsx
@@ -252,13 +288,27 @@ El código se organiza en capas y módulos:
     │   │       ├── ModeratorLayout.tsx
     │   │       └── ModeratorUsersPage.tsx
     │   └── routes/
+    │       ├── AccountBlockToast.tsx     # Aviso en pantalla al ser sancionado
     │       ├── AppRouter.tsx
     │       ├── index.ts
     │       └── RoleRoute.tsx
     └── styles/
-        ├── admin/       (admin-dashboard.css, admin-modal.css, admin-users.css)
+        ├── admin/
+        │   ├── admin-dashboard.css
+        │   ├── admin-history.css
+        │   ├── admin-modal.css
+        │   ├── admin-users.css            # Índice: importa las partes siguientes
+        │   ├── admin-users-extras.css
+        │   ├── admin-users-list.css
+        │   ├── admin-users-responsive.css
+        │   └── admin-users-sanction.css
         ├── auth/        (auth-register.css, auth.css)
-        ├── chat/        (chat.css)
+        ├── chat/
+        │   ├── chat.css                   # Índice: importa las partes siguientes
+        │   ├── chat-attachments.css
+        │   ├── chat-conversation.css
+        │   ├── chat-responsive.css
+        │   └── chat-widget.css
         ├── home/        (home.css)
         ├── moderation/  (moderation-panel.css, moderation.css)
         ├── profile/     (profile.css)
@@ -267,11 +317,11 @@ El código se organiza en capas y módulos:
 
 ### Responsabilidad de las capas
 
-- **`presentation/`:** páginas, componentes, formularios, layouts, contexto de sesión y navegación.
-- **`business/`:** tipos, validaciones y reglas de negocio (contraseñas, registro, sanciones, cambio de nombre, bloqueo de login).
+- **`presentation/`:** páginas, componentes, formularios, layouts, contexto de sesión y navegación. Las páginas (`pages/`) contienen solo pantallas; la lógica va en `business/` y en `hooks/`.
+- **`business/`:** tipos, validaciones y reglas de negocio (contraseñas, registro, sanciones, notas, cambio de nombre, bloqueo de login).
 - **`data/`:** cliente de Supabase y repositorios de acceso a datos.
 - **`hooks/`:** lógica reutilizable de React.
-- **`styles/`:** hojas de estilo globales y por módulo.
+- **`styles/`:** hojas de estilo globales y por módulo. Los archivos grandes tienen un archivo índice que importa sus partes.
 - **`assets/`:** imágenes y otros recursos gráficos.
 
 `AppRouter.tsx` define la navegación y `RoleRoute.tsx` aplica las restricciones por rol en el frontend. Estas restricciones mejoran el flujo de la interfaz, pero no reemplazan la autorización del servidor.
@@ -280,8 +330,8 @@ El código se organiza en capas y módulos:
 
 | Rol | Valor | Acceso |
 |---|---|---|
-| Administrador | `admin` | Panel `/admin`: usuarios, roles, actividad e informes; puede banear y suspender. No usa el inicio ni el perfil ni el chat. |
-| Moderador | `moderator` | Panel `/moderacion`; puede suspender usuarios con rol `user`. También tiene inicio, perfil y chat. |
+| Administrador | `admin` | Panel `/admin`: resumen, usuarios, roles, actividad, historial e informes; puede banear, suspender y escribir notas. No usa el inicio ni el perfil ni el chat. |
+| Moderador | `moderator` | Panel `/moderacion`: reseñas, usuarios (solo `user`, solo suspender), historial y notas. También tiene inicio, perfil y chat. |
 | Usuario | `user` | Inicio, perfil, lugares, reseñas, favoritos, seguimiento y chat. |
 
 Al iniciar sesión, cada rol llega a su página principal: `admin` → `/admin`, `moderator` → `/moderacion`, `user` → `/`.
@@ -302,10 +352,12 @@ Definidas en `src/presentation/routes/AppRouter.tsx`:
 | `/perfil` | `user`, `moderator` | `MyProfilePage` |
 | `/moderacion` | `moderator` | `ModerationPage` |
 | `/moderacion/usuarios` | `moderator` | `ModeratorUsersPage` |
+| `/moderacion/historial` | `moderator` | `AdminHistoryPage` |
 | `/admin` | `admin` | `AdminOverviewPage` |
-| `/admin/users` | `admin` | `AdminUsersPage` |
+| `/admin/users` | `admin` | `AdminUsersPage` (acepta `?estado=sancionados`, `suspendidos`, `baneados` o `activos`) |
 | `/admin/roles` | `admin` | `AdminRolesPage` |
 | `/admin/activity` | `admin` | `AdminActivityPage` |
+| `/admin/history` | `admin` | `AdminHistoryPage` |
 | `/admin/reports` | `admin` | `AdminReportsPage` |
 | `*` | — | Redirige a la página principal del rol, o a `/login` si no hay sesión. |
 
@@ -342,14 +394,16 @@ La conexión se configura en `src/data/supabase.ts` mediante `@supabase/supabase
 | Favoritos | **Supabase** |
 | Seguimiento de usuarios | **Supabase** (con `followStore.ts` como almacén local complementario) |
 | Registro de cuentas | `localStorage` (`app_users`) y sincronización a `users` en Supabase |
-| Sesión, roles y sanciones | `localStorage` |
-| Intentos de login | `localStorage` |
+| Sesión, roles y sanciones (con avisos de levantamiento) | `localStorage` (`user`, `app_users`) |
+| Intentos de login | `localStorage` (`login_attempts`) |
 | Chat y mensajes | `localStorage` (`app_messages`) |
-| Actividad e informes de administración | `localStorage` (`app_activity`) |
+| Actividad, ranking e **historial de moderación** | `localStorage` (`app_activity`) |
+| **Notas internas** de usuarios | `localStorage` (`app_user_notes`) |
 | Foto de perfil y fecha del último cambio de nombre | `localStorage` |
+| Nota de permisos del moderador cerrada | `localStorage` (`moderator_note_dismissed`) |
 | Avisos temporales de la interfaz | `sessionStorage` |
 
-Mientras las cuentas, los roles y las sanciones vivan en `localStorage`, solo son efectivos en el navegador donde se crearon: **un baneo o una suspensión aplicados por un administrador no afectan a otros equipos**. Los roles guardados en el navegador tampoco son una fuente confiable de autorización.
+Mientras las cuentas, los roles, las sanciones, el historial y las notas vivan en `localStorage`, solo son efectivos en el navegador donde se crearon: **un baneo, una suspensión o una nota hecha por un administrador no afectan a otros equipos**. Los datos guardados en el navegador tampoco son una fuente confiable de autorización, porque pueden editarse desde las herramientas del navegador.
 
 ## ⚙️ Instalación y ejecución
 
@@ -424,10 +478,15 @@ Antes de dar por terminado un cambio, comprobar:
 - Indicador de fortaleza de contraseña.
 - Inicio y cierre de sesión, y bloqueo tras 5 intentos fallidos.
 - Recuperación y restablecimiento de contraseña.
-- Redirección por rol y acceso a `/admin` y `/moderacion`.
-- Sanciones: baneo (solo admin), suspensión en minutos, horas y días, y reversión.
+- Redirección por rol y acceso a `/admin` y `/moderacion`; que un usuario normal que entra a `/admin` sea redirigido al inicio.
+- Sanciones: baneo (solo admin), suspensión en minutos, horas y días, y reversión con y sin motivo.
+- Avisos del login: cuenta regresiva de la suspensión, baneo permanente y aviso verde de sanción levantada.
 - Que el moderador vea solo usuarios con rol `user` y no pueda banear.
-- Cierre automático de sesión al sancionar una cuenta activa.
+- Cierre automático de sesión y aviso en pantalla al sancionar una cuenta activa.
+- Historial: que cada sanción aparezca, los filtros por acción y por fecha (hoy, día y mes) y la descarga del CSV.
+- Que «Borrar actividad» no elimine el historial de moderación.
+- Notas internas: crear con etiqueta, crear con «Otro», borrar las propias y que el moderador no pueda borrar las de otros.
+- Roles: buscador y filtros Todos / Moderadores / Usuarios, y subir o bajar de rol.
 - Lugares, reseñas, comentarios sin calificación y favoritos contra Supabase.
 - Seguimiento de usuarios.
 - Perfil, cambio de nombre y foto.
@@ -441,28 +500,32 @@ Antes de dar por terminado un cambio, comprobar:
 | Área | Estado |
 |---|---|
 | React, TypeScript y Vite | Configurados. |
-| Organización por capas | Implementada. |
+| Organización por capas | Implementada; archivos largos separados y paneles con carga diferida. |
 | Supabase: lugares, reseñas, favoritos, seguimiento | Conectado y en uso. |
 | Registro de cuentas | Local, con sincronización a Supabase. |
 | Autenticación y contraseñas | Local (`btoa`); pendiente migrar a Supabase Auth. |
 | Recuperación de contraseña | Código generado en el navegador; falta envío real por correo. |
-| Roles y sanciones (baneo y suspensión) | Funcionan en el navegador; falta persistirlos en Supabase. |
+| Roles y sanciones (baneo y suspensión) | Funcionan en el navegador, con avisos en el login; falta persistirlos en Supabase. |
+| Historial de moderación | Funciona en el navegador, con filtros y CSV; falta persistirlo en Supabase. |
+| Notas internas por usuario | Funcionan en el navegador; falta persistirlas en Supabase. |
 | Panel de moderación de reseñas | Interfaz lista con datos de ejemplo; falta conectarla a `reviews`. |
 | Chat y notificaciones | Locales; sin entrega entre dispositivos. |
-| Actividad e informes de administración | Basados en `localStorage`. |
+| Actividad e informes de administración | Basados en `localStorage`; el ranking solo tiene datos reales de moderación hasta que el Home registre la actividad. |
 | Políticas RLS | Abiertas (desarrollo); deben restringirse. |
 | Pruebas automatizadas | Pendiente. |
 
 ### Mejoras previstas
 
 1. Migrar la autenticación a **Supabase Auth** (hash de contraseñas, sesiones y recuperación por correo).
-2. Mover cuentas, roles y sanciones a tablas de Supabase para que apliquen en todos los dispositivos.
-3. Conectar el panel de moderación a las reseñas reales (aprobar y eliminar) y registrar las acciones de moderación.
-4. Restringir las políticas RLS según el usuario autenticado y su rol.
-5. Mover la URL y la clave de Supabase a variables de entorno.
-6. Migrar mensajes, notificaciones y actividad a servicios compartidos (por ejemplo, Supabase Realtime).
-7. Añadir pruebas automatizadas y mejorar el manejo de errores.
-8. Optimizar carga de imágenes, accesibilidad y división del código.
+2. Mover cuentas, roles, sanciones, historial y notas a tablas de Supabase para que apliquen en todos los dispositivos.
+3. Conectar el panel de moderación a las reseñas reales: borrado lógico de reseñas con registro en el historial y restauración (acciones `review_delete` y `review_restore`, ya previstas en el historial).
+4. Registrar en el historial los cambios de rol (subir o bajar a moderador).
+5. Registrar la actividad real de los usuarios (publicaciones, comentarios, «me gusta» y seguimientos) con `logActivity` desde el Home, para que el ranking use datos reales.
+6. Restringir las políticas RLS según el usuario autenticado y su rol.
+7. Mover la URL y la clave de Supabase a variables de entorno.
+8. Migrar mensajes, notificaciones y actividad a servicios compartidos (por ejemplo, Supabase Realtime).
+9. Añadir pruebas automatizadas (por ejemplo con Vitest para el registro, el login y las sanciones) y mejorar el manejo de errores.
+10. Optimizar la carga de imágenes y la accesibilidad, y dividir los archivos más grandes del Home (`FacebookFeed.tsx` y `home.css`).
 
 ## 👨‍💻 Información académica
 

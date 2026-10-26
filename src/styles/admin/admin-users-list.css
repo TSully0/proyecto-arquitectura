@@ -1,0 +1,303 @@
+/* ==========================================
+   USUARIOS: contenedor, búsqueda, filtros, tarjetas, roles y acciones
+   Parte de src/styles/admin/admin-users.css (ver índice)
+   ========================================== */
+
+.users-container,
+.users-container *,
+.users-container *::before,
+.users-container *::after {
+  box-sizing: border-box;
+}
+
+.users-container {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: #f4efe8;
+  color: #3b2f25;
+  font-family: "Inter", sans-serif;
+}
+
+.users-container h1 {
+  margin: 0 0 20px;
+  color: #4a2f1d;
+  font-size: clamp(23px, 4vw, 30px);
+}
+
+/* ==========================================
+   BOTÓN VOLVER
+   ========================================== */
+
+.btn-back {
+  min-height: 40px;
+  margin-bottom: 15px;
+  padding: 8px 14px;
+  color: #fff;
+  background: #8b5e3c;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-back:hover {
+  background: #6f4a2f;
+}
+
+/* ==========================================
+   BÚSQUEDA Y FILTROS
+   ========================================== */
+
+.users-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 12px;
+  color: #3b2f25;
+  background: #fff;
+  border: 1px solid #d6cfc2;
+  border-radius: 8px;
+  outline: none;
+  font: inherit;
+}
+
+.search-input:focus {
+  border-color: #c89b6d;
+  box-shadow: 0 0 0 3px rgba(200, 155, 109, 0.15);
+}
+
+.filter-btn {
+  min-height: 40px;
+  padding: 8px 12px;
+  color: #4a2f1d;
+  background: #e5ddd1;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.filter-btn:hover {
+  background: #d6c7b3;
+}
+
+.filter-btn.active {
+  color: #fff;
+  background: #a75f37;
+}
+
+/* ==========================================
+   GRID DE USUARIOS
+   ========================================== */
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, 280px), 1fr)
+  );
+  gap: 20px;
+}
+
+.user-card {
+  min-width: 0;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #e4dcd1;
+  border-radius: 14px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.user-card:hover {
+  transform: translateY(-4px);
+  border-color: #c89b6d;
+}
+
+.user-card.baneado {
+  background: #fff4f4;
+  border-left: 5px solid #ef4444;
+}
+
+.user-card.suspendido {
+  background: #fff8e6;
+  border-left: 5px solid #f59e0b;
+}
+
+/* ==========================================
+   CABECERA Y AVATAR
+   ========================================== */
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  color: #fff;
+  background: linear-gradient(135deg, #2c6e91, #2563eb);
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.user-header > div:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.user-header h3 {
+  margin: 0;
+  color: #3b2f25;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.user-header p {
+  margin: 4px 0 0;
+  color: #7b6a58;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================
+   ROLES Y ESTADOS
+   ========================================== */
+
+.user-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.role,
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.role.admin {
+  color: #fff;
+  background: #4a2f1d;
+}
+
+.role.moderator {
+  color: #fff;
+  background: #d97706;
+}
+
+.role.user {
+  color: #fff;
+  background: #7b8490;
+}
+
+.status.activo {
+  color: #fff;
+  background: #059669;
+}
+
+.status.suspendido {
+  color: #fff;
+  background: #d97706;
+}
+
+.status.baneado {
+  color: #fff;
+  background: #dc2626;
+}
+
+/* ==========================================
+   ACCIONES DEL USUARIO
+   ========================================== */
+
+.user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.user-actions button {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 0;
+  min-height: 40px;
+  padding: 9px 8px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-ban {
+  background: #ef4444;
+}
+
+.btn-ban:hover {
+  background: #b91c1c;
+}
+
+.btn-unban {
+  background: #10b981;
+}
+
+.btn-unban:hover {
+  background: #059669;
+}
+
+.btn-suspend {
+  background: #f59e0b;
+}
+
+.btn-suspend:hover {
+  background: #d97706;
+}
+
+.btn-unsuspend {
+  background: #2c6e91;
+}
+
+.btn-unsuspend:hover {
+  background: #20536e;
+}
+
+/* ==========================================
+   ESTADO VACÍO
+   ========================================== */
+
+.empty {
+  margin-top: 24px;
+  color: #7b6a58;
+  text-align: center;
+}

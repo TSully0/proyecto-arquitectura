@@ -12,6 +12,7 @@ import type { AppUser, ActivityItem } from "../../../data/repositories/activity"
 
 import { PageHeader } from "../../components/admin/PageHeader";
 import { StatCard } from "../../components/admin/StatCard";
+import { RecentModerationCard } from "../../components/admin/RecentModerationCard";
 import { MEDALS } from "../../components/admin/admin-utils";
 
 const LINKS = [
@@ -20,6 +21,13 @@ const LINKS = [
   { to: "/admin/activity", icon: TrendingUp, title: "Actividad", text: "Quiénes participan más en la app." },
   { to: "/admin/reports", icon: FileDown, title: "Informes", text: "Descargar reportes en CSV o PDF." }
 ];
+
+// La tarjeta completa funciona como enlace, sin cambiar su aspecto.
+const cardLinkStyle = {
+  display: "block",
+  color: "inherit",
+  textDecoration: "none"
+} as const;
 
 export function AdminOverviewPage() {
   const [users] = useState<AppUser[]>(readUsers);
@@ -37,7 +45,16 @@ export function AdminOverviewPage() {
       <div className="admin-stats">
         <StatCard tone="blue" icon={<Users size={20} />} value={users.length} label="Usuarios registrados" />
         <StatCard tone="brown" icon={<Wrench size={20} />} value={moderators} label="Moderadores" />
-        <StatCard tone="red" icon={<Ban size={20} />} value={blocked} label="Baneados o suspendidos" />
+
+        {/* Lleva a Usuarios ya filtrado por baneados y suspendidos */}
+        <Link
+          to="/admin/users?estado=sancionados"
+          style={cardLinkStyle}
+          title="Ver usuarios baneados o suspendidos"
+        >
+          <StatCard tone="red" icon={<Ban size={20} />} value={blocked} label="Baneados o suspendidos" />
+        </Link>
+
         <StatCard tone="green" icon={<Activity size={20} />} value={items.length} label="Acciones registradas" />
       </div>
 
@@ -81,6 +98,8 @@ export function AdminOverviewPage() {
           </div>
         )}
       </div>
+
+      <RecentModerationCard />
     </div>
   );
 }

@@ -1,0 +1,318 @@
+/* =====================================================
+   CHAT — WIDGET: variables, botón flotante, panel y lista de conversaciones (secciones 1-4)
+   Parte de src/styles/chat/chat.css (ver índice)
+===================================================== */
+
+/* =====================================================
+   1. VARIABLES Y BASE
+===================================================== */
+
+:root {
+  --chat-blue: #2c6e91;
+  --chat-blue-dark: #1f566f;
+  --chat-brown: #a75f37;
+  --chat-brown-dark: #8c4b27;
+  --chat-cream: #f7f1ea;
+  --chat-cream-dark: #e5ddd1;
+  --chat-text: #292421;
+  --chat-muted: #7b6a58;
+  --chat-border: #e8e2dc;
+  --chat-white: #ffffff;
+}
+
+.msg-panel,
+.msg-panel *,
+.chat-box,
+.chat-box *,
+.chat-attach-menu,
+.chat-attach-menu * {
+  box-sizing: border-box;
+}
+
+/* =====================================================
+   2. BOTÓN FLOTANTE
+===================================================== */
+
+.msg-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 58px;
+  height: 58px;
+  min-height: 58px;
+  padding: 0;
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 50% !important;
+  background: linear-gradient(
+    135deg,
+    var(--chat-blue),
+    var(--chat-blue-dark)
+  );
+  color: var(--chat-white);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.msg-fab:hover {
+  transform: scale(1.06);
+}
+
+/* =====================================================
+   3. PANEL FLOTANTE
+===================================================== */
+
+.msg-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 96px;
+  z-index: 999;
+
+  display: flex;
+  flex-direction: column;
+
+  width: 360px;
+  height: 500px;
+  min-width: 0;
+  min-height: 0;
+
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 120px);
+  max-height: calc(100dvh - 120px);
+
+  padding: 0;
+  overflow: hidden;
+
+  background: var(--chat-white);
+  border: 1px solid rgb(41 36 33 / 6%);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 24%);
+
+  animation: msg-pop 0.18s ease-out;
+}
+
+@keyframes msg-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.msg-panel .chat-box {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+
+  overflow: hidden;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* =====================================================
+   4. LISTA DE CONVERSACIONES
+===================================================== */
+
+.msg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 16px 18px 8px;
+
+  color: var(--chat-text);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.msg-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+  padding: 6px;
+
+  border: none;
+  border-radius: 50% !important;
+  background: #f3f4f6;
+  color: #444444;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.msg-close:hover {
+  background: #e5e7eb;
+}
+
+.msg-search-wrap {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  flex: 0 0 auto;
+  min-width: 0;
+  margin: 4px 14px 10px;
+
+  color: var(--chat-muted);
+}
+
+.msg-search-wrap svg {
+  position: absolute;
+  left: 13px;
+  pointer-events: none;
+}
+
+.msg-panel .msg-search {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 14px 10px 38px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px !important;
+  background: #f3f4f6;
+  color: var(--chat-text);
+
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.msg-panel .msg-search:focus {
+  border-color: var(--chat-blue);
+  background: var(--chat-white);
+  box-shadow: 0 0 0 3px rgb(44 110 145 / 12%);
+}
+
+.msg-list {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  padding: 0 8px 10px;
+}
+
+.msg-list::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.msg-list::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #c89b6d;
+  border-radius: 10px;
+}
+
+.msg-empty {
+  padding: 40px 20px;
+  color: var(--chat-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.msg-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--chat-text);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.msg-item:hover {
+  background: #f3f4f6;
+}
+
+.msg-item-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+
+  border-radius: 50% !important;
+  background: linear-gradient(
+    135deg,
+    var(--chat-blue),
+    var(--chat-brown)
+  );
+  color: var(--chat-white);
+  font-weight: 800;
+}
+
+.msg-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.msg-item-name,
+.msg-item-preview {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msg-item-name {
+  color: var(--chat-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.msg-item-preview {
+  margin-top: 2px;
+  color: #777777;
+  font-size: 13px;
+}
+
+.msg-item-time {
+  align-self: flex-start;
+  flex: 0 0 auto;
+  margin-top: 4px;
+
+  color: #999999;
+  font-size: 11px;
+}

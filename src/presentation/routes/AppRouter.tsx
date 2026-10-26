@@ -1,23 +1,57 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Routes, Route, useNavigate } from "react-router-dom";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "../pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "../pages/auth/ResetPasswordPage";
-import { AdminRolesPage } from "../pages/admin/AdminRolesPage";
-import { AdminUsersPage } from "../pages/admin/AdminUsersPage";
-import { AdminLayout } from "../pages/admin/AdminLayout";
-import { AdminOverviewPage, AdminActivityPage, AdminReportsPage } from "../pages/admin/AdminSections";
-import { ModerationPage } from "../pages/moderation/ModerationPage";
-import { ModeratorLayout } from "../pages/moderation/ModeratorLayout";
-import { ModeratorUsersPage } from "../pages/moderation/ModeratorUsersPage";
 import { MyProfilePage } from "../pages/MyProfilePage";
 import type { User } from "../../business/types/user";
 import { RoleRoute } from "./RoleRoute";
 import { MessengerWidget } from "../components/chat/MessengerWidget";
-import { subscribeToAccountStatus } from "../../business/services/accountStatus";
+import {
+  subscribeToAccountStatus,
+  type AccountBlockNotice,
+} from "../../business/services/accountStatus";
+import { AccountBlockToast } from "./AccountBlockToast";
 import { useAuth } from "../auth/AuthContext";
+import { PageLoader } from "../components/ui/PageLoader";
+
+/* =========================
+   PANELES CON CARGA PEREZOSA
+   Se descargan solo cuando alguien entra a ellos, así los usuarios
+   normales no bajan el código de admin ni de moderación.
+========================= */
+const AdminLayout = lazy(() =>
+  import("../pages/admin/AdminLayout").then((m) => ({ default: m.AdminLayout }))
+);
+const AdminOverviewPage = lazy(() =>
+  import("../pages/admin/AdminSections").then((m) => ({ default: m.AdminOverviewPage }))
+);
+const AdminActivityPage = lazy(() =>
+  import("../pages/admin/AdminSections").then((m) => ({ default: m.AdminActivityPage }))
+);
+const AdminReportsPage = lazy(() =>
+  import("../pages/admin/AdminSections").then((m) => ({ default: m.AdminReportsPage }))
+);
+const AdminUsersPage = lazy(() =>
+  import("../pages/admin/AdminUsersPage").then((m) => ({ default: m.AdminUsersPage }))
+);
+const AdminRolesPage = lazy(() =>
+  import("../pages/admin/AdminRolesPage").then((m) => ({ default: m.AdminRolesPage }))
+);
+const AdminHistoryPage = lazy(() =>
+  import("../pages/admin/AdminHistoryPage").then((m) => ({ default: m.AdminHistoryPage }))
+);
+const ModeratorLayout = lazy(() =>
+  import("../pages/moderation/ModeratorLayout").then((m) => ({ default: m.ModeratorLayout }))
+);
+const ModerationPage = lazy(() =>
+  import("../pages/moderation/ModerationPage").then((m) => ({ default: m.ModerationPage }))
+);
+const ModeratorUsersPage = lazy(() =>
+  import("../pages/moderation/ModeratorUsersPage").then((m) => ({ default: m.ModeratorUsersPage }))
+);
 
 /* =========================
    NORMALIZAR ROL
@@ -47,6 +81,7 @@ const AppRoutes = () => {
 
   // Mensaje que se muestra cuando una cuenta es baneada o suspendida.
   const [blockMessage, setBlockMessage] = useState("");
+  const [blockNotice, setBlockNotice] = useState<AccountBlockNotice | null>(null);
 
   /* =========================
      DETECTAR BANEOS / SUSPENSIONES CON LA SESIÓN ABIERTA
@@ -55,8 +90,9 @@ const AppRoutes = () => {
   useEffect(() => {
     if (!user) return;
 
-    return subscribeToAccountStatus(user, (message) => {
+    return subscribeToAccountStatus(user, (message, notice) => {
       setBlockMessage(message);
+      setBlockNotice(notice);
       logout();
       navigate("/login", { replace: true });
     });
@@ -66,15 +102,20 @@ const AppRoutes = () => {
   useEffect(() => {
     if (!blockMessage) return;
 
-    const timer = window.setTimeout(() => setBlockMessage(""), 12_000);
+    // Con detalle y cuenta regresiva se deja más tiempo en pantalla.
+    const timer = window.setTimeout(() => {
+      setBlockMessage("");
+      setBlockNotice(null);
+    }, blockNotice ? 30_000 : 12_000);
     return () => window.clearTimeout(timer);
-  }, [blockMessage]);
+  }, [blockMessage, blockNotice]);
 
   /* =========================
      LOGIN
   ========================= */
   const handleLogin = (loggedInUser: User) => {
     setBlockMessage("");
+    setBlockNotice(null);
     login(loggedInUser); // el contexto normaliza el rol y guarda la sesión
   };
 
@@ -88,6 +129,7 @@ const AppRoutes = () => {
 
   return (
     <>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* =========================
             HOME (el admin NO entra aquí: va a su panel)
@@ -189,6 +231,7 @@ const AppRoutes = () => {
           >
             <Route index element={<ModerationPage />} />
             <Route path="usuarios" element={<ModeratorUsersPage />} />
+            <Route path="historial" element={<AdminHistoryPage />} />
           </Route>
         </Route>
 
@@ -211,6 +254,7 @@ const AppRoutes = () => {
             <Route path="roles" element={<AdminRolesPage />} />
             <Route path="activity" element={<AdminActivityPage />} />
             <Route path="reports" element={<AdminReportsPage />} />
+            <Route path="history" element={<AdminHistoryPage />} />
           </Route>
         </Route>
 
@@ -228,6 +272,7 @@ const AppRoutes = () => {
           }
         />
       </Routes>
+      </Suspense>
 
       {/* 💬 CHAT FLOTANTE (el admin no lo usa) */}
       {user && normalizeRole(user.role) !== "admin" && (
@@ -236,42 +281,14 @@ const AppRoutes = () => {
 
       {/* Aviso de cuenta baneada o suspendida (se ve sobre el login) */}
       {blockMessage && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          style={{
-            position: "fixed",
-            bottom: 20,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 9999,
-            width: "min(92%, 520px)",
-            padding: "14px 18px",
-            borderRadius: 10,
-            background: "#fff1f0",
-            color: "#a12622",
-            border: "1px solid #f0b8b5",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+        <AccountBlockToast
+          message={blockMessage}
+          notice={blockNotice}
+          onClose={() => {
+            setBlockMessage("");
+            setBlockNotice(null);
           }}
-        >
-          <button
-            type="button"
-            onClick={() => setBlockMessage("")}
-            aria-label="Cerrar mensaje"
-            style={{
-              float: "right",
-              marginLeft: 12,
-              border: 0,
-              background: "transparent",
-              color: "inherit",
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            ×
-          </button>
-          {blockMessage}
-        </div>
+        />
       )}
     </>
   );

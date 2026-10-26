@@ -1,0 +1,57 @@
+.history-page { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+.history-page, .history-page * { box-sizing: border-box; }
+
+.history-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.history-page h1 { margin: 0 0 4px; font-size: 1.6rem; }
+.history-subtitle { margin: 0; color: #6b7280; font-size: 0.92rem; }
+
+.history-csv { border: 1px solid #d1d5db; background: #fff; border-radius: 10px; padding: 9px 14px; font-weight: 600; cursor: pointer; }
+.history-csv:hover:not(:disabled) { background: #f3f4f6; }
+.history-csv:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.history-toolbar { display: flex; flex-direction: column; gap: 12px; margin: 20px 0 16px; }
+.history-search { width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 0.95rem; }
+.history-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.history-filter { border: 1px solid #d1d5db; background: #fff; border-radius: 999px; padding: 6px 14px; font-size: 0.85rem; cursor: pointer; }
+.history-filter.active { background: #111827; border-color: #111827; color: #fff; }
+
+.history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.history-item { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start; background: #fff; border: 1px solid #e5e7eb; border-left: 4px solid #9ca3af; border-radius: 12px; padding: 12px 14px; }
+.history-item.ban { border-left-color: #dc2626; }
+.history-item.suspend { border-left-color: #f59e0b; }
+.history-item.unban, .history-item.unsuspend, .history-item.review_restore { border-left-color: #16a34a; }
+.history-item.review_delete { border-left-color: #7c3aed; }
+
+.history-badge { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; background: #f3f4f6; border-radius: 6px; padding: 4px 8px; white-space: nowrap; }
+.history-line { margin: 0; font-size: 0.95rem; }
+.history-line em { color: #6b7280; font-style: normal; font-size: 0.85rem; }
+.history-duration { color: #b45309; font-weight: 600; }
+.history-reason { margin: 4px 0 0; color: #4b5563; font-size: 0.88rem; }
+.history-time { color: #6b7280; font-size: 0.8rem; white-space: nowrap; }
+.history-empty { text-align: center; color: #6b7280; padding: 40px 0; }
+
+@media (max-width: 640px) {
+  .history-item { grid-template-columns: 1fr; gap: 6px; }
+}
+
+/* ===== Tarjeta "Últimas acciones" del Resumen ===== */
+.recent-list { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.recent-item { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; border-left: 4px solid #9ca3af; background: #f9fafb; border-radius: 8px; padding: 8px 12px; }
+.recent-item.ban { border-left-color: #dc2626; }
+.recent-item.suspend { border-left-color: #f59e0b; }
+.recent-item.unban, .recent-item.unsuspend, .recent-item.review_restore { border-left-color: #16a34a; }
+.recent-item.review_delete { border-left-color: #7c3aed; }
+.recent-text { font-size: 0.92rem; }
+.recent-more { font-weight: 600; font-size: 0.9rem; }
+@media (max-width: 640px) { .recent-item { grid-template-columns: 1fr; gap: 4px; } }
+
+/* ===== Filtro por fecha del Historial ===== */
+.history-dates { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.history-dates-label { font-weight: 600; font-size: 0.9rem; color: #6b7280; }
+.history-select,
+.history-date-input { min-height: 38px; padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; font: inherit; font-size: 0.9rem; cursor: pointer; }
+.history-select:focus,
+.history-date-input:focus { outline: none; border-color: #c89b6d; box-shadow: 0 0 0 3px rgba(200, 155, 109, 0.15); }
+.history-clear-dates { border: none; background: transparent; color: #a75f37; font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 6px 4px; }
+.history-clear-dates:hover { text-decoration: underline; }
+.history-count { margin: 0 0 10px; color: #6b7280; font-size: 0.85rem; }

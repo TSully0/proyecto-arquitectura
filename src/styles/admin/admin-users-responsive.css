@@ -1,0 +1,167 @@
+/* ==========================================
+   RESPONSIVE: tablets, celulares, táctil y reducir animaciones
+   Parte de src/styles/admin/admin-users.css (ver índice)
+   ========================================== */
+
+/* ==========================================
+   TABLETS
+   ========================================== */
+
+@media (max-width: 768px) {
+  .users-container {
+    padding: 24px 14px;
+  }
+
+  .users-grid {
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, 260px), 1fr)
+    );
+    gap: 14px;
+  }
+
+  .user-card {
+    padding: 15px;
+  }
+
+  .users-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* ==========================================
+   CELULARES
+   ========================================== */
+
+@media (max-width: 520px) {
+  .users-container {
+    padding: 18px 10px;
+  }
+
+  .users-container h1 {
+    font-size: 23px;
+    overflow-wrap: anywhere;
+  }
+
+  .users-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .user-card {
+    padding: 13px;
+    border-radius: 12px;
+  }
+
+  .user-header {
+    gap: 10px;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .user-header h3 {
+    font-size: 15px;
+  }
+
+  .user-info {
+    gap: 6px;
+  }
+
+  .role,
+  .status {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .user-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .user-actions button {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 6px;
+    font-size: 11px;
+  }
+
+  .users-toolbar {
+    gap: 8px;
+  }
+
+  .filter-btn {
+    min-height: 42px;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .sanction-overlay {
+    padding: 12px;
+  }
+
+  .sanction-modal {
+    max-height: calc(100vh - 24px);
+    padding: 22px 18px;
+    border-radius: 16px;
+  }
+
+  .sanction-actions {
+    flex-direction: column-reverse;
+  }
+
+  .sanction-actions button {
+    width: 100%;
+  }
+
+  .sanction-helper {
+    font-size: 11px;
+  }
+
+  .sanction-unit-tabs {
+    width: 100%;
+  }
+
+  .sanction-unit-tab {
+    flex: 1;
+    padding: 9px 6px;
+  }
+
+  .sanction-select {
+    flex: 1 1 100%;
+  }
+}
+
+/* Controles táctiles */
+@media (hover: none) and (pointer: coarse) {
+  .user-actions button,
+  .filter-btn,
+  .btn-back {
+    min-height: 44px;
+  }
+
+  .user-card:hover {
+    transform: none;
+  }
+}
+
+/* Accesibilidad: reducir animaciones */
+@media (prefers-reduced-motion: reduce) {
+  .sanction-overlay,
+  .sanction-modal {
+    animation: none;
+  }
+
+  .sanction-actions button,
+  .user-card {
+    transition: none;
+  }
+}

@@ -1,0 +1,147 @@
+/* ==========================================
+   EXTRAS: modo moderador y filtro por estado
+   Parte de src/styles/admin/admin-users.css (ver índice)
+   ========================================== */
+
+/* ==========================================
+   MODO MODERADOR
+   ========================================== */
+
+.users-subtitle {
+  margin: -10px 0 20px;
+  color: #7b6a58;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.user-note {
+  width: 100%;
+  margin: 0;
+  padding: 9px 10px;
+  color: #991b1b;
+  background: #fdeaea;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.user-note-admin {
+  color: #4a2f1d;
+  background: #f1e9dd;
+}
+
+/* ===== Filtro por estado ===== */
+.users-status-toolbar { align-items: center; margin-top: -8px; }
+.users-status-label { font-weight: 600; font-size: 0.9rem; color: #6b7280; margin-right: 4px; }
+
+/* ===== Botones de la pantalla de Roles ===== */
+.btn-promote {
+  background: #10b981; /* verde: subir de rol */
+}
+
+.btn-promote:hover {
+  background: #059669;
+}
+
+.btn-demote {
+  background: #ef4444; /* rojo: bajar de rol */
+}
+
+.btn-demote:hover {
+  background: #b91c1c;
+}
+
+/* ===== Notas internas del equipo ===== */
+.user-actions .btn-notes {
+  flex: 1 1 100%;
+  background: #8b6b4a;
+}
+
+.user-actions .btn-notes:hover {
+  background: #6f5339;
+}
+
+.sanction-icon.notes-icon {
+  color: #8b6b4a;
+  background: #f7efe4;
+  border-color: #e4d3bd;
+  font-size: 26px;
+}
+
+.notes-empty {
+  margin: 4px 0 18px;
+  padding: 14px;
+  color: #7b6a58;
+  background: #faf6f0;
+  border-radius: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 150px;
+  margin: 4px 0 16px;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.notes-item {
+  padding: 10px 12px;
+  background: #faf6f0;
+  border: 1px solid #eadfce;
+  border-left: 4px solid #c89b6d;
+  border-radius: 10px;
+}
+
+.notes-text {
+  margin: 0 0 6px;
+  color: #3b2f25;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.notes-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #7b6a58;
+  font-size: 12px;
+}
+
+.notes-delete {
+  padding: 2px 6px;
+  color: #b91c1c;
+  background: transparent;
+  border: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notes-delete:hover {
+  text-decoration: underline;
+}
+
+.sanction-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notes-tag {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 3px 10px;
+  color: #4a2f1d;
+  background: #efe2d0;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}

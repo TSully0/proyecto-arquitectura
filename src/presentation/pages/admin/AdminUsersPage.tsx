@@ -1,58 +1,26 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import type { User } from "../../../business/types/user";
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   SanctionModal,
   type SanctionType,
   type SanctionConfirmPayload,
 } from "../../components/admin/SanctionModal";
-import { UserCard, type UserStatus } from "../../components/admin/UserCard";
+import { LiftSanctionModal } from "../../components/admin/LiftSanctionModal";
+import { UserNotesModal } from "../../components/admin/UserNotesModal";
+import { UserCard } from "../../components/admin/UserCard";
+import { UsersFilters } from "../../components/admin/UsersFilters";
+import {
+  STATUS_PARAMS,
+  type Role,
+  type StatusFilter,
+} from "../../components/admin/user-types";
+import { useManagedUsers } from "../../hooks/useManagedUsers";
+import { logModeration } from "../../../data/repositories/activity";
+import {
+  countNotesByUser,
+  getAllNotes,
+} from "../../../business/services/userNotes";
 import "../../../styles/admin/admin-users.css";
-
-type Role = "admin" | "moderator" | "user";
-
-type ManagedUser = User & {
-  banned?: boolean;
-  suspendedUntil?: number | null;
-  sanctionReason?: string;
-  sanctionCategory?: string;
-  suspensionLabel?: string;
-};
-
-const USERS_KEY = "app_users";
-const SESSION_KEY = "user";
-const ACCOUNT_STATUS_EVENT = "account-status-changed";
-
-function normalizeUsers(data: unknown): ManagedUser[] {
-  if (!Array.isArray(data)) return [];
-
-  return data.map((item): ManagedUser => {
-    const user = item as Partial<ManagedUser>;
-
-    return {
-      ...user,
-      id: String(user.id ?? ""),
-      name: String(user.name ?? ""),
-      email: String(user.email ?? ""),
-      role: String(user.role ?? "user").toLowerCase().trim() as Role,
-      banned: user.banned ?? false,
-      suspendedUntil: user.suspendedUntil ?? null,
-      sanctionReason: user.sanctionReason ?? "",
-      sanctionCategory: user.sanctionCategory ?? "",
-      suspensionLabel: user.suspensionLabel ?? "",
-    } as ManagedUser;
-  });
-}
-
-function readStoredUsers(): ManagedUser[] {
-  try {
-    const raw = localStorage.getItem(USERS_KEY);
-    return raw ? normalizeUsers(JSON.parse(raw)) : [];
-  } catch (error) {
-    console.error("No se pudieron cargar los usuarios:", error);
-    return [];
-  }
-}
 
 interface AdminUsersPageProps {
   /**
@@ -64,93 +32,31 @@ interface AdminUsersPageProps {
 
 export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
   const isModerator = mode === "moderator";
-  const [users, setUsers] = useState<ManagedUser[]>(readStoredUsers);
-  const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const { users, saveUsers, getStatus } = useManagedUsers();
+
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | Role>("all");
+  const [searchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    () => STATUS_PARAMS[searchParams.get("estado") ?? ""] ?? "all"
+  );
 
   const [sanctionModalOpen, setSanctionModalOpen] = useState(false);
   const [sanctionUserId, setSanctionUserId] = useState<string | null>(null);
   const [sanctionType, setSanctionType] = useState<SanctionType>("ban");
 
+  // Quitar baneo / suspensión (con motivo opcional)
+  const [lift, setLift] = useState<{
+    id: string;
+    kind: "ban" | "suspension";
+  } | null>(null);
+
+  // Notas internas del equipo
+  const [notes, setNotes] = useState(getAllNotes);
+  const [notesUserId, setNotesUserId] = useState<string | null>(null);
+  const noteCounts = useMemo(() => countNotesByUser(notes), [notes]);
+
   const navigate = useNavigate();
-
-  // Actualizar suspensiones y estados periódicamente.
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 30_000);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
-  // Sincronizar la lista si otra pestaña modifica app_users.
-  useEffect(() => {
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === USERS_KEY) {
-        setUsers(readStoredUsers());
-        setCurrentTime(Date.now());
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, []);
-
-  // Guardar los usuarios y notificar a las sesiones abiertas.
-  const saveUsers = (updated: ManagedUser[]) => {
-    try {
-      localStorage.setItem(USERS_KEY, JSON.stringify(updated));
-
-      setUsers(updated);
-      setCurrentTime(Date.now());
-
-      // Actualizar la sesión local si pertenece a una cuenta sancionada.
-      const rawSession = localStorage.getItem(SESSION_KEY);
-
-      if (rawSession) {
-        try {
-          const session = JSON.parse(rawSession) as User;
-
-          const updatedSessionUser = updated.find(
-            (item) => String(item.id) === String(session.id)
-          );
-
-          if (updatedSessionUser) {
-            localStorage.setItem(
-              SESSION_KEY,
-              JSON.stringify({
-                ...session,
-                banned: updatedSessionUser.banned ?? false,
-                suspendedUntil: updatedSessionUser.suspendedUntil ?? null,
-                sanctionReason: updatedSessionUser.sanctionReason ?? "",
-                sanctionCategory: updatedSessionUser.sanctionCategory ?? "",
-                suspensionLabel: updatedSessionUser.suspensionLabel ?? "",
-              })
-            );
-          }
-        } catch (error) {
-          console.error("No se pudo actualizar la sesión:", error);
-        }
-      }
-
-      // El evento personalizado funciona dentro de esta misma pestaña.
-      window.dispatchEvent(
-        new CustomEvent(ACCOUNT_STATUS_EVENT, {
-          detail: { users: updated },
-        })
-      );
-    } catch (error) {
-      console.error("No se pudieron guardar los usuarios:", error);
-
-      window.alert(
-        "No se pudieron guardar los cambios. Comprueba el almacenamiento del navegador."
-      );
-    }
-  };
 
   const openSanctionModal = (id: string, type: SanctionType) => {
     setSanctionUserId(id);
@@ -158,52 +64,73 @@ export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
     setSanctionModalOpen(true);
   };
 
+  const closeSanctionModal = () => {
+    setSanctionModalOpen(false);
+    setSanctionUserId(null);
+  };
+
   const handleBan = (id: string) => {
     if (isModerator) return;
     openSanctionModal(id, "ban");
-  };
-
-  const handleUnban = (id: string) => {
-    if (isModerator) return;
-
-    saveUsers(
-      users.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              banned: false,
-              sanctionReason: "",
-              sanctionCategory: "",
-              suspensionLabel: "",
-            }
-          : user
-      )
-    );
   };
 
   const handleSuspend = (id: string) => {
     openSanctionModal(id, "suspend");
   };
 
-  const handleUnsuspend = (id: string) => {
-    saveUsers(
-      users.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              suspendedUntil: null,
-              sanctionReason: "",
-              sanctionCategory: "",
-              suspensionLabel: "",
-            }
-          : user
-      )
-    );
+  const handleUnban = (id: string) => {
+    if (isModerator) return;
+    setLift({ id, kind: "ban" });
   };
 
-  const closeSanctionModal = () => {
-    setSanctionModalOpen(false);
-    setSanctionUserId(null);
+  const handleUnsuspend = (id: string) => {
+    setLift({ id, kind: "suspension" });
+  };
+
+  // Quitar el baneo o la suspensión (el motivo puede venir vacío).
+  const confirmLift = (reason: string) => {
+    if (!lift) return;
+
+    const target = users.find((user) => user.id === lift.id);
+    const isBan = lift.kind === "ban";
+
+    if (target) {
+      logModeration({
+        action: isBan ? "unban" : "unsuspend",
+        targetId: lift.id,
+        targetName: target.name,
+        reason: reason || undefined,
+      });
+    }
+
+    saveUsers(
+      users.map((user) => {
+        if (user.id !== lift.id) return user;
+
+        const cleaned = {
+          ...user,
+          sanctionReason: "",
+          sanctionCategory: "",
+          suspensionLabel: "",
+        };
+
+        return isBan
+          ? {
+              ...cleaned,
+              banned: false,
+              liftedNotice: "ban" as const,
+              liftedBy: "admin",
+            }
+          : {
+              ...cleaned,
+              suspendedUntil: null,
+              liftedNotice: "suspension" as const,
+              liftedBy: isModerator ? "moderator" : "admin",
+            };
+      })
+    );
+
+    setLift(null);
   };
 
   // Aplicar el baneo o la suspensión.
@@ -217,16 +144,25 @@ export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
     if (!sanctionUserId || !reason.trim()) return;
     if (sanctionType === "suspend" && !durationMinutes) return;
 
+    const target = users.find((user) => user.id === sanctionUserId);
+
     // El moderador no banea y solo puede sancionar a usuarios normales sin baneo.
     if (isModerator) {
-      const target = users.find((user) => user.id === sanctionUserId);
-
       if (sanctionType === "ban" || !target || target.role !== "user" || target.banned) {
         return;
       }
     }
 
     const cleanReason = reason.trim();
+
+    logModeration({
+      action: sanctionType === "ban" ? "ban" : "suspend",
+      targetId: sanctionUserId,
+      targetName: target?.name,
+      reason: cleanReason,
+      duration: sanctionType === "suspend" ? durationLabel : undefined,
+    });
+
     const suspensionEnd = Date.now() + (durationMinutes ?? 0) * 60 * 1000;
 
     const updated = users.map((user) => {
@@ -236,6 +172,8 @@ export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
         return {
           ...user,
           banned: true,
+          liftedNotice: undefined,
+          liftedBy: undefined,
           suspendedUntil: null,
           sanctionReason: cleanReason,
           sanctionCategory: "",
@@ -246,6 +184,8 @@ export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
       return {
         ...user,
         banned: false,
+        liftedNotice: undefined,
+        liftedBy: undefined,
         suspendedUntil: suspensionEnd,
         // Etiqueta y detalle se guardan por separado para mostrarlos en el login.
         sanctionReason: detail?.trim() || category || cleanReason,
@@ -258,33 +198,39 @@ export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
     closeSanctionModal();
   };
 
-  const getStatus = (user: ManagedUser): UserStatus => {
-    if (user.banned) return "BANEADO";
-
-    if (
-      user.suspendedUntil &&
-      user.suspendedUntil > currentTime
-    ) {
-      return "SUSPENDIDO";
-    }
-
-    return "ACTIVO";
-  };
-
+  /* ===== Lista filtrada y contadores ===== */
   const normalizedSearch = search.trim().toLowerCase();
 
-  const filteredUsers = users.filter((user) => {
+  // El moderador solo trabaja con usuarios normales.
+  const scopedUsers = users.filter((user) => !isModerator || user.role === "user");
+
+  const filteredUsers = scopedUsers.filter((user) => {
+    const status = getStatus(user);
+
     const matchesSearch =
       user.name.toLowerCase().includes(normalizedSearch) ||
       user.email.toLowerCase().includes(normalizedSearch);
 
-    const matchesFilter =
-      filter === "all" || user.role === filter;
+    const matchesRole = filter === "all" || user.role === filter;
 
-    const matchesScope = !isModerator || user.role === "user";
+    const matchesStatus =
+      statusFilter === "all" ||
+      status === statusFilter ||
+      (statusFilter === "sanctioned" && status !== "ACTIVO");
 
-    return matchesSearch && matchesFilter && matchesScope;
+    return matchesSearch && matchesRole && matchesStatus;
   });
+
+  const countStatus = (status: string) =>
+    scopedUsers.filter((user) => getStatus(user) === status).length;
+
+  const counts: Record<StatusFilter, number> = {
+    all: scopedUsers.length,
+    ACTIVO: countStatus("ACTIVO"),
+    SUSPENDIDO: countStatus("SUSPENDIDO"),
+    BANEADO: countStatus("BANEADO"),
+    sanctioned: scopedUsers.length - countStatus("ACTIVO"),
+  };
 
   const selectedUser =
     users.find((user) => user.id === sanctionUserId) ?? null;
@@ -310,52 +256,16 @@ export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
         </p>
       )}
 
-      <div className="users-toolbar">
-        <input
-          type="text"
-          placeholder="Buscar por nombre o correo..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="search-input"
-          aria-label="Buscar usuarios"
-        />
-
-        {!isModerator && (
-          <>
-        <button
-          type="button"
-          className={`filter-btn ${filter === "all" ? "active" : ""}`}
-          onClick={() => setFilter("all")}
-        >
-          Todos
-        </button>
-
-        <button
-          type="button"
-          className={`filter-btn ${filter === "admin" ? "active" : ""}`}
-          onClick={() => setFilter("admin")}
-        >
-          Admin
-        </button>
-
-        <button
-          type="button"
-          className={`filter-btn ${filter === "moderator" ? "active" : ""}`}
-          onClick={() => setFilter("moderator")}
-        >
-          Moderadores
-        </button>
-
-        <button
-          type="button"
-          className={`filter-btn ${filter === "user" ? "active" : ""}`}
-          onClick={() => setFilter("user")}
-        >
-          Usuarios
-        </button>
-          </>
-        )}
-      </div>
+      <UsersFilters
+        isModerator={isModerator}
+        search={search}
+        onSearchChange={setSearch}
+        roleFilter={filter}
+        onRoleChange={setFilter}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        counts={counts}
+      />
 
       <div className="users-grid">
         {filteredUsers.map((user) => (
@@ -368,6 +278,8 @@ export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
             onSuspend={handleSuspend}
             onUnsuspend={handleUnsuspend}
             canBan={!isModerator}
+            noteCount={noteCounts[user.id] ?? 0}
+            onNotes={setNotesUserId}
           />
         ))}
       </div>
@@ -375,6 +287,22 @@ export const AdminUsersPage = ({ mode = "admin" }: AdminUsersPageProps) => {
       {filteredUsers.length === 0 && (
         <p className="empty">No se encontraron usuarios</p>
       )}
+
+      <LiftSanctionModal
+        isOpen={lift !== null}
+        userName={users.find((user) => user.id === lift?.id)?.name ?? "este usuario"}
+        kind={lift?.kind ?? "ban"}
+        onClose={() => setLift(null)}
+        onConfirm={confirmLift}
+      />
+
+      <UserNotesModal
+        isOpen={notesUserId !== null}
+        userId={notesUserId}
+        userName={users.find((user) => user.id === notesUserId)?.name ?? ""}
+        onClose={() => setNotesUserId(null)}
+        onChanged={() => setNotes(getAllNotes())}
+      />
 
       <SanctionModal
         isOpen={sanctionModalOpen}

@@ -4,40 +4,78 @@ type ManagedAccount = User & {
   banned?: boolean;
   suspendedUntil?: number | null;
   sanctionReason?: string;
+  sanctionCategory?: string;
+  suspensionLabel?: string;
 };
+
+/** Datos de la sanción para mostrarlos con detalle (motivo, tiempo...). */
+export interface AccountBlockNotice {
+  type: "ban" | "suspension";
+  reason: string;
+  category: string;
+  /** Texto legible de la duración, por ejemplo "2 días". */
+  label: string;
+  /** Solo suspensiones: momento (ms) en que termina. */
+  until: number | null;
+}
 
 const USERS_KEY = "app_users";
 const SESSION_KEY = "user";
 const ACCOUNT_STATUS_EVENT = "account-status-changed";
+const DEFAULT_REASON = "Incumplimiento de las normas de la comunidad.";
 
-export function isAccountBlocked(sessionUser: User): boolean {
+function findAccount(sessionUser: User): ManagedAccount | null {
   try {
     const rawUsers = localStorage.getItem(USERS_KEY);
-
-    if (!rawUsers) return false;
+    if (!rawUsers) return null;
 
     const parsed: unknown = JSON.parse(rawUsers);
+    if (!Array.isArray(parsed)) return null;
 
-    if (!Array.isArray(parsed)) return false;
-
-    const users = parsed as ManagedAccount[];
-
-    const current = users.find(
-      (item) => String(item.id) === String(sessionUser.id)
-    );
-
-    if (!current) return false;
-
-    if (current.banned === true) return true;
-
-    return Boolean(
-      current.suspendedUntil &&
-      current.suspendedUntil > Date.now()
+    return (
+      (parsed as ManagedAccount[]).find(
+        (item) => String(item.id) === String(sessionUser.id)
+      ) ?? null
     );
   } catch (error) {
     console.error("No se pudo verificar el estado de la cuenta:", error);
-    return false;
+    return null;
   }
+}
+
+export function isAccountBlocked(sessionUser: User): boolean {
+  const current = findAccount(sessionUser);
+
+  if (!current) return false;
+  if (current.banned === true) return true;
+
+  return Boolean(current.suspendedUntil && current.suspendedUntil > Date.now());
+}
+
+export function getAccountBlockNotice(
+  sessionUser: User
+): AccountBlockNotice | null {
+  const current = findAccount(sessionUser);
+  if (!current) return null;
+
+  const reason = current.sanctionReason?.trim() || DEFAULT_REASON;
+  const category = current.sanctionCategory?.trim() || "";
+
+  if (current.banned) {
+    return { type: "ban", reason, category: "", label: "", until: null };
+  }
+
+  if (current.suspendedUntil && current.suspendedUntil > Date.now()) {
+    return {
+      type: "suspension",
+      reason,
+      category,
+      label: current.suspensionLabel?.trim() || "",
+      until: current.suspendedUntil,
+    };
+  }
+
+  return null;
 }
 
 export function getAccountBlockMessage(sessionUser: User): string {
@@ -46,32 +84,14 @@ export function getAccountBlockMessage(sessionUser: User): string {
 
     if (!rawUsers) return "Tu cuenta no está disponible.";
 
-    const users = JSON.parse(rawUsers) as ManagedAccount[];
+    if (!findAccount(sessionUser)) return "Tu cuenta no está disponible.";
 
-    const current = users.find(
-      (item) => String(item.id) === String(sessionUser.id)
-    );
+    const notice = getAccountBlockNotice(sessionUser);
+    if (!notice) return "";
 
-    if (!current) return "Tu cuenta no está disponible.";
-
-    const reason = current.sanctionReason?.trim();
-
-    if (current.banned) {
-      return reason
-        ? `Cuenta bloqueada permanentemente. Motivo: ${reason}`
-        : "Tu cuenta está bloqueada permanentemente.";
-    }
-
-    if (
-      current.suspendedUntil &&
-      current.suspendedUntil > Date.now()
-    ) {
-      return reason
-        ? `Tu cuenta está suspendida temporalmente. Motivo: ${reason}`
-        : "Tu cuenta está suspendida temporalmente.";
-    }
-
-    return "";
+    return notice.type === "ban"
+      ? `Cuenta bloqueada permanentemente. Motivo: ${notice.reason}`
+      : `Tu cuenta está suspendida temporalmente. Motivo: ${notice.reason}`;
   } catch {
     return "No se pudo verificar el estado de tu cuenta.";
   }
@@ -99,10 +119,11 @@ function clearSessionIfOwnedBy(sessionUser: User): void {
 /**
  * Escucha cambios de sanciones y permite que la aplicación
  * cierre la sesión cuando la cuenta actual quede bloqueada.
+ * El segundo argumento de onBlocked trae el detalle de la sanción.
  */
 export function subscribeToAccountStatus(
   sessionUser: User,
-  onBlocked: (message: string) => void
+  onBlocked: (message: string, notice: AccountBlockNotice | null) => void
 ): () => void {
   let handled = false;
 
@@ -112,9 +133,10 @@ export function subscribeToAccountStatus(
     handled = true;
 
     const message = getAccountBlockMessage(sessionUser);
+    const notice = getAccountBlockNotice(sessionUser);
 
     clearSessionIfOwnedBy(sessionUser);
-    onBlocked(message || "Tu cuenta ya no tiene acceso.");
+    onBlocked(message || "Tu cuenta ya no tiene acceso.", notice);
   };
 
   const handleStorage = (event: StorageEvent) => {

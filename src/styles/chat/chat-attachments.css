@@ -1,0 +1,413 @@
+/* =====================================================
+   CHAT — ADJUNTOS: clip, vista previa, documentos, videos y archivos pendientes (secciones 12-13)
+   Parte de src/styles/chat/chat.css (ver índice)
+===================================================== */
+
+/* =====================================================
+   12. ADJUNTOS Y VISTA PREVIA
+===================================================== */
+
+.chat-file-input {
+  display: none;
+}
+
+.chat-attach-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.chat-attach {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  flex: 0 0 42px;
+  padding: 0;
+
+  border: none;
+  border-radius: 50% !important;
+  background: #f3f4f6;
+  color: var(--chat-blue);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.chat-attach:hover {
+  background: #e5e7eb;
+  transform: scale(1.04);
+}
+
+.chat-attach-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+
+  width: 100%;
+  height: 100%;
+  padding: 0;
+
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+/* =====================================================
+   12.1 MENÚ DEL CLIP — BLOQUE UNIFICADO
+   Compatible con dos label y un button
+===================================================== */
+
+.chat-attach-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  z-index: 21;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  padding: 7px;
+
+  background: var(--chat-white);
+  border: 1px solid var(--chat-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgb(41 36 33 / 14%);
+
+  color: var(--chat-text);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+
+  animation: chat-attach-appear 0.16s ease-out;
+}
+
+/* Las tres opciones: dos label y un button */
+.chat-attach-menu > .chat-attach-option {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 60px;
+  padding: 9px 10px;
+
+  border: none;
+  border-radius: 9px !important;
+  background: transparent;
+  color: var(--chat-text);
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+
+/* Normaliza la apariencia de las etiquetas */
+.chat-attach-menu > label.chat-attach-option {
+  appearance: none;
+}
+
+/* Hover uniforme */
+.chat-attach-menu > .chat-attach-option:hover {
+  background: #f7f1ea;
+}
+
+/* Foco visible al navegar con teclado */
+.chat-attach-menu > .chat-attach-option:focus-visible {
+  outline: 2px solid var(--chat-brown);
+  outline-offset: -2px;
+}
+
+/* Iconos */
+.chat-attach-menu .chat-attach-option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+
+  border-radius: 10px !important;
+}
+
+.chat-attach-menu .chat-attach-option-icon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  stroke-width: 1.8;
+}
+
+/* Colores de los iconos */
+.chat-attach-menu .chat-attach-option-icon.photo {
+  background: #e4f3ff;
+  color: #2374a5;
+}
+
+.chat-attach-menu .chat-attach-option-icon.document {
+  background: #fbe9dc;
+  color: var(--chat-brown);
+}
+
+.chat-attach-menu .chat-attach-option-icon.link {
+  background: #e2f5e8;
+  color: #27804c;
+}
+
+/* Contenedor del título y la descripción */
+.chat-attach-menu
+  .chat-attach-option > span:not(.chat-attach-option-icon) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+
+  min-width: 0;
+  margin: 0;
+}
+
+/* Títulos */
+.chat-attach-menu .chat-attach-option strong {
+  display: block;
+  margin: 0;
+
+  color: #3b2f25;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+/* Descripciones */
+.chat-attach-menu .chat-attach-option small {
+  display: block;
+  margin: 0;
+
+  color: #83776c;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+/* Inputs ocultos: no ocupan espacio */
+.chat-attach-menu .chat-file-input {
+  display: none;
+}
+
+/* Animación del menú */
+@keyframes chat-attach-appear {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =====================================================
+   VISTA PREVIA DE IMAGEN O ARCHIVO PENDIENTE
+===================================================== */
+
+.chat-attachment {
+  position: relative;
+
+  width: fit-content;
+  max-width: calc(100% - 28px);
+  margin: 10px 14px 0;
+}
+
+.chat-attachment img {
+  display: block;
+
+  width: auto;
+  height: 84px;
+  max-width: 100%;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.chat-attachment-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 22px;
+  height: 22px;
+  padding: 0;
+
+  border: none;
+  border-radius: 50% !important;
+  background: var(--chat-text);
+  color: var(--chat-white);
+  cursor: pointer;
+}
+
+/* =====================================================
+   13. TARJETAS DE DOCUMENTOS Y ARCHIVOS
+===================================================== */
+
+.chat-file-card {
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: 5px;
+}
+
+.chat-document {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px;
+
+  background: rgb(255 255 255 / 12%);
+  border: 1px solid rgb(130 130 130 / 20%);
+  border-radius: 11px !important;
+}
+
+.chat-row.theirs .chat-document {
+  background: #f7f3ef;
+  border-color: #eee2d7;
+}
+
+.chat-document-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 40px;
+  height: 44px;
+  flex: 0 0 40px;
+
+  border-radius: 9px !important;
+  background: #fbe9dc;
+  color: var(--chat-brown);
+}
+
+.chat-document-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.chat-document-info strong {
+  max-width: 190px;
+  color: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.chat-document-info small {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.chat-file-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  max-width: 100%;
+  margin-top: 7px;
+  padding: 6px 9px;
+
+  border-radius: 8px !important;
+  background: rgb(44 110 145 / 12%);
+  color: inherit;
+
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.chat-file-download:hover {
+  background: rgb(44 110 145 / 22%);
+}
+
+.chat-row.mine .chat-file-download {
+  color: var(--chat-white);
+}
+
+.chat-row.theirs .chat-file-download {
+  color: var(--chat-blue);
+}
+
+/* Video adjunto */
+.chat-video {
+  display: block;
+
+  width: 100%;
+  max-width: 250px;
+  max-height: 220px;
+
+  background: #161616;
+  border-radius: 10px !important;
+}
+
+/* Archivo pendiente de enviar */
+.chat-pending-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+
+  border: 1px solid #dceaf3;
+  border-radius: 12px !important;
+  background: #f1f7fb;
+  color: var(--chat-blue);
+}
+
+.chat-pending-file > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chat-pending-file strong {
+  max-width: 190px;
+  color: #3b2f25;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.chat-pending-file small {
+  color: #83776c;
+  font-size: 11px;
+}
