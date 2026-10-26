@@ -33,6 +33,7 @@ export function HomePage({ user, onLogout }: HomePageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSection, setActiveSection] = useState<'all' | 'saved' | 'nearby' | 'trends'>('all');
   const [savedPlaceIds, setSavedPlaceIds] = useState<string[]>([]);
+  const [currentSupabaseUserId, setCurrentSupabaseUserId] = useState<string | null>(null);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -78,11 +79,16 @@ export function HomePage({ user, onLogout }: HomePageProps) {
   useEffect(() => {
     let isMounted = true;
     syncUserToSupabase(user)
-      .then((synced) => {
+      .then(async (synced) => {
         if (!synced) {
           throw new Error('No se pudo sincronizar tu cuenta con Supabase para cargar tus favoritos.');
         }
-        return fetchFavoritePlaceIds(user.email);
+        const [userId, placeIds] = await Promise.all([
+          getSupabaseUserId(user.email),
+          fetchFavoritePlaceIds(user.email)
+        ]);
+        if (isMounted) setCurrentSupabaseUserId(userId);
+        return placeIds;
       })
       .then((placeIds) => {
         if (isMounted) {
@@ -295,6 +301,7 @@ export function HomePage({ user, onLogout }: HomePageProps) {
             favoriteError={favoriteError}
             onToggleFavorite={handleToggleFavorite}
             reviewsRefreshKey={reviewsRefreshKey}
+            currentSupabaseUserId={currentSupabaseUserId}
             onOpenCreateReview={() => setIsReviewModalOpen(true)}
             onSelectPlace={(place) => {
               setSearchQuery(place.name);

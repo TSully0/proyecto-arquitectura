@@ -43,6 +43,7 @@ export function ProfilePhotoModal({ userId, name, hasPhoto, onClose }: ProfilePh
   const [previewIsLink, setPreviewIsLink] = useState(false); // la foto es el enlace tal cual
   const [linkUrl, setLinkUrl] = useState("");
   const [loadingLink, setLoadingLink] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -150,21 +151,34 @@ export function ProfilePhotoModal({ userId, name, hasPhoto, onClose }: ProfilePh
     }
   };
 
-  const handleSave = () => {
-    if (!preview) return;
+  const handleSave = async () => {
+    if (!preview || savingPhoto) return;
+    setSavingPhoto(true);
 
-    if (saveProfilePhoto(userId, preview)) {
+    try {
+      await saveProfilePhoto(userId, preview);
       success("Foto de perfil actualizada");
       onClose();
-    } else {
-      error("No hay espacio para guardar la foto. Prueba con otra más pequeña.");
+    } catch (saveError) {
+      error(saveError instanceof Error ? saveError.message : "No se pudo guardar la foto de perfil.");
+    } finally {
+      setSavingPhoto(false);
     }
   };
 
-  const handleRemove = () => {
-    removeProfilePhoto(userId);
-    success("Foto eliminada. Se mostrará tu inicial.");
-    onClose();
+  const handleRemove = async () => {
+    if (savingPhoto) return;
+    setSavingPhoto(true);
+
+    try {
+      await removeProfilePhoto(userId);
+      success("Foto eliminada. Se mostrará tu inicial.");
+      onClose();
+    } catch (removeError) {
+      error(removeError instanceof Error ? removeError.message : "No se pudo eliminar la foto de perfil.");
+    } finally {
+      setSavingPhoto(false);
+    }
   };
 
   /* =========================
@@ -194,7 +208,9 @@ export function ProfilePhotoModal({ userId, name, hasPhoto, onClose }: ProfilePh
         <Button variant="secondary" onClick={() => setMode("choose")}>
           Elegir otra
         </Button>
-        <Button onClick={handleSave}>Usar esta foto</Button>
+        <Button onClick={handleSave} disabled={savingPhoto}>
+          {savingPhoto ? "Guardando..." : "Usar esta foto"}
+        </Button>
       </>
     ) : (
       <Button variant="secondary" onClick={onClose}>
@@ -247,7 +263,7 @@ export function ProfilePhotoModal({ userId, name, hasPhoto, onClose }: ProfilePh
             </button>
 
             {hasPhoto && (
-              <button type="button" className="photo-option danger" onClick={handleRemove}>
+              <button type="button" className="photo-option danger" onClick={handleRemove} disabled={savingPhoto}>
                 <Trash2 size={20} />
                 <div>
                   Quitar foto

@@ -46,6 +46,7 @@ export interface Review {
 
 export interface CommunityComment {
   id: string;
+  authorUserId?: string;
   authorName: string;
   authorAvatar: string;
   text: string;
@@ -56,6 +57,7 @@ export interface CommunityComment {
 
 export interface CommunityPost {
   id: string;
+  authorUserId?: string;
   authorName: string;
   authorRole: string;
   authorAvatar: string;

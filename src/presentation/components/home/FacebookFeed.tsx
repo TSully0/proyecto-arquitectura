@@ -15,6 +15,7 @@ import {
 import type { User } from '../../../business/types/user';
 import type { Place, CommunityPost, CommunityComment, CategoryId } from '../../../business/types/place';
 import { CommentModal } from './CommentModal';
+import { UserAvatar } from '../ui/UserAvatar';
 import {
   addReviewToSupabase,
   fetchReviewsByPlaceIds,
@@ -49,6 +50,7 @@ interface FacebookFeedProps {
   favoriteError: string | null;
   onToggleFavorite: (placeId: string) => Promise<void>;
   reviewsRefreshKey: number;
+  currentSupabaseUserId: string | null;
   onOpenCreateReview: () => void;
   onSelectPlace?: (place: Place) => void;
 }
@@ -62,6 +64,7 @@ export function FacebookFeed({
   favoriteError,
   onToggleFavorite,
   reviewsRefreshKey,
+  currentSupabaseUserId,
   onOpenCreateReview,
   onSelectPlace
 }: FacebookFeedProps) {
@@ -244,6 +247,7 @@ export function FacebookFeed({
             .filter((review) => review.place_id === resolvePlaceId(post.place.id))
             .map((review) => ({
               id: `db-review:${review.id}`,
+              authorUserId: review.user_id,
               authorName: review.author_name,
               authorAvatar: COMMENT_AVATAR,
               text: review.comment,
@@ -275,6 +279,7 @@ export function FacebookFeed({
 
             const comments: CommunityComment[] = placeReviews.map((review) => ({
               id: `db-review:${review.id}`,
+              authorUserId: review.user_id,
               authorName: review.author_name,
               authorAvatar: COMMENT_AVATAR,
               text: review.comment,
@@ -286,6 +291,7 @@ export function FacebookFeed({
 
             return [{
               id: `review-place:${place.id}`,
+              authorUserId: firstReview.user_id,
               authorName: firstReview.author_name,
               authorRole: 'Reseña de la comunidad',
               authorAvatar: COMMENT_AVATAR,
@@ -408,6 +414,7 @@ export function FacebookFeed({
         if (post.id === commentModalState.postId) {
           const newComment = {
             id: `c-${Date.now()}`,
+            authorUserId: currentSupabaseUserId ?? undefined,
             authorName: user.name,
             authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
             text: commentData.text,
@@ -439,6 +446,7 @@ export function FacebookFeed({
         if (post.id === postId) {
           const newComment = {
             id: `c-${Date.now()}`,
+            authorUserId: currentSupabaseUserId ?? undefined,
             authorName: user.name,
             authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
             text,
@@ -483,9 +491,11 @@ export function FacebookFeed({
       {/* 1. Caja de crear publicación */}
       <div className="fb-create-post-card">
         <div className="fb-create-top">
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-            alt={user.name}
+          <UserAvatar
+            userId={user.id}
+            name={user.name}
+            size={40}
+            shape="circle"
             className="fb-user-avatar"
           />
           <button
@@ -536,11 +546,21 @@ export function FacebookFeed({
             {/* Header del Post */}
             <div className="fb-post-header">
               <div className="fb-author-info">
-                <img
-                  src={post.authorAvatar}
-                  alt={post.authorName}
-                  className="fb-post-avatar"
-                />
+                {post.authorUserId && post.authorUserId === currentSupabaseUserId ? (
+                  <UserAvatar
+                    userId={user.id}
+                    name={post.authorName}
+                    size={40}
+                    shape="circle"
+                    className="fb-post-avatar"
+                  />
+                ) : (
+                  <img
+                    src={post.authorAvatar}
+                    alt={post.authorName}
+                    className="fb-post-avatar"
+                  />
+                )}
                 <div>
                   <div className="fb-author-name-row">
                     <span className="fb-author-name">{post.authorName}</span>
@@ -701,11 +721,21 @@ export function FacebookFeed({
             <div className="fb-comments-section">
               {post.comments.map((comment) => (
                 <div key={comment.id} className="fb-comment-item">
-                  <img
-                    src={comment.authorAvatar}
-                    alt={comment.authorName}
-                    className="fb-comment-avatar"
-                  />
+                  {comment.authorUserId && comment.authorUserId === currentSupabaseUserId ? (
+                    <UserAvatar
+                      userId={user.id}
+                      name={comment.authorName}
+                      size={32}
+                      shape="circle"
+                      className="fb-comment-avatar"
+                    />
+                  ) : (
+                    <img
+                      src={comment.authorAvatar}
+                      alt={comment.authorName}
+                      className="fb-comment-avatar"
+                    />
+                  )}
                   <div className="fb-comment-bubble">
                     <div className="fb-comment-header-row">
                       <span className="fb-comment-author">{comment.authorName}</span>
@@ -723,9 +753,11 @@ export function FacebookFeed({
 
               {/* Input rápido o botón para abrir ventana flotante */}
               <div className="fb-comment-input-box">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-                  alt={user.name}
+                <UserAvatar
+                  userId={user.id}
+                  name={user.name}
+                  size={32}
+                  shape="circle"
                   className="fb-comment-avatar"
                 />
                 <div className="fb-input-wrapper">
