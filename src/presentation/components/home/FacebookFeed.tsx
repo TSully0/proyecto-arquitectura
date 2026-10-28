@@ -402,7 +402,8 @@ export function FacebookFeed({
 
     const saved = await addReviewToSupabase({
       place_id: placeId,
-      user_id: user.id,
+      // El id real de Supabase permite que el comentario aparezca en "Tus publicaciones"
+      user_id: currentSupabaseUserId ?? undefined,
       author_name: user.name,
       rating,
       has_visited: rating !== undefined,

@@ -5,12 +5,21 @@ import type { ProfilePost } from "../../../business/types/profile";
 interface PostGridProps {
   posts: ProfilePost[];
   title?: string;
+  loading?: boolean;
 }
 
-export function PostGrid({ posts, title = "Mis publicaciones" }: PostGridProps) {
+export function PostGrid({ posts, title = "Tus publicaciones", loading = false }: PostGridProps) {
   return (
     <section className="profile-section">
       <h2>{title}</h2>
+
+      {loading && <p className="profile-empty">Cargando tus publicaciones...</p>}
+
+      {!loading && posts.length === 0 && (
+        <p className="profile-empty">
+          Aún no tienes publicaciones. Comenta o reseña un lugar desde el inicio y aparecerá aquí.
+        </p>
+      )}
 
       <div className="profile-posts-grid">
         {posts.map((post) => (

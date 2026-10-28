@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 import type { User } from "../../business/types/user";
-import type { CommunityUser } from "../../business/types/profile";
+import type { CommunityUser, ProfilePost } from "../../business/types/profile";
 import { changeUserName, daysLeftToChangeName } from "../../business/services/nameChange";
-import { getCommunityPeople, getPostsByUser } from "../../data/repositories/profile";
+import { getCommunityPeople, fetchPostsByUser } from "../../data/repositories/profile";
 
 import { useFollows } from "../hooks/useFollows";
 import { useProfilePhoto } from "../hooks/useProfilePhoto";
@@ -32,7 +32,8 @@ export function MyProfilePage({ user }: MyProfilePageProps) {
   const [showEditName, setShowEditName] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
   const [people] = useState(getCommunityPeople);
-  const [posts] = useState(() => getPostsByUser(user.id));
+  const [posts, setPosts] = useState<ProfilePost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   const daysLeft = daysLeftToChangeName(user.id);
 
@@ -44,6 +45,28 @@ export function MyProfilePage({ user }: MyProfilePageProps) {
       success(msg);
     }
   }, [success]);
+
+  // carga "Tus publicaciones" desde Supabase (las reseñas y comentarios del usuario)
+  useEffect(() => {
+    let isMounted = true;
+
+    fetchPostsByUser(user.email)
+      .then((loaded) => {
+        if (isMounted) setPosts(loaded);
+      })
+      .catch((err: unknown) => {
+        if (isMounted) {
+          error(err instanceof Error ? err.message : "No se pudieron cargar tus publicaciones");
+        }
+      })
+      .finally(() => {
+        if (isMounted) setPostsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user.email, error]);
 
   /* ===== seguir ===== */
   const handleFollow = (person: CommunityUser) => {
@@ -110,7 +133,7 @@ export function MyProfilePage({ user }: MyProfilePageProps) {
           onUnfollow={handleUnfollow}
         />
 
-        <PostGrid posts={posts} />
+        <PostGrid posts={posts} loading={postsLoading} />
       </div>
 
       {showEditName && (

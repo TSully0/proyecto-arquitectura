@@ -659,3 +659,13 @@
     padding: 18px 12px;
   }
 }
+
+/* Mensaje cuando "Tus publicaciones" está cargando o vacía */
+.profile-empty {
+  padding: 22px;
+  background: #fff;
+  border-radius: 12px;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+}
