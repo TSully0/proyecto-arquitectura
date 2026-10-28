@@ -43,6 +43,32 @@ function formatRelativeTime(isoDate?: string): string {
   return days === 1 ? 'Ayer' : `Hace ${days} días`;
 }
 
+// Quita tildes y mayúsculas para que "Murciélago" coincida con "murcielago"
+function normalizeText(text: string): string {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+// Una publicación coincide si TODAS las palabras buscadas aparecen
+// en el lugar, el texto de la publicación o el autor
+function postMatchesSearch(post: CommunityPost, query: string): boolean {
+  const words = normalizeText(query).split(/\s+/).filter(Boolean);
+  if (words.length === 0) return true;
+
+  const haystack = normalizeText(
+    [
+      post.place.name,
+      post.locationName,
+      post.place.address,
+      post.place.description,
+      post.content,
+      post.authorName
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+  return words.every((word) => haystack.includes(word));
+}
+
 interface FacebookFeedProps {
   user: User;
   places: Place[];
@@ -55,6 +81,8 @@ interface FacebookFeedProps {
   currentSupabaseUserId: string | null;
   onOpenCreateReview: () => void;
   onSelectPlace?: (place: Place) => void;
+  searchQuery?: string;
+  onClearSearch?: () => void;
 }
 
 export function FacebookFeed({
@@ -68,7 +96,9 @@ export function FacebookFeed({
   reviewsRefreshKey,
   currentSupabaseUserId,
   onOpenCreateReview,
-  onSelectPlace
+  onSelectPlace,
+  searchQuery = '',
+  onClearSearch
 }: FacebookFeedProps) {
   // Modal de Comentario flotante
   const [commentModalState, setCommentModalState] = useState<{
@@ -384,7 +414,7 @@ export function FacebookFeed({
     }
   };
 
-  // Filtrar publicaciones por categoría seleccionada
+  // Filtrar publicaciones por categoría, por guardados y por lo que se escribe en el buscador
   const filteredPosts = posts.filter((post) => {
     const matchesCategory =
       activeCategory === 'inicio' || post.place.category_id === activeCategory;
@@ -393,7 +423,9 @@ export function FacebookFeed({
       activeSection !== 'saved' ||
       (resolvedPlaceId !== null && savedPlaceIds.includes(resolvedPlaceId));
 
-    return matchesCategory && matchesSaved;
+    const matchesSearch = postMatchesSearch(post, searchQuery);
+
+    return matchesCategory && matchesSaved && matchesSearch;
   });
 
   const handleToggleFavorite = async (placeId: string) => {
@@ -857,7 +889,17 @@ export function FacebookFeed({
 
         {filteredPosts.length === 0 && (
           <div className="fb-empty-feed">
-            {activeSection === 'saved' ? (
+            {searchQuery.trim() ? (
+              <>
+                <h4>No encontramos resultados para “{searchQuery.trim()}”</h4>
+                <p>Prueba con otra palabra o revisa la ortografía.</p>
+                {onClearSearch && (
+                  <button className="btn-submit" onClick={onClearSearch}>
+                    Limpiar búsqueda
+                  </button>
+                )}
+              </>
+            ) : activeSection === 'saved' ? (
               <>
                 <h4>Aún no tienes lugares guardados</h4>
                 <p>Pulsa “Guardar” en una publicación para agregarla a tu lista.</p>

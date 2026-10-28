@@ -302,6 +302,8 @@ export function HomePage({ user, onLogout }: HomePageProps) {
             onToggleFavorite={handleToggleFavorite}
             reviewsRefreshKey={reviewsRefreshKey}
             currentSupabaseUserId={currentSupabaseUserId}
+            searchQuery={searchQuery}
+            onClearSearch={() => setSearchQuery('')}
             onOpenCreateReview={() => setIsReviewModalOpen(true)}
             onSelectPlace={(place) => {
               setSearchQuery(place.name);
