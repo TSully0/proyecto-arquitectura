@@ -18,8 +18,10 @@ import { CommentModal } from './CommentModal';
 import { UserAvatar } from '../ui/UserAvatar';
 import {
   addReviewToSupabase,
+  fetchPlaceLikes,
   fetchReviewsByPlaceIds,
-  resolvePlaceId
+  resolvePlaceId,
+  setPlaceLike
 } from '../../../data/repositories/places';
 
 // Avatar por defecto para los comentarios que vienen de la base de datos
@@ -210,6 +212,47 @@ export function FacebookFeed({
   const [pendingFavoriteIds, setPendingFavoriteIds] = useState<string[]>([]);
   const [favoriteActionError, setFavoriteActionError] = useState<string | null>(null);
 
+  // LIKES: se guardan en Supabase (tabla place_likes), uno por lugar y por usuario.
+  // El usuario se identifica con su correo.
+  const likeClientId = user.email.toLowerCase();
+  const [likeData, setLikeData] = useState<{ counts: Record<string, number>; liked: string[] }>({
+    counts: {},
+    liked: []
+  });
+  const [pendingLikeIds, setPendingLikeIds] = useState<string[]>([]);
+
+  // Lugares (ids reales de Supabase) que tienen publicación en el feed
+  const likePlaceKey = Array.from(
+    new Set(
+      posts
+        .map((post) => resolvePlaceId(post.place.id))
+        .filter((id): id is string => id !== null)
+    )
+  ).join(',');
+
+  // CARGAR LIKES: al abrir el feed y cada vez que aparecen publicaciones de lugares nuevos
+  useEffect(() => {
+    if (!likePlaceKey) return;
+    let isMounted = true;
+
+    fetchPlaceLikes(likePlaceKey.split(','), likeClientId)
+      .then(({ counts, likedPlaceIds }) => {
+        if (isMounted) setLikeData({ counts, liked: likedPlaceIds });
+      })
+      .catch((error: unknown) => console.warn('No se pudieron cargar los likes:', error));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [likePlaceKey, likeClientId]);
+
+  // Likes que se muestran: los iniciales de la publicación + los guardados en Supabase
+  const getLikesCount = (post: CommunityPost) =>
+    post.likesCount + (likeData.counts[resolvePlaceId(post.place.id) ?? ''] ?? 0);
+
+  const isPostLiked = (post: CommunityPost) =>
+    likeData.liked.includes(resolvePlaceId(post.place.id) ?? '');
+
   useEffect(() => {
     setPosts((current) =>
       current.map((post) => {
@@ -374,20 +417,42 @@ export function FacebookFeed({
     }
   };
 
-  const handleToggleLike = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          const nextLiked = !post.isLiked;
-          return {
-            ...post,
-            isLiked: nextLiked,
-            likesCount: nextLiked ? post.likesCount + 1 : post.likesCount - 1
-          };
-        }
-        return post;
-      })
-    );
+  // Dar o quitar like: el cambio se ve al instante y se guarda en Supabase.
+  // Si falla el guardado, se deshace el cambio y se avisa al usuario.
+  const handleToggleLike = async (post: CommunityPost) => {
+    const placeId = resolvePlaceId(post.place.id);
+    if (!placeId) {
+      setFavoriteActionError('Este lugar todavía no está disponible en Supabase y no se puede dar like.');
+      return;
+    }
+    if (pendingLikeIds.includes(placeId)) return;
+
+    const wasLiked = likeData.liked.includes(placeId);
+    const applyLike = (liked: boolean) =>
+      setLikeData((current) => ({
+        counts: {
+          ...current.counts,
+          [placeId]: Math.max(0, (current.counts[placeId] ?? 0) + (liked ? 1 : -1))
+        },
+        liked: liked
+          ? current.liked.includes(placeId)
+            ? current.liked
+            : [...current.liked, placeId]
+          : current.liked.filter((id) => id !== placeId)
+      }));
+
+    applyLike(!wasLiked);
+    setPendingLikeIds((current) => [...current, placeId]);
+    setFavoriteActionError(null);
+
+    try {
+      await setPlaceLike(placeId, likeClientId, !wasLiked);
+    } catch (error) {
+      applyLike(wasLiked);
+      setFavoriteActionError(error instanceof Error ? error.message : 'No se pudo guardar tu like.');
+    } finally {
+      setPendingLikeIds((current) => current.filter((id) => id !== placeId));
+    }
   };
 
   // Abrir ventana flotante para comentar
@@ -652,7 +717,7 @@ export function FacebookFeed({
               <div className="fb-stats-reactions">
                 <span className="fb-reaction-icon fb-like-badge">👍</span>
                 <span className="fb-reaction-icon fb-heart-badge">❤️</span>
-                <span className="fb-stats-text">{post.likesCount} me gusta</span>
+                <span className="fb-stats-text">{getLikesCount(post)} me gusta</span>
               </div>
               <div className="fb-stats-comments">
                 <span>{post.commentsCount} comentarios</span>
@@ -666,8 +731,9 @@ export function FacebookFeed({
             {/* Barra de Botones de Acción */}
             <div className="fb-actions-bar">
               <button
-                className={`fb-action-btn ${post.isLiked ? 'active' : ''}`}
-                onClick={() => handleToggleLike(post.id)}
+                className={`fb-action-btn ${isPostLiked(post) ? 'active' : ''}`}
+                aria-pressed={isPostLiked(post)}
+                onClick={() => handleToggleLike(post)}
               >
                 <ThumbsUp size={18} />
                 <span>Me Gusta</span>

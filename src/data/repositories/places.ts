@@ -373,6 +373,76 @@ export async function setPlaceFavorite(
   }
 }
 
+// =============================================================================
+// LIKES (tabla "place_likes": un registro por lugar y por usuario)
+// clientId = correo del usuario. UNIQUE(placeId, clientId) evita likes repetidos.
+// =============================================================================
+
+// Trae cuántos likes tiene cada lugar y a cuáles ya les dio like este usuario
+export async function fetchPlaceLikes(
+  placeIds: string[],
+  clientId: string
+): Promise<{ counts: Record<string, number>; likedPlaceIds: string[] }> {
+  const uuids = Array.from(
+    new Set(placeIds.map(resolvePlaceId).filter((id): id is string => id !== null))
+  );
+  if (uuids.length === 0) return { counts: {}, likedPlaceIds: [] };
+
+  const { data, error } = await supabase
+    .from('place_likes')
+    .select('placeId, clientId')
+    .in('placeId', uuids);
+
+  if (error) {
+    throw new Error(`No se pudieron cargar los likes: ${error.message}`);
+  }
+
+  const counts: Record<string, number> = {};
+  const likedPlaceIds: string[] = [];
+  (data ?? []).forEach((like) => {
+    counts[like.placeId] = (counts[like.placeId] ?? 0) + 1;
+    if (like.clientId === clientId) likedPlaceIds.push(like.placeId);
+  });
+
+  return { counts, likedPlaceIds };
+}
+
+// Da like (liked = true) o lo quita (liked = false)
+export async function setPlaceLike(
+  placeId: string,
+  clientId: string,
+  liked: boolean
+): Promise<void> {
+  const resolvedPlaceId = resolvePlaceId(placeId);
+  if (!resolvedPlaceId) {
+    throw new Error('Este lugar todavía no está disponible en Supabase y no se puede dar like.');
+  }
+
+  if (liked) {
+    const { error } = await supabase
+      .from('place_likes')
+      .upsert(
+        [{ placeId: resolvedPlaceId, clientId }],
+        { onConflict: 'placeId,clientId', ignoreDuplicates: true }
+      );
+
+    if (error) {
+      throw new Error(`No se pudo guardar tu like: ${error.message}`);
+    }
+    return;
+  }
+
+  const { error } = await supabase
+    .from('place_likes')
+    .delete()
+    .eq('placeId', resolvedPlaceId)
+    .eq('clientId', clientId);
+
+  if (error) {
+    throw new Error(`No se pudo quitar tu like: ${error.message}`);
+  }
+}
+
 export async function addPlaceToSupabase(place: Omit<Place, 'id' | 'likes_count'>): Promise<string> {
   const categoryUUID = CATEGORY_SLUG_TO_UUID[place.category_id] || 'c1111111-0000-0000-0000-000000000003';
   const imagesArray = place.images && place.images.length > 0
