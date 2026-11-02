@@ -245,34 +245,29 @@ export async function fetchPlaceFromSupabase(placeId: string): Promise<Place | n
 
 // Lee del backend los comentarios de los lugares indicados (más antiguos primero).
 export async function fetchReviewsByPlaceIds(placeIds: string[]): Promise<Review[]> {
-  try {
-    const uuids = placeIds
-      .map(resolvePlaceId)
-      .filter((id): id is string => id !== null);
-    if (uuids.length === 0) return [];
+  const uuids = placeIds
+    .map(resolvePlaceId)
+    .filter((id): id is string => id !== null);
+  if (uuids.length === 0) return [];
 
-    const placeIdSet = new Set(uuids);
-    const reviews = await listReviews();
-    return reviews
-      .filter((row) => placeIdSet.has(row.placeId ?? row.place_id ?? ''))
-      .map((row) => ({
-        id: row.id,
-        place_id: row.placeId ?? row.place_id ?? '',
-        user_id: row.userId ?? row.user_id ?? undefined,
-        author_name:
-          row.authorName || row.author_name || row.User?.fullName || 'Estudiante Manta',
-        rating: row.rating ?? undefined,
-        has_visited: row.rating !== null && row.rating !== undefined,
-        comment: row.comment || row.text || '',
-        created_at: row.createdAt || row.created_at
-      }))
-      .sort((first, second) =>
-        (first.created_at ?? '').localeCompare(second.created_at ?? '')
-      );
-  } catch (err) {
-    console.warn('Excepción al leer reseñas del backend:', err);
-    return [];
-  }
+  const placeIdSet = new Set(uuids);
+  const reviews = await listReviews();
+  return reviews
+    .filter((row) => placeIdSet.has(row.placeId ?? row.place_id ?? ''))
+    .map((row) => ({
+      id: row.id,
+      place_id: row.placeId ?? row.place_id ?? '',
+      user_id: row.userId ?? row.user_id ?? undefined,
+      author_name:
+        row.authorName || row.author_name || row.User?.fullName || 'Estudiante Manta',
+      rating: row.rating ?? undefined,
+      has_visited: row.rating !== null && row.rating !== undefined,
+      comment: row.comment || row.text || '',
+      created_at: row.createdAt || row.created_at
+    }))
+    .sort((first, second) =>
+      (first.created_at ?? '').localeCompare(second.created_at ?? '')
+    );
 }
 
 export async function getSupabaseUserId(email: string): Promise<string> {

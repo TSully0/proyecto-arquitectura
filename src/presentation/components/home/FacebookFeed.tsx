@@ -239,6 +239,7 @@ export function FacebookFeed({
 
   // Aviso que se muestra si un comentario no pudo guardarse en la base de datos
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [reviewsLoadError, setReviewsLoadError] = useState<string | null>(null);
   const [pendingFavoriteIds, setPendingFavoriteIds] = useState<string[]>([]);
   const [favoriteActionError, setFavoriteActionError] = useState<string | null>(null);
 
@@ -381,6 +382,13 @@ export function FacebookFeed({
 
           return [...postsWithReviews, ...reviewPosts];
         }
+      );
+      setReviewsLoadError(null);
+    }).catch((error: unknown) => {
+      if (!isMounted) return;
+      console.error('No se pudieron cargar las reseñas del backend:', error);
+      setReviewsLoadError(
+        error instanceof Error ? error.message : 'No se pudieron cargar las reseñas.'
       );
     });
 
@@ -584,6 +592,14 @@ export function FacebookFeed({
         <div className="feed-status-banner" role="alert">
           <span>{saveError}</span>
           <button className="btn-text-link" onClick={() => setSaveError(null)}>
+            Cerrar
+          </button>
+        </div>
+      )}
+      {reviewsLoadError && (
+        <div className="feed-status-banner" role="alert">
+          <span>No se cargaron las publicaciones guardadas: {reviewsLoadError}</span>
+          <button className="btn-text-link" onClick={() => setReviewsLoadError(null)}>
             Cerrar
           </button>
         </div>

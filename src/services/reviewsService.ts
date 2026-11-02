@@ -130,13 +130,17 @@ export function createReviewsService(apiUrl: string | undefined, fetcher: typeof
 }
 
 export function listReviews() {
-  return createReviewsService(import.meta.env.VITE_API_URL).list();
+  return createReviewsService(getReviewsApiUrl()).list();
 }
 
 export function createReview(review: ReviewRequest) {
-  return createReviewsService(import.meta.env.VITE_API_URL).create(review);
+  return createReviewsService(getReviewsApiUrl()).create(review);
 }
 
 export function updateReview(id: string, review: ReviewRequest) {
-  return createReviewsService(import.meta.env.VITE_API_URL).update(id, review);
+  return createReviewsService(getReviewsApiUrl()).update(id, review);
+}
+
+function getReviewsApiUrl(): string | undefined {
+  return import.meta.env.PROD ? '/api' : import.meta.env.VITE_API_URL;
 }
