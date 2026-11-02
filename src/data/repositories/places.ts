@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
 import type { Place, Review, CategoryId, CategoryItem } from '../../business/types/place';
+import { listReviews } from '../../services/reviewsService';
 
 export const initialCategories: CategoryItem[] = [
   { id: 'inicio', name: 'Inicio', iconName: 'home' },
@@ -199,35 +200,6 @@ export function resolvePlaceId(placeId: string): string | null {
   return PLACE_SLUG_TO_UUID[placeId] ?? null;
 }
 
-export async function addReviewToSupabase(review: Omit<Review, 'id' | 'created_at'>): Promise<boolean> {
-  try {
-    const placeId = resolvePlaceId(review.place_id);
-    if (!placeId) {
-      console.warn('Reseña no guardada: el lugar no existe en Supabase:', review.place_id);
-      return false;
-    }
-
-    const dbPayload = {
-      // Sin estrellas -> null (antes se convertía en 5 y subía el promedio del lugar)
-      rating: review.rating ? Math.min(5, Math.max(1, Math.round(review.rating))) : null,
-      comment: review.comment,
-      authorName: review.author_name || 'Estudiante Manta',
-      placeId: placeId,
-      userId: review.user_id && UUID_REGEX.test(review.user_id) ? review.user_id : null
-    };
-
-    const { error } = await supabase.from('reviews').insert([dbPayload]);
-    if (error) {
-      console.warn('Error al guardar reseña en Supabase:', error);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.warn('Excepción al conectar con Supabase (reviews):', err);
-    return false;
-  }
-}
-
 export async function fetchPlaceFromSupabase(placeId: string): Promise<Place | null> {
   const resolvedPlaceId = resolvePlaceId(placeId);
   if (!resolvedPlaceId) return null;
@@ -271,7 +243,7 @@ export async function fetchPlaceFromSupabase(placeId: string): Promise<Place | n
   };
 }
 
-// Lee de Supabase todos los comentarios de los lugares indicados (más antiguos primero)
+// Lee del backend los comentarios de los lugares indicados (más antiguos primero).
 export async function fetchReviewsByPlaceIds(placeIds: string[]): Promise<Review[]> {
   try {
     const uuids = placeIds
@@ -279,29 +251,26 @@ export async function fetchReviewsByPlaceIds(placeIds: string[]): Promise<Review
       .filter((id): id is string => id !== null);
     if (uuids.length === 0) return [];
 
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('*')
-      .in('placeId', uuids)
-      .order('createdAt', { ascending: true });
-
-    if (error || !data) {
-      console.warn('Error al leer reseñas de Supabase:', error);
-      return [];
-    }
-
-    return data.map((row: any) => ({
-      id: row.id,
-      place_id: row.placeId,
-      user_id: row.userId ?? undefined,
-      author_name: row.authorName || 'Estudiante Manta',
-      rating: row.rating ?? undefined,
-      has_visited: row.rating !== null && row.rating !== undefined,
-      comment: row.comment || '',
-      created_at: row.createdAt
-    }));
+    const placeIdSet = new Set(uuids);
+    const reviews = await listReviews();
+    return reviews
+      .filter((row) => placeIdSet.has(row.placeId ?? row.place_id ?? ''))
+      .map((row) => ({
+        id: row.id,
+        place_id: row.placeId ?? row.place_id ?? '',
+        user_id: row.userId ?? row.user_id ?? undefined,
+        author_name:
+          row.authorName || row.author_name || row.User?.fullName || 'Estudiante Manta',
+        rating: row.rating ?? undefined,
+        has_visited: row.rating !== null && row.rating !== undefined,
+        comment: row.comment || row.text || '',
+        created_at: row.createdAt || row.created_at
+      }))
+      .sort((first, second) =>
+        (first.created_at ?? '').localeCompare(second.created_at ?? '')
+      );
   } catch (err) {
-    console.warn('Excepción al leer reseñas de Supabase:', err);
+    console.warn('Excepción al leer reseñas del backend:', err);
     return [];
   }
 }

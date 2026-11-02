@@ -8,11 +8,11 @@ import {
   getSupabaseUserId,
   resolvePlaceId,
   setPlaceFavorite,
-  addReviewToSupabase,
   addPlaceToSupabase,
   initialPlaces
 } from '../../data/repositories/places';
 import { syncUserToSupabase } from '../../data/repositories/users';
+import { createReview } from '../../services/reviewsService';
 import { Header } from '../components/home/Header';
 import { CategoryNav } from '../components/home/CategoryNav';
 import { Sidebar } from '../components/home/Sidebar';
@@ -143,18 +143,17 @@ export function HomePage({ user, onLogout }: HomePageProps) {
       throw new Error('No se pudo sincronizar tu cuenta con Supabase. La reseña no se publicó.');
     }
     const userId = await getSupabaseUserId(user.email);
-    const saved = await addReviewToSupabase({
-      place_id: review.place_id,
-      user_id: userId,
-      author_name: user.name,
-      rating: review.rating,
-      has_visited: true,
-      comment: review.comment
-    });
-
-    if (!saved) {
-      throw new Error('Supabase no pudo guardar la reseña. Revisa la conexión y vuelve a intentarlo.');
+    const placeId = resolvePlaceId(review.place_id);
+    if (!placeId) {
+      throw new Error('No se pudo identificar el lugar para guardar la reseña.');
     }
+
+    await createReview({
+      placeId,
+      userId,
+      rating: review.rating,
+      text: review.comment
+    });
 
     setReviewsRefreshKey((key) => key + 1);
     await refreshPlaceSummary(review.place_id);
@@ -204,19 +203,17 @@ export function HomePage({ user, onLogout }: HomePageProps) {
     };
     setPlaces((prev) => [newPlace, ...prev]);
 
-    const reviewSaved = await addReviewToSupabase({
-      place_id: placeId,
-      user_id: userId,
-      author_name: user.name,
-      rating: newPlaceData.rating,
-      has_visited: true,
-      comment: newPlaceData.description
-    });
-    if (!reviewSaved) {
-      throw new Error(
-        `El lugar "${newPlaceData.name}" se creó, pero la reseña inicial no se guardó. Ya puedes reseñarlo desde “Reseñar un lugar”.`
-      );
+    const resolvedPlaceId = resolvePlaceId(placeId);
+    if (!resolvedPlaceId) {
+      throw new Error('El lugar se creó, pero no se pudo identificar para guardar la reseña.');
     }
+
+    await createReview({
+      placeId: resolvedPlaceId,
+      userId,
+      rating: newPlaceData.rating,
+      text: newPlaceData.description
+    });
 
     setReviewsRefreshKey((key) => key + 1);
     await refreshPlaceSummary(placeId);

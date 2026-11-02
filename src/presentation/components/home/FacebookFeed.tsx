@@ -16,8 +16,8 @@ import type { User } from '../../../business/types/user';
 import type { Place, CommunityPost, CommunityComment, CategoryId } from '../../../business/types/place';
 import { CommentModal } from './CommentModal';
 import { UserAvatar } from '../ui/UserAvatar';
+import { createReview } from '../../../services/reviewsService';
 import {
-  addReviewToSupabase,
   fetchPlaceLikes,
   fetchReviewsByPlaceIds,
   resolvePlaceId,
@@ -390,28 +390,35 @@ export function FacebookFeed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [places, reviewsRefreshKey]);
 
-  // GUARDAR: envía el comentario a Supabase. El comentario ya se mostró en pantalla,
-  // así que si falla solo se avisa al usuario (no se rompe nada).
+  // El comentario solo se agrega al feed cuando el backend confirma que se guardó.
   const saveCommentToDatabase = async (
     placeId: string | undefined,
     text: string,
     rating?: number
-  ) => {
-    if (!placeId) return;
+  ): Promise<boolean> => {
     setSaveError(null);
 
-    const saved = await addReviewToSupabase({
-      place_id: placeId,
-      // El id real de Supabase permite que el comentario aparezca en "Tus publicaciones"
-      user_id: currentSupabaseUserId ?? undefined,
-      author_name: user.name,
-      rating,
-      has_visited: rating !== undefined,
-      comment: text
-    });
+    const resolvedPlaceId = placeId ? resolvePlaceId(placeId) : null;
+    if (!resolvedPlaceId || !currentSupabaseUserId) {
+      setSaveError('No se pudo identificar tu cuenta o el lugar para guardar el comentario.');
+      return false;
+    }
 
-    if (!saved) {
-      setSaveError('Tu comentario se publicó en pantalla, pero no se pudo guardar en la base de datos.');
+    try {
+      await createReview({
+        placeId: resolvedPlaceId,
+        userId: currentSupabaseUserId,
+        rating,
+        text
+      });
+      return true;
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : 'No se pudo guardar el comentario. Inténtalo de nuevo.'
+      );
+      return false;
     }
   };
 
@@ -498,14 +505,19 @@ export function FacebookFeed({
   };
 
   // Callback al enviar comentario desde la ventana flotante
-  const handleCommentModalSubmit = (commentData: {
+  const handleCommentModalSubmit = async (commentData: {
     text: string;
     hasVisited: boolean;
     rating?: number;
-  }) => {
+  }): Promise<void> => {
     if (!commentModalState.postId) return;
 
-    saveCommentToDatabase(commentModalState.place?.id, commentData.text, commentData.rating);
+    const saved = await saveCommentToDatabase(
+      commentModalState.place?.id,
+      commentData.text,
+      commentData.rating
+    );
+    if (!saved) return;
 
     setPosts((prev) =>
       prev.map((post) => {
@@ -532,12 +544,13 @@ export function FacebookFeed({
   };
 
   // Enviar comentario rápido desde el input inline del post
-  const handleAddInlineComment = (postId: string) => {
+  const handleAddInlineComment = async (postId: string) => {
     const text = commentInputs[postId]?.trim();
     if (!text) return;
 
     const targetPost = posts.find((post) => post.id === postId);
-    saveCommentToDatabase(targetPost?.place.id, text);
+    const saved = await saveCommentToDatabase(targetPost?.place.id, text);
+    if (!saved) return;
 
     setPosts((prev) =>
       prev.map((post) => {
@@ -568,7 +581,7 @@ export function FacebookFeed({
     <div className="facebook-feed-container">
       {/* Aviso de error al guardar comentarios */}
       {saveError && (
-        <div className="feed-status-banner">
+        <div className="feed-status-banner" role="alert">
           <span>{saveError}</span>
           <button className="btn-text-link" onClick={() => setSaveError(null)}>
             Cerrar
