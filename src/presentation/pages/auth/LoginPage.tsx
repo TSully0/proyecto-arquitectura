@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { initialUsers } from '../../../data/repositories/users';
+import { initialUsers, loginWithSupabase } from '../../../data/repositories/users';
 import type { User } from '../../../business/types/user';
 import {
   getGuardKey,
@@ -78,7 +78,7 @@ export function LoginPage({
     return () => window.clearInterval(interval);
   }, [guardKey]);
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setSuspension(null);
@@ -119,15 +119,51 @@ export function LoginPage({
     // Buscar usuario y verificar la contraseña.
     const encoded = encodePassword(password);
 
-    const user =
-      encoded === null
-        ? undefined
-        : users.find(
-            (u) =>
-              (u.email.trim().toLowerCase() === cleanIdentifier ||
-                u.name.trim().toLowerCase() === cleanIdentifier) &&
-              u.password === encoded
+    let user: UserWithSanction | undefined;
+
+    if (encoded !== null) {
+      // 1) Supabase manda: si la cuenta existe allí, solo vale la clave de la base de datos.
+      const remote = await loginWithSupabase(cleanIdentifier, encoded);
+
+      if (remote.status === 'ok') {
+        const local = users.find(
+          (u) => u.email.trim().toLowerCase() === remote.user.email.trim().toLowerCase()
+        );
+
+        // Se conservan las sanciones locales y se reemplaza la clave y los datos por los de Supabase.
+        user = {
+          ...local,
+          ...remote.user,
+          banned: Boolean(local?.banned) || Boolean(remote.user.banned)
+        };
+
+        // Sin duplicados: una sola copia local por correo.
+        try {
+          localStorage.setItem(
+            'app_users',
+            JSON.stringify([
+              ...users.filter(
+                (u) =>
+                  u.email.trim().toLowerCase() !==
+                  remote.user.email.trim().toLowerCase()
+              ),
+              user
+            ])
           );
+        } catch {
+          /* si no se puede guardar, la sesión igual continúa */
+        }
+      } else if (remote.status === 'not_found' || remote.status === 'error') {
+        // 2) Solo si la cuenta NO existe en Supabase (o no hay conexión) se usa la copia local.
+        user = users.find(
+          (u) =>
+            (u.email.trim().toLowerCase() === cleanIdentifier ||
+              u.name.trim().toLowerCase() === cleanIdentifier) &&
+            u.password === encoded
+        );
+      }
+      // wrong_password: la cuenta existe en Supabase y la clave no coincide → no entra.
+    }
 
     if (!user) {
       registerFailedLogin(key);

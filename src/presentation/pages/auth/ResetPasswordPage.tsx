@@ -6,6 +6,7 @@ import {
   MAX_PASSWORD_LENGTH,
   getPasswordStrength
 } from "../../../business/services/passwordStrength";
+import { updatePasswordInSupabase } from "../../../data/repositories/users";
 
 export function ResetPasswordPage({ onFinish }: { onFinish: () => void }) {
   const [newPassword, setNewPassword] = useState("");
@@ -27,7 +28,7 @@ export function ResetPasswordPage({ onFinish }: { onFinish: () => void }) {
     );
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!email) {
       setMessage("❌ No hay sesión de recuperación activa");
       return;
@@ -40,24 +41,31 @@ export function ResetPasswordPage({ onFinish }: { onFinish: () => void }) {
       return;
     }
 
-    const stored = localStorage.getItem("app_users");
-    const users = stored ? JSON.parse(stored) : [];
+    const encoded = btoa(newPassword.trim());
 
-    const index = findUserIndex(users, email);
+    // 1) Primero se actualiza la base de datos (Supabase).
+    const updated = await updatePasswordInSupabase(email, encoded);
 
-    // ❌ usuario no encontrado
-    if (index === -1) {
-      setMessage("❌ Usuario no encontrado en base de datos");
+    if (!updated) {
+      setMessage(
+        "❌ No se pudo cambiar la contraseña en la base de datos. Inténtalo de nuevo."
+      );
       return;
     }
 
-    // 🔥 actualizar usuario
-    users[index] = {
-      ...users[index],
-      password: btoa(newPassword.trim()),
-    };
+    // 2) Si este navegador tiene una copia local, se actualiza también.
+    try {
+      const stored = localStorage.getItem("app_users");
+      const users = stored ? JSON.parse(stored) : [];
+      const index = findUserIndex(users, email);
 
-    localStorage.setItem("app_users", JSON.stringify(users));
+      if (index !== -1) {
+        users[index] = { ...users[index], password: encoded };
+        localStorage.setItem("app_users", JSON.stringify(users));
+      }
+    } catch {
+      /* si falla la copia local, el login la recupera desde Supabase */
+    }
 
     // 🧹 limpiar sesión de reset
     localStorage.removeItem("reset_email");

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent, ClipboardEvent, KeyboardEvent } from "react";
+import { emailExistsInSupabase } from "../../../data/repositories/users";
 
 type Step = "email" | "code" | "verified";
 
@@ -108,28 +109,23 @@ export function ForgotPasswordPage({ onBack }: { onBack: () => void }) {
   const [step, setStep] = useState<Step>("email");
   const [message, setMessage] = useState("");
 
-  // 🔍 buscar usuario en "base de datos local"
-  const findUserByEmail = (email: string) => {
-    const stored = localStorage.getItem("app_users");
-    const users = stored ? JSON.parse(stored) : [];
-    return users.find(
-      (u: any) =>
-        (u.email || "").toLowerCase().trim() ===
-        email.toLowerCase().trim()
-    );
-  };
-
   // ================= ENVIAR CÓDIGO =================
-  const sendCode = () => {
+  const sendCode = async () => {
     if (!email.trim()) {
       setMessage("Ingresa un correo");
       return;
     }
 
-    const user = findUserByEmail(email);
+    // Se consulta la base de datos (Supabase), no localStorage.
+    const exists = await emailExistsInSupabase(email);
+
+    if (exists === null) {
+      setMessage("No se pudo verificar el correo. Revisa tu conexión.");
+      return;
+    }
 
     // ❌ email no existe en BD
-    if (!user) {
+    if (!exists) {
       setMessage("Este correo no está registrado");
       return;
     }

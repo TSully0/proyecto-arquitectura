@@ -80,8 +80,8 @@ export function MyProfilePage({ user }: MyProfilePageProps) {
   };
 
   /* ===== cambiar nombre ===== */
-  const handleChangeName = (newName: string) => {
-    const result = changeUserName(user, newName);
+  const handleChangeName = async (newName: string) => {
+    const result = await changeUserName(user, newName);
 
     if (!result.ok) {
       error(result.message);

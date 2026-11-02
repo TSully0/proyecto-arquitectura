@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import type { User } from "../../business/types/user";
+import { fetchNameFromSupabase } from "../../data/repositories/users";
 
 const SESSION_KEY = "user";
 const USERS_KEY = "app_users";
@@ -98,6 +99,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener("storage", revalidate);
     };
   }, []);
+
+  // Mantiene el nombre al día con Supabase (al abrir la app y al volver a la pestaña).
+  useEffect(() => {
+    const email = user?.email;
+    if (!email) return;
+
+    let cancelled = false;
+
+    const syncName = async () => {
+      const remoteName = await fetchNameFromSupabase(email);
+      if (cancelled || !remoteName) return;
+
+      try {
+        const rawSession = localStorage.getItem(SESSION_KEY);
+        if (rawSession) {
+          const session = JSON.parse(rawSession) as User;
+          if (session.name !== remoteName) {
+            localStorage.setItem(
+              SESSION_KEY,
+              JSON.stringify({ ...session, name: remoteName })
+            );
+          }
+        }
+
+        const rawUsers = localStorage.getItem(USERS_KEY);
+        if (rawUsers) {
+          const users: User[] = JSON.parse(rawUsers);
+          const target = email.trim().toLowerCase();
+          localStorage.setItem(
+            USERS_KEY,
+            JSON.stringify(
+              users.map((u) =>
+                (u.email || "").trim().toLowerCase() === target
+                  ? { ...u, name: remoteName }
+                  : u
+              )
+            )
+          );
+        }
+      } catch {
+        /* si falla el guardado local, igual se actualiza el estado */
+      }
+
+      setUser((prev) =>
+        prev && prev.name !== remoteName ? { ...prev, name: remoteName } : prev
+      );
+    };
+
+    syncName();
+    window.addEventListener("focus", syncName);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", syncName);
+    };
+  }, [user?.email]);
 
   const login = useCallback((loggedUser: User) => {
     const current = resolveUser(loggedUser);

@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { syncUserToSupabase } from '../../../data/repositories/users';
+import {
+  registerUserInSupabase,
+  checkUserExistsInSupabase
+} from '../../../data/repositories/users';
 import {
   validateName,
   validateEmail,
@@ -14,7 +17,6 @@ import { RegisterTerms } from '../../components/auth/RegisterTerms';
 import { RegisterActions } from '../../components/auth/RegisterActions';
 import {
   buildNewUser,
-  findDuplicates,
   getStrengthLabel,
   getUsers,
   saveUsersLocally,
@@ -49,8 +51,8 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
   const strength = getPasswordStrength(password);
   const strengthLabel = getStrengthLabel(strength);
 
-  // Paso 1: comprueba nombre, correo y duplicados.
-  const validateStepOne = (): boolean => {
+  // Paso 1: comprueba nombre, correo y duplicados (solo en Supabase).
+  const validateStepOne = async (): Promise<boolean> => {
     const nameError = validateName(name);
 
     if (nameError) {
@@ -65,7 +67,12 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
       return false;
     }
 
-    const duplicates = findDuplicates(getUsers(), name, email);
+    const duplicates = await checkUserExistsInSupabase(name, email);
+
+    if (duplicates === null) {
+      setError('No se pudo verificar el correo. Revisa tu conexión e inténtalo de nuevo.');
+      return false;
+    }
 
     if (duplicates.email) {
       setError('Este correo ya está registrado.');
@@ -94,8 +101,8 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
     return message === '';
   };
 
-  const handleNext = () => {
-    if (validateStepOne()) {
+  const handleNext = async () => {
+    if (await validateStepOne()) {
       setStep(2);
       setError('');
     }
@@ -131,39 +138,41 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
       return;
     }
 
-    // Comprobar duplicados nuevamente con los usuarios actuales.
     const users = getUsers();
-    const duplicates = findDuplicates(users, name, email);
-
-    if (duplicates.email || duplicates.name) {
-      setError(
-        'El correo o nombre de usuario ya está registrado. Revisa los datos.'
-      );
-      setStep(1);
-      return;
-    }
 
     const newUser = buildNewUser(name, email, password);
 
-    if (!saveUsersLocally([...users, newUser])) {
+    // Supabase es la fuente principal: primero se crea allí.
+    const remote = await registerUserInSupabase({
+      name: newUser.name,
+      email: newUser.email,
+      password: newUser.password
+    });
+
+    if (!remote.ok) {
+      setError(
+        remote.reason === 'duplicate'
+          ? 'El correo o nombre de usuario ya está registrado. Revisa los datos.'
+          : 'No se pudo crear la cuenta. Revisa tu conexión e inténtalo de nuevo.'
+      );
+      if (remote.reason === 'duplicate') setStep(1);
+      return;
+    }
+
+    // Copia local con el id real de la base de datos.
+    const savedUser = { ...newUser, id: remote.id };
+
+    if (!saveUsersLocally([
+        ...users.filter(
+          (u) => (u.email || '').trim().toLowerCase() !== savedUser.email
+        ),
+        savedUser
+      ])) {
       setError('No se pudo guardar la cuenta en este dispositivo.');
       return;
     }
 
     setSuccess(true);
-
-    // Si falla la sincronización, la cuenta local se conserva.
-    try {
-      const synced = await syncUserToSupabase(newUser);
-
-      if (!synced) {
-        console.warn(
-          'El usuario se guardó localmente, pero no se confirmó la sincronización con Supabase.'
-        );
-      }
-    } catch (err) {
-      console.warn('Error al sincronizar el usuario con Supabase:', err);
-    }
 
     // Volver al inicio de sesión después de mostrar el éxito.
     window.setTimeout(() => {

@@ -1,9 +1,10 @@
 import type { User } from "../types/user";
+import { updateNameInSupabase } from "../../data/repositories/users";
 
 // =====================================================
 // CONFIGURACIÓN
 // Cada usuario puede cambiar su nombre una vez cada 7 días.
-// La información se guarda actualmente en localStorage.
+// El nombre se guarda en Supabase; la fecha del último cambio sigue en localStorage.
 // =====================================================
 
 const COOLDOWN_DAYS = 7;
@@ -99,10 +100,10 @@ export type NameChangeResult =
 // CAMBIAR NOMBRE DEL USUARIO
 // =====================================================
 
-export const changeUserName = (
+export const changeUserName = async (
   user: User,
   newName: string
-): NameChangeResult => {
+): Promise<NameChangeResult> => {
   // Validar el nombre original antes de modificarlo.
   // No usamos trim() para corregirlo automáticamente,
   // porque debemos detectar los espacios sobrantes.
@@ -127,24 +128,43 @@ export const changeUserName = (
     };
   }
 
-  // 1. Actualizar la sesión del usuario.
+  // 1. Base de datos primero (Supabase).
+  const remote = await updateNameInSupabase(user.email, newName);
+
+  if (!remote.ok) {
+    if (remote.reason === "duplicate") {
+      return { ok: false, message: "Ese nombre de usuario ya está en uso." };
+    }
+
+    // "not_found": cuenta que solo existe en este dispositivo → se cambia solo en local.
+    if (remote.reason === "error") {
+      return {
+        ok: false,
+        message: "No se pudo guardar el cambio en la base de datos. Inténtalo de nuevo.",
+      };
+    }
+  }
+
+  // 2. Actualizar la sesión y la copia local.
   localStorage.setItem(
     "user",
     JSON.stringify({ ...user, name: newName })
   );
 
-  // 2. Actualizar el usuario guardado en localStorage.
   try {
     const raw = localStorage.getItem("app_users");
     const users: User[] = raw ? JSON.parse(raw) : [];
+    const email = user.email.trim().toLowerCase();
 
     const synced = users.map((u) =>
-      u.id === user.id ? { ...u, name: newName } : u
+      u.id === user.id || (u.email || "").trim().toLowerCase() === email
+        ? { ...u, name: newName }
+        : u
     );
 
     localStorage.setItem("app_users", JSON.stringify(synced));
   } catch {
-    // Si falla la sincronización local, la sesión ya fue actualizada.
+    // Si falla la copia local, la base de datos ya quedó actualizada.
   }
 
   // 3. Registrar la fecha del último cambio.
