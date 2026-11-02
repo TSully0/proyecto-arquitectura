@@ -22,6 +22,7 @@ test('creates a review with the backend POST contract', async () => {
   assert.equal(requests[0].url, 'https://api.example.test/reviews');
   assert.equal(requests[0].init.method, 'POST');
   assert.deepEqual(JSON.parse(requests[0].init.body), review);
+  assert.equal('comment' in JSON.parse(requests[0].init.body), false);
 });
 
 test('updates a review with PATCH and encodes its id', async () => {
@@ -36,6 +37,10 @@ test('updates a review with PATCH and encodes its id', async () => {
 
   assert.equal(requests[0].url, 'https://api.example.test/reviews/review%2F789');
   assert.equal(requests[0].init.method, 'PATCH');
+  assert.deepEqual(JSON.parse(requests[0].init.body), {
+    rating: review.rating,
+    comment: review.text
+  });
 });
 
 test('lists reviews from GET /reviews without sending a request body', async () => {

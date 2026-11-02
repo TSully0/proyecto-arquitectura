@@ -5,6 +5,11 @@ export interface ReviewRequest {
   text: string;
 }
 
+export interface ReviewUpdateRequest {
+  rating?: number | null;
+  text?: string;
+}
+
 export interface BackendReview {
   id: string;
   placeId?: string;
@@ -74,26 +79,14 @@ export function createReviewsService(apiUrl: string | undefined, fetcher: typeof
   const request = async (
     url: string,
     method: 'GET' | 'POST' | 'PATCH',
-    review?: ReviewRequest
+    body?: object
   ) => {
-    if (review) {
-      if (!review.userId.trim() || !review.placeId.trim() || !review.text.trim()) {
-        throw new Error('La reseña necesita usuario, lugar y comentario.');
-      }
-      if (
-        review.rating !== undefined &&
-        (!Number.isInteger(review.rating) || review.rating < 1 || review.rating > 5)
-      ) {
-        throw new Error('La calificación debe ser un número entero entre 1 y 5.');
-      }
-    }
-
     const response = await fetcher(url, {
       method,
-      headers: review
+      headers: body
         ? { Accept: 'application/json', 'Content-Type': 'application/json' }
         : { Accept: 'application/json' },
-      ...(review ? { body: JSON.stringify(review) } : {})
+      ...(body ? { body: JSON.stringify(body) } : {})
     });
     const responseText = await response.text();
     let responseBody: unknown;
@@ -121,10 +114,31 @@ export function createReviewsService(apiUrl: string | undefined, fetcher: typeof
       }
       return responseBody;
     },
-    create: (review: ReviewRequest) => request(reviewsUrl, 'POST', review),
-    update: (id: string, review: ReviewRequest) => {
+    create: (review: ReviewRequest) => {
+      if (!review.userId.trim() || !review.placeId.trim() || !review.text.trim()) {
+        throw new Error('La reseña necesita usuario, lugar y comentario.');
+      }
+      if (
+        review.rating !== undefined &&
+        (!Number.isInteger(review.rating) || review.rating < 1 || review.rating > 5)
+      ) {
+        throw new Error('La calificación debe ser un número entero entre 1 y 5.');
+      }
+      return request(reviewsUrl, 'POST', review);
+    },
+    update: (id: string, review: ReviewUpdateRequest) => {
       if (!id.trim()) throw new Error('Se necesita el identificador de la reseña.');
-      return request(`${reviewsUrl}/${encodeURIComponent(id)}`, 'PATCH', review);
+      if (
+        review.rating !== undefined &&
+        review.rating !== null &&
+        (!Number.isInteger(review.rating) || review.rating < 1 || review.rating > 5)
+      ) {
+        throw new Error('La calificación debe ser un número entero entre 1 y 5.');
+      }
+      return request(`${reviewsUrl}/${encodeURIComponent(id)}`, 'PATCH', {
+        rating: review.rating,
+        comment: review.text
+      });
     }
   };
 }
@@ -137,7 +151,7 @@ export function createReview(review: ReviewRequest) {
   return createReviewsService(getReviewsApiUrl()).create(review);
 }
 
-export function updateReview(id: string, review: ReviewRequest) {
+export function updateReview(id: string, review: ReviewUpdateRequest) {
   return createReviewsService(getReviewsApiUrl()).update(id, review);
 }
 
