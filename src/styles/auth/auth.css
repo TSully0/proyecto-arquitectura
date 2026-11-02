@@ -3,7 +3,10 @@
    HUECAS MANABAS - MANTACAMPUS
 ================================================== */
 
-/* VARIABLES */
+/* =========================
+   VARIABLES
+========================= */
+
 :root {
   --primary: #A75F37;
   --primary-hover: #8C4B27;
@@ -13,14 +16,20 @@
   --error-red: #ef4444;
 }
 
-/* RESET */
+/* =========================
+   RESET
+========================= */
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-/* FONDO GENERAL */
+/* =========================
+   FONDO GENERAL
+========================= */
+
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
@@ -36,7 +45,10 @@ body {
   background-attachment: fixed;
 }
 
-/* CONTENEDOR DE AUTENTICACIÓN */
+/* =========================
+   CONTENEDOR DE AUTENTICACIÓN
+========================= */
+
 .auth-container {
   width: min(420px, calc(100% - 24px));
   margin: 20px auto;
@@ -47,8 +59,8 @@ body {
   backdrop-filter: blur(5px);
 }
 
-/* LOGIN FIJO: ocupa la ventana, sin scroll de página.
-   Solo aparece scroll interno si la ventana es demasiado baja. */
+/* LOGIN FIJO */
+
 html:has(.auth-fixed),
 html:has(.auth-fixed) body {
   overflow: hidden;
@@ -66,21 +78,30 @@ html:has(.auth-fixed) body {
   margin: auto;
 }
 
-/* TÍTULOS */
+/* =========================
+   TÍTULOS
+========================= */
+
 .auth-container h2 {
   margin: 0 0 25px;
   color: var(--text-main);
   text-align: center;
 }
 
-/* LABELS */
+/* =========================
+   LABELS
+========================= */
+
 .auth-container label {
   color: var(--text-main);
   font-size: 13px;
   font-weight: 600;
 }
 
-/* INPUTS GENERALES */
+/* =========================
+   INPUTS GENERALES
+========================= */
+
 .auth-container input {
   width: 100%;
   margin-top: 5px;
@@ -100,7 +121,10 @@ html:has(.auth-fixed) body {
   box-shadow: 0 0 0 2px rgba(167, 95, 55, 0.2);
 }
 
-/* CONTENEDOR DE CONTRASEÑA */
+/* =========================
+   CONTENEDOR DE CONTRASEÑA
+========================= */
+
 .password-wrapper {
   position: relative;
   width: 100%;
@@ -110,7 +134,8 @@ html:has(.auth-fixed) body {
   padding-right: 45px;
 }
 
-/* ICONO PARA MOSTRAR / OCULTAR CONTRASEÑA */
+/* ICONO MOSTRAR / OCULTAR */
+
 .password-wrapper .eye-icon {
   position: absolute;
   top: 50%;
@@ -144,7 +169,10 @@ html:has(.auth-fixed) body {
   transform: translateY(-50%) scale(0.95);
 }
 
-/* BOTÓN PRINCIPAL DEL LOGIN Y RECUPERACIÓN */
+/* =========================
+   BOTONES PRINCIPALES
+========================= */
+
 .auth-container button[type="submit"],
 .auth-container > button {
   width: 100%;
@@ -170,7 +198,10 @@ html:has(.auth-fixed) body {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* CASILLAS DE CÓDIGO (6 dígitos) */
+/* =========================
+   CASILLAS OTP (6 DÍGITOS)
+========================= */
+
 .auth-container .otp-group {
   display: flex;
   justify-content: center;
@@ -196,7 +227,10 @@ html:has(.auth-fixed) body {
   background: #fff;
 }
 
-/* BOTÓN DESHABILITADO */
+/* =========================
+   BOTONES DESHABILITADOS
+========================= */
+
 .auth-container button:disabled,
 .auth-container button:disabled:hover {
   opacity: 0.6;
@@ -205,7 +239,10 @@ html:has(.auth-fixed) body {
   box-shadow: none;
 }
 
-/* MENSAJES */
+/* =========================
+   MENSAJES
+========================= */
+
 .auth-container .error {
   margin: 0 0 10px;
   color: var(--error-red);
@@ -224,7 +261,10 @@ html:has(.auth-fixed) body {
   white-space: pre-line;
 }
 
-/* PÁRRAFOS Y ENLACES */
+/* =========================
+   PÁRRAFOS Y ENLACES
+========================= */
+
 .auth-container p {
   margin-top: 15px;
   color: var(--text-muted);
@@ -253,7 +293,10 @@ html:has(.auth-fixed) body {
   text-decoration: underline;
 }
 
-/* BOTÓN VOLVER AL LOGIN EN RECUPERACIÓN */
+/* =========================
+   BOTÓN VOLVER AL LOGIN
+========================= */
+
 .auth-container > button:not(:only-of-type):last-of-type {
   display: block;
   width: auto;
@@ -274,7 +317,10 @@ html:has(.auth-fixed) body {
   text-decoration: underline;
 }
 
-/* AVISO DE CUENTA SUSPENDIDA (login) */
+/* =========================
+   AVISO DE CUENTA SUSPENDIDA
+========================= */
+
 .auth-container .suspension-notice {
   margin: 0 0 18px;
   padding: 16px;
@@ -344,7 +390,10 @@ html:has(.auth-fixed) body {
   font-size: 11px;
 }
 
-/* AVISO DE SUSPENSIÓN TERMINADA (variante verde) */
+/* =========================
+   AVISO DE SUSPENSIÓN TERMINADA
+========================= */
+
 .auth-container .lifted-notice {
   background: #f0fdf4;
   border-color: #b7e4c7;
@@ -361,7 +410,10 @@ html:has(.auth-fixed) body {
   color: #3f6b4f;
 }
 
-/* AVISO DE CUENTA BANEADA (variante roja del aviso de suspensión) */
+/* =========================
+   AVISO DE CUENTA BANEADA
+========================= */
+
 .auth-container .ban-notice {
   background: #fff4f4;
   border-color: #f5c2c2;
@@ -386,7 +438,85 @@ html:has(.auth-fixed) body {
   letter-spacing: 0.5px;
 }
 
-/* RESPONSIVE */
+/* =========================
+   INFORMACIÓN DEL CORREO OTP
+========================= */
+
+.auth-container .otp-email-info {
+  margin: 0 0 15px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* =========================
+   REENVIAR CÓDIGO OTP
+========================= */
+
+.resend-code-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 18px 0;
+  text-align: center;
+}
+
+.auth-container .resend-code-container p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.auth-container .resend-code-container .resend-countdown {
+  line-height: 1.5;
+}
+
+.auth-container .resend-timer {
+  color: var(--primary);
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+}
+
+.auth-container .resend-code-btn {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent-blue);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.auth-container .resend-code-btn:hover:not(:disabled) {
+  transform: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.auth-container .resend-code-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
 @media (max-width: 500px) {
   body {
     background-attachment: scroll;
@@ -411,5 +541,26 @@ html:has(.auth-fixed) body {
   .auth-container button[type="submit"],
   .auth-container > button {
     min-height: 44px;
+  }
+
+  .auth-container .otp-group {
+    gap: 6px;
+  }
+
+  .auth-container .otp-input {
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .resend-code-container {
+    margin: 16px 0;
+  }
+
+  .auth-container .resend-timer {
+    font-size: 24px;
+  }
+
+  .auth-container .resend-code-btn {
+    min-height: 40px;
   }
 }

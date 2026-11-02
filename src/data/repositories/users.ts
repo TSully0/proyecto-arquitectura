@@ -464,6 +464,7 @@ export type DbUser = {
   name: string;
   email: string;
   role: 'admin' | 'moderator' | 'user';
+  createdAt: string | null;
 };
 
 const toFrontRole = (role: unknown): DbUser['role'] => {
@@ -476,7 +477,7 @@ export async function fetchAllUsersFromSupabase(): Promise<DbUser[] | null> {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, email, fullName, role')
+      .select('id, email, fullName, role, createdAt')
       .order('createdAt', { ascending: true });
 
     if (error || !data) {
@@ -488,7 +489,8 @@ export async function fetchAllUsersFromSupabase(): Promise<DbUser[] | null> {
       id: String(row.id),
       name: String(row.fullName ?? ''),
       email: String(row.email ?? ''),
-      role: toFrontRole(row.role)
+      role: toFrontRole(row.role),
+      createdAt: row.createdAt ? String(row.createdAt) : null
     }));
   } catch (err) {
     console.warn('Excepción al leer los usuarios de Supabase:', err);

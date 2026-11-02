@@ -53,18 +53,48 @@ La aplicación incluye módulos de autenticación, perfiles, lugares y reseñas,
 - Modales de reseña y comentario (`ReviewModal`, `CommentModal`).
 
 ### 🔐 Registro, inicio de sesión y recuperación de contraseña
-- Registro con validación de nombre (3–30 caracteres), correo y contraseña (8–64 caracteres). La lógica de creación de la cuenta está en `registerAccount.ts`.
+
+#### Registro en 3 pasos
+El registro (`RegisterPage.tsx`) se hace en tres pasos, con un indicador de progreso (`RegisterProgress.tsx`, «Paso X de 3»):
+
+| Paso | Nombre | Qué se hace |
+|---|---|---|
+| 1 | **Cuenta** | Nombre de usuario y correo. Se validan el formato y que ninguno exista ya en la tabla `users` de Supabase. |
+| 2 | **Seguridad** | Contraseña, confirmación y aceptación de los términos. Al pulsar «Continuar» se valida la contraseña y se genera el código de verificación. **Todavía no se crea la cuenta.** |
+| 3 | **Verificar correo** | Código de 6 dígitos (`OtpInput`) con temporizador de reenvío de 5 minutos (`useResendTimer`). Solo cuando el código coincide se crea la cuenta. |
+
+- La cuenta se crea **al final**, cuando ya están todos los datos y el correo está verificado, así no quedan cuentas a medias si el usuario abandona el proceso.
+- Si el usuario retrocede desde el paso 3, el código anterior se invalida y se genera uno nuevo al continuar. Al reenviar el código, las casillas se limpian.
+- Si al crear la cuenta Supabase responde que el correo o el nombre ya existen, el registro vuelve al paso 1.
+- El paso 3 está separado en el componente `RegisterVerifyStep.tsx`, y el botón secundario «Atrás» usa la clase `register-back-btn` (`auth-register.css`).
+
+#### Reglas del registro
+- Validación de nombre (3–30 caracteres), correo y contraseña (8–64 caracteres). La lógica de apoyo está en `registerAccount.ts`.
 - Solo se aceptan correos de Gmail, Hotmail, Outlook y Email.com.
 - **El registro usa Supabase como fuente de verdad:** el paso 1 comprueba en la tabla `users` que el correo y el nombre no existan (aunque el navegador tenga datos viejos en `localStorage`), y la cuenta se crea primero en Supabase (`registerUserInSupabase`). Solo si eso funciona se guarda la copia local, con el `id` real de la base de datos. Si Supabase no responde, la cuenta no se crea y se muestra un error.
+
+#### Inicio de sesión
 - **El inicio de sesión consulta primero Supabase** (`loginWithSupabase`): si la cuenta existe en la tabla `users`, solo vale la contraseña guardada allí, aunque ese navegador tenga una copia local con otra clave. Si la cuenta no existe en Supabase (o no hay conexión), se usa la copia local como respaldo. Se puede entrar con el correo o con el nombre de usuario.
 - Al iniciar sesión correctamente se actualiza la copia local con los datos de Supabase (una sola entrada por correo) y se conservan las sanciones guardadas en el navegador.
 - Indicador de fortaleza de contraseña (`PasswordStrengthMeter.tsx`) y servicio `passwordStrength.ts`.
 - Protección contra fuerza bruta en el login (`loginGuard.ts`): 5 intentos fallidos consecutivos bloquean el acceso durante 1 minuto, por cuenta y por navegador.
 - Avisos claros en el login para cuentas sancionadas o recién liberadas (consulta [Sistema de sanciones](#️-sistema-de-sanciones)).
-- Recuperación de contraseña en dos pasos: código de verificación de 6 dígitos y pantalla de restablecimiento. El correo se comprueba en Supabase y la nueva contraseña se guarda en la columna `passwordHash` de `users` (y en la copia local, si existe).
+
+#### Recuperación de contraseña
+`ForgotPasswordPage.tsx` tiene tres etapas, y después pasa a la pantalla de restablecimiento (`ResetPasswordPage.tsx`):
+
+1. **Correo:** el usuario escribe su correo y se comprueba en Supabase que esté registrado.
+2. **Código:** se introduce el código de 6 dígitos con `OtpInput`; el reenvío está controlado por `useResendTimer` (cuenta regresiva de 5 minutos).
+3. **Verificado:** si el código coincide, se permite continuar a «Cambiar contraseña». La nueva contraseña se guarda en la columna `passwordHash` de `users` (y en la copia local, si existe).
+
+#### Componentes reutilizables del código de verificación
+- **`OtpInput.tsx`:** seis casillas individuales, solo números, avance automático, retroceso con Backspace, navegación con flechas y pegado de un código completo. Lo usan el registro y la recuperación de contraseña.
+- **`useResendTimer.ts`:** hook con la cuenta regresiva (por defecto `05:00`): `startTimer`, `clearTimer`, `isActive` y `formattedTime`.
+
+#### Sesión
 - Contexto de sesión en `AuthContext.tsx` (única fuente de verdad de la sesión). Al abrir la app y al volver a la pestaña, sincroniza el nombre de la sesión con Supabase.
 
-> ⚠️ **Limitaciones de seguridad actuales.** Las contraseñas se almacenan codificadas con `btoa` (Base64), que **no es un hash ni cifrado**, y la tabla `users` es legible con la clave pública, por lo que cualquiera con acceso puede verlas. El código de recuperación se genera en el navegador y se muestra en la consola; no se envía por correo. Estos flujos sirven para desarrollo y demostración, no como autenticación segura. Para producción debe usarse **Supabase Auth** (o un backend propio) con hash de contraseñas, tokens y envío real de correos.
+> ⚠️ **Limitaciones de seguridad actuales.** Las contraseñas se almacenan codificadas con `btoa` (Base64), que **no es un hash ni cifrado**, y la tabla `users` es legible con la clave pública, por lo que cualquiera con acceso puede verlas. Los códigos de verificación del **registro** y de la **recuperación de contraseña** se generan en el navegador y se muestran en la consola; **no se envían por correo** y cualquiera puede leerlos. Estos flujos sirven para desarrollo y demostración, no como autenticación segura. Para producción debe usarse **Supabase Auth** (o un backend propio) con hash de contraseñas, tokens y envío real de correos.
 
 ### 👤 Perfil y comunidad
 - Visualización del perfil, estadísticas y publicaciones.
@@ -77,7 +107,11 @@ La aplicación incluye módulos de autenticación, perfiles, lugares y reseñas,
 ### 🛡️ Administración (`/admin`)
 - **Resumen:** tarjetas con las estadísticas del sistema. La tarjeta «Baneados o suspendidos» es un enlace que abre **Usuarios** ya filtrado por sancionados. Incluye también la tarjeta **Últimas acciones** con los movimientos recientes de moderación (`RecentModerationCard`).
 - **Usuarios:** ver todos los usuarios con buscador, filtro por rol y filtro por estado (activos, sancionados, suspendidos, baneados), con contadores. Permite **banear** (permanente), **suspender** (temporal), revertir ambas sanciones y abrir las **notas internas** de cada usuario.
-- **Roles:** la lista de usuarios sale de la tabla `users` de Supabase y el cambio de rol entre `user` y `moderator` se guarda en la columna `role` (`MODERATOR` / `STUDENT`). Si la base de datos no confirma el cambio, se muestra un error y la pantalla no se modifica. Los botones son de color (verde para subir, rojo para bajar) y muestran «Guardando...» mientras trabajan. Incluye buscador por nombre o correo y botones **Todos / Moderadores / Usuarios**. Los administradores no son editables. El usuario afectado ve su rol nuevo la próxima vez que inicia sesión.
+- **Roles:** la lista de usuarios sale de la tabla `users` de Supabase y el cambio de rol entre `user` y `moderator` se guarda en la columna `role` (`MODERATOR` / `STUDENT`). Si la base de datos no confirma el cambio, se muestra un error y la pantalla no se modifica. Los botones son de color (verde para subir, rojo para bajar) y muestran «Guardando...» mientras trabajan. Los administradores no son editables. Incluye:
+  - Buscador por nombre o correo.
+  - **Filtros por rol:** Todos, Administradores, Moderadores y Usuarios.
+  - **Orden:** Nombre A-Z, Nombre Z-A, Más antiguos primero y Más recientes primero. El orden por antigüedad usa la fecha de creación de la cuenta (`createdAt`).
+  - El usuario afectado ve su rol nuevo la próxima vez que inicia sesión.
 - **Actividad:** ranking de los usuarios más activos y acciones de moderación por moderador.
 - **Historial:** registro de cada baneo, suspensión y levantamiento de sanción (consulta [Historial de moderación](#-historial-de-moderación)).
 - **Informes:** descarga de informes del sistema.
@@ -126,6 +160,7 @@ Las sanciones se configuran en `SanctionModal.tsx`:
 ### ⚡ Rendimiento
 - Las páginas de administración y de moderación se cargan **bajo demanda** con `React.lazy` y `Suspense` (`PageLoader.tsx`). Un usuario normal no descarga el código ni los estilos de los paneles.
 - Los archivos largos de código y de CSS están divididos en partes de menos de unas 700 líneas para facilitar el mantenimiento.
+- La lógica de la verificación por código está separada de las páginas (`OtpInput`, `useResendTimer`, `RegisterVerifyStep`), de modo que `ForgotPasswordPage.tsx` y `RegisterPage.tsx` no concentran toda la interfaz en un solo componente.
 
 ### 📱 Diseño adaptable
 Estilos separados por módulo: autenticación, inicio, perfil, chat, administración, moderación y componentes de interfaz reutilizables.
@@ -195,7 +230,7 @@ El código se organiza en capas y módulos:
     │       ├── places.ts
     │       ├── profile.ts
     │       ├── profilePhoto.ts
-    │       └── users.ts               # Cuentas contra Supabase: login, registro, contraseña, nombre y roles
+    │       └── users.ts               # Cuentas contra Supabase: login, registro, contraseña, nombre, roles y fecha de creación (createdAt)
     ├── presentation/
     │   ├── auth/
     │   │   └── AuthContext.tsx        # Sesión y sincronización del nombre con Supabase
@@ -215,13 +250,15 @@ El código se organiza en capas y módulos:
     │   │   │   ├── UserNotesModal.tsx
     │   │   │   └── UsersFilters.tsx
     │   │   ├── auth/
+    │   │   │   ├── OtpInput.tsx              # Seis casillas para el código de verificación
     │   │   │   ├── PasswordStrengthMeter.tsx
-    │   │   │   ├── RegisterAccountFields.tsx
+    │   │   │   ├── RegisterAccountFields.tsx # Registro, paso 1: cuenta
     │   │   │   ├── RegisterActions.tsx
-    │   │   │   ├── RegisterProgress.tsx
-    │   │   │   ├── RegisterSecurityFields.tsx
+    │   │   │   ├── RegisterProgress.tsx      # Indicador «Paso X de 3»
+    │   │   │   ├── RegisterSecurityFields.tsx # Registro, paso 2: seguridad
     │   │   │   ├── RegisterTerms.tsx
-    │   │   │   └── SanctionNotices.tsx   # Avisos de baneo, suspensión y levantamiento
+    │   │   │   ├── RegisterVerifyStep.tsx    # Registro, paso 3: verificar correo
+    │   │   │   └── SanctionNotices.tsx       # Avisos de baneo, suspensión y levantamiento
     │   │   ├── chat/
     │   │   │   ├── ChatAttachmentPreview.tsx
     │   │   │   ├── ChatBox.tsx
@@ -267,7 +304,8 @@ El código se organiza en capas y módulos:
     │   │   ├── useFollows.ts
     │   │   ├── useManagedUsers.ts        # Usuarios con sanciones (admin y moderador)
     │   │   ├── useMyProfile.ts
-    │   │   └── useProfilePhoto.ts
+    │   │   ├── useProfilePhoto.ts
+    │   │   └── useResendTimer.ts         # Cuenta regresiva (05:00) para reenviar el código
     │   ├── layouts/
     │   ├── pages/
     │   │   ├── HomePage.tsx
@@ -278,13 +316,13 @@ El código se organiza en capas y módulos:
     │   │   │   ├── AdminLayout.tsx
     │   │   │   ├── AdminOverviewPage.tsx
     │   │   │   ├── AdminReportsPage.tsx
-    │   │   │   ├── AdminRolesPage.tsx    # Lista y cambia roles contra Supabase
+    │   │   │   ├── AdminRolesPage.tsx    # Lista, filtra, ordena y cambia roles contra Supabase
     │   │   │   ├── AdminSections.tsx
     │   │   │   └── AdminUsersPage.tsx
     │   │   ├── auth/
-    │   │   │   ├── ForgotPasswordPage.tsx
+    │   │   │   ├── ForgotPasswordPage.tsx # Recuperación en 3 etapas con OTP
     │   │   │   ├── LoginPage.tsx
-    │   │   │   ├── RegisterPage.tsx
+    │   │   │   ├── RegisterPage.tsx       # Registro en 3 pasos con verificación OTP
     │   │   │   └── ResetPasswordPage.tsx
     │   │   └── moderation/
     │   │       ├── ModerationPage.tsx
@@ -305,7 +343,9 @@ El código se organiza en capas y módulos:
         │   ├── admin-users-list.css
         │   ├── admin-users-responsive.css
         │   └── admin-users-sanction.css
-        ├── auth/        (auth-register.css, auth.css)
+        ├── auth/
+        │   ├── auth.css                   # Login, recuperación, casillas OTP, temporizador y mensajes
+        │   └── auth-register.css          # Registro (incluye el botón secundario «Atrás»)
         ├── chat/
         │   ├── chat.css                   # Índice: importa las partes siguientes
         │   ├── chat-attachments.css
@@ -349,7 +389,7 @@ Definidas en `src/presentation/routes/AppRouter.tsx`:
 |---|---|---|
 | `/` | Sesión iniciada (el admin se redirige a `/admin`) | `HomePage` |
 | `/login` | Pública | `LoginPage` |
-| `/register` | Pública | `RegisterPage` |
+| `/register` | Pública | `RegisterPage` (3 pasos) |
 | `/forgot-password` | Pública | `ForgotPasswordPage` |
 | `/reset-password` | Pública | `ResetPasswordPage` |
 | `/perfil` | `user`, `moderator` | `MyProfilePage` |
@@ -385,11 +425,13 @@ create policy "actualizar users (prueba)" on public.users for update to anon usi
 create policy "actualizar reviews (prueba)" on public.reviews for update to anon using (true) with check (true);
 ```
 
+6. Comprueba que la tabla `users` tenga la columna `"createdAt"` (fecha de creación de la cuenta). La pantalla **Roles** la consulta para ordenar por antigüedad; si no existe, la lista de usuarios no se carga.
+
 ### Tablas
 
 | Tabla | Uso en la aplicación |
 |---|---|
-| `users` | Fuente de verdad de las cuentas: `email` (único), `passwordHash` (Base64), `fullName`, `role` (`ADMIN` / `MODERATOR` / `STUDENT`) e `isActive`. Se usa en login, registro, recuperación de contraseña, cambio de nombre y gestión de roles. |
+| `users` | Fuente de verdad de las cuentas: `email` (único), `passwordHash` (Base64), `fullName`, `role` (`ADMIN` / `MODERATOR` / `STUDENT`), `isActive` y `createdAt` (fecha de registro, usada para ordenar en Roles). Se usa en login, registro, recuperación de contraseña, cambio de nombre y gestión de roles. |
 | `categories` | Categorías de lugares. |
 | `places` | Lugares y sus calificaciones. |
 | `reviews` | Reseñas y comentarios (`rating` puede ser `NULL`). |
@@ -406,7 +448,9 @@ create policy "actualizar reviews (prueba)" on public.reviews for update to anon
 | Lugares, reseñas y comentarios | **Supabase** |
 | Favoritos | **Supabase** |
 | Seguimiento de usuarios | **Supabase** (con `followStore.ts` como almacén local complementario) |
-| Cuentas: registro, contraseña, nombre y rol | **Supabase** (tabla `users`), con una copia local en `localStorage` (`app_users`) como respaldo |
+| Cuentas: registro, contraseña, nombre, rol y fecha de creación | **Supabase** (tabla `users`), con una copia local en `localStorage` (`app_users`) como respaldo |
+| Código de verificación (registro y recuperación) | Solo en la memoria del componente, mientras la página está abierta; se muestra en la consola y no se guarda en ningún almacenamiento |
+| Correo de la recuperación en curso | `localStorage` (`reset_email`) |
 | Sesión iniciada | `localStorage` (`user`) |
 | Sanciones (con avisos de levantamiento) | `localStorage` (`app_users`) |
 | Intentos de login | `localStorage` (`login_attempts`) |
@@ -491,11 +535,20 @@ El proyecto incluye `vercel.json` con una regla de reescritura que envía todas 
 Antes de dar por terminado un cambio, comprobar:
 
 - Registro con datos válidos e inválidos (nombre, dominio de correo, contraseña).
+- **Registro en 3 pasos:**
+  - El indicador muestra «Paso 1 de 3», «Paso 2 de 3» y «Paso 3 de 3», y la barra avanza.
+  - Con un correo o nombre ya registrado, el paso 1 no avanza.
+  - En el paso 2, una contraseña débil, distinta de la confirmación o sin aceptar los términos no deja continuar.
+  - Al llegar al paso 3 se genera un código y aparece en la consola; con un código incorrecto no se crea la cuenta.
+  - Con el código correcto se crea la cuenta (visible en Supabase) y se vuelve al login.
+  - Al retroceder desde el paso 3, el código anterior deja de ser válido.
+  - El temporizador de 05:00 corre y el botón «Reenviar código» aparece al terminar; al reenviar se limpian las casillas.
+  - Las casillas del código aceptan solo números, avanzan solas, permiten Backspace, flechas y pegar un código completo.
 - **Registro entre navegadores:** crear una cuenta en un navegador y comprobar que otro la detecta como ya registrada y permite iniciar sesión con ella.
 - **Cuenta creada directamente en Supabase (SQL):** debe poder iniciar sesión en la app (la contraseña va en Base64: `encode('clave'::bytea, 'base64')`).
 - Indicador de fortaleza de contraseña.
 - Inicio y cierre de sesión, y bloqueo tras 5 intentos fallidos.
-- Recuperación y restablecimiento de contraseña; después, que la clave vieja ya no entre en ningún navegador y la nueva sí.
+- Recuperación de contraseña: correo no registrado, código incorrecto, código correcto y restablecimiento; después, que la clave vieja ya no entre en ningún navegador y la nueva sí.
 - Cambio de nombre desde el perfil: debe verse en Supabase, en el otro navegador al volver a la pestaña y en el login (el nombre anterior debe dejar de funcionar).
 - Redirección por rol y acceso a `/admin` y `/moderacion`; que un usuario normal que entra a `/admin` sea redirigido al inicio.
 - Sanciones: baneo (solo admin), suspensión en minutos, horas y días, y reversión con y sin motivo.
@@ -505,7 +558,7 @@ Antes de dar por terminado un cambio, comprobar:
 - Historial: que cada sanción aparezca, los filtros por acción y por fecha (hoy, día y mes) y la descarga del CSV.
 - Que «Borrar actividad» no elimine el historial de moderación.
 - Notas internas: crear con etiqueta, crear con «Otro», borrar las propias y que el moderador no pueda borrar las de otros.
-- Roles: la lista debe coincidir con la tabla `users`; buscador y filtros Todos / Moderadores / Usuarios; al subir o bajar de rol, la columna `role` de Supabase debe cambiar y el usuario debe entrar con el rol nuevo.
+- Roles: la lista debe coincidir con la tabla `users`; buscador; filtros Todos / Administradores / Moderadores / Usuarios; orden por nombre A-Z, Z-A, más antiguos y más recientes; al subir o bajar de rol, la columna `role` de Supabase debe cambiar y el usuario debe entrar con el rol nuevo.
 - Lugares, reseñas, comentarios sin calificación y favoritos contra Supabase.
 - Seguimiento de usuarios.
 - Perfil, cambio de nombre y foto.
@@ -521,11 +574,11 @@ Antes de dar por terminado un cambio, comprobar:
 | React, TypeScript y Vite | Configurados. |
 | Organización por capas | Implementada; archivos largos separados y paneles con carga diferida. |
 | Supabase: lugares, reseñas, favoritos, seguimiento | Conectado y en uso. |
-| Registro de cuentas | En Supabase (`users`); la copia local es solo respaldo. |
+| Registro de cuentas | En 3 pasos (cuenta, seguridad y verificación del correo); se guarda en Supabase (`users`) solo tras verificar el código. El código se genera en el navegador (falta el envío real por correo). |
 | Inicio de sesión | Consulta primero Supabase; contraseñas en Base64 (pendiente migrar a Supabase Auth). |
-| Recuperación de contraseña | Actualiza Supabase; el código se genera en el navegador y falta el envío real por correo. |
+| Recuperación de contraseña | En 3 etapas con `OtpInput` y `useResendTimer`; actualiza Supabase. El código se genera en el navegador y falta el envío real por correo. |
 | Cambio de nombre | En Supabase y en las reseñas; la espera de 7 días sigue en `localStorage`. |
-| Gestión de roles (`user` / `moderator`) | En Supabase (`users.role`). Una sesión ya abierta toma el rol nuevo al volver a iniciar sesión. |
+| Gestión de roles (`user` / `moderator`) | En Supabase (`users.role`), con filtros por rol y orden por nombre o antigüedad (`createdAt`). Una sesión ya abierta toma el rol nuevo al volver a iniciar sesión. |
 | Sanciones (baneo y suspensión) | Funcionan en el navegador, con avisos en el login; falta persistirlas en Supabase. |
 | Historial de moderación | Funciona en el navegador, con filtros y CSV; falta persistirlo en Supabase. |
 | Notas internas por usuario | Funcionan en el navegador; falta persistirlas en Supabase. |
@@ -537,7 +590,7 @@ Antes de dar por terminado un cambio, comprobar:
 
 ### Mejoras previstas
 
-1. Migrar la autenticación a **Supabase Auth** (hash de contraseñas, sesiones y recuperación por correo).
+1. Migrar la autenticación a **Supabase Auth** (hash de contraseñas, sesiones y envío real del código de verificación por correo, tanto en el registro como en la recuperación de contraseña).
 2. Mover sanciones, historial, notas y la espera de 7 días del nombre a tablas o columnas de Supabase para que apliquen en todos los dispositivos.
 3. Conectar el panel de moderación a las reseñas reales: borrado lógico de reseñas con registro en el historial y restauración (acciones `review_delete` y `review_restore`, ya previstas en el historial).
 4. Registrar en el historial los cambios de rol (subir o bajar a moderador).
@@ -548,6 +601,7 @@ Antes de dar por terminado un cambio, comprobar:
 9. Migrar mensajes, notificaciones y actividad a servicios compartidos (por ejemplo, Supabase Realtime).
 10. Añadir pruebas automatizadas (por ejemplo con Vitest para el registro, el login y las sanciones) y mejorar el manejo de errores.
 11. Optimizar la carga de imágenes y la accesibilidad, y dividir los archivos más grandes del Home (`FacebookFeed.tsx` y `home.css`).
+12. Hacer que el código de verificación caduque (hoy el temporizador solo controla cuándo se puede reenviar, no la validez del código).
 
 ## 👨‍💻 Información académica
 

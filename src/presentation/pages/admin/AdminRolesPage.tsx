@@ -9,13 +9,29 @@ import "../../../styles/admin/admin-users.css";
 
 type User = DbUser;
 
-type RoleFilter = "all" | "moderator" | "user";
+type RoleFilter = "all" | "admin" | "moderator" | "user";
+type SortKey = "name-asc" | "name-desc" | "oldest" | "newest";
 
 const ROLE_FILTERS: { key: RoleFilter; label: string }[] = [
   { key: "all", label: "Todos" },
+  { key: "admin", label: "Admin" },
   { key: "moderator", label: "Moderadores" },
   { key: "user", label: "Usuarios" }
 ];
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "name-asc", label: "Nombre A-Z" },
+  { key: "name-desc", label: "Nombre Z-A" },
+  { key: "oldest", label: "Más antiguos primero" },
+  { key: "newest", label: "Más recientes primero" }
+];
+
+// Fecha como número; las cuentas sin fecha válida van siempre al final.
+const toTime = (value: string | null): number | null => {
+  if (!value) return null;
+  const t = new Date(value).getTime();
+  return Number.isNaN(t) ? null : t;
+};
 
 // Mantiene la copia local (app_users) con el mismo rol que la base de datos.
 const syncLocalRole = (email: string, role: User["role"]) => {
@@ -43,6 +59,7 @@ export const AdminRolesPage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("name-asc");
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -94,11 +111,11 @@ export const AdminRolesPage = () => {
     syncLocalRole(target.email, newRole);
   };
 
-  // 🔎 Búsqueda por nombre o correo + filtro por rol
+  // 🔎 Búsqueda por nombre o correo + filtro por rol + orden
   const visibleUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
 
-    return users.filter((u) => {
+    const filtered = users.filter((u) => {
       const matchesRole = roleFilter === "all" || u.role === roleFilter;
       const matchesSearch =
         !q ||
@@ -107,7 +124,40 @@ export const AdminRolesPage = () => {
 
       return matchesRole && matchesSearch;
     });
-  }, [users, search, roleFilter]);
+
+    const byName = (a: User, b: User) =>
+      a.name.localeCompare(b.name, "es", { sensitivity: "base" });
+
+    const byDate = (direction: 1 | -1) => (a: User, b: User) => {
+      const ta = toTime(a.createdAt);
+      const tb = toTime(b.createdAt);
+
+      if (ta === null && tb === null) return byName(a, b);
+      if (ta === null) return 1;
+      if (tb === null) return -1;
+
+      return ta === tb ? byName(a, b) : (ta - tb) * direction;
+    };
+
+    const sorted = [...filtered];
+
+    switch (sortKey) {
+      case "name-asc":
+        sorted.sort(byName);
+        break;
+      case "name-desc":
+        sorted.sort((a, b) => byName(b, a));
+        break;
+      case "oldest":
+        sorted.sort(byDate(1));
+        break;
+      case "newest":
+        sorted.sort(byDate(-1));
+        break;
+    }
+
+    return sorted;
+  }, [users, search, roleFilter, sortKey]);
 
   return (
     <div className="users-container">
@@ -118,7 +168,7 @@ export const AdminRolesPage = () => {
 
       <h1>🛡️ Gestión de Roles</h1>
 
-      {/* BUSCADOR Y FILTROS */}
+      {/* BUSCADOR, FILTROS Y ORDEN */}
       <div className="users-toolbar">
         <input
           type="text"
@@ -140,6 +190,19 @@ export const AdminRolesPage = () => {
               {item.label}
             </button>
           ))}
+
+          <select
+            className="filter-btn"
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            aria-label="Ordenar usuarios"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
