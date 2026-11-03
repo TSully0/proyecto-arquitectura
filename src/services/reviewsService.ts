@@ -68,7 +68,11 @@ function isBackendReview(value: unknown): value is BackendReview {
   );
 }
 
-export function createReviewsService(apiUrl: string | undefined, fetcher: typeof fetch = fetch) {
+export function createReviewsService(
+  apiUrl: string | undefined,
+  fetcher: typeof fetch = fetch,
+  createTextField: 'text' | 'comment' = 'comment'
+) {
   const baseUrl = apiUrl?.trim().replace(/\/+$/, '');
   if (!baseUrl) {
     throw new Error('Configura VITE_API_URL con la URL de tu backend para publicar reseñas.');
@@ -118,13 +122,23 @@ export function createReviewsService(apiUrl: string | undefined, fetcher: typeof
       if (!review.userId.trim() || !review.placeId.trim() || !review.text.trim()) {
         throw new Error('La reseña necesita usuario, lugar y comentario.');
       }
+      if (!isValidUuid(review.placeId)) {
+        throw new Error(
+          'El lugar seleccionado tiene un ID que no es un UUID válido. Selecciona un lugar existente del backend.'
+        );
+      }
       if (
         review.rating !== undefined &&
         (!Number.isInteger(review.rating) || review.rating < 1 || review.rating > 5)
       ) {
         throw new Error('La calificación debe ser un número entero entre 1 y 5.');
       }
-      return request(reviewsUrl, 'POST', review);
+      return request(reviewsUrl, 'POST', {
+        userId: review.userId,
+        placeId: review.placeId,
+        rating: review.rating,
+        [createTextField]: review.text
+      });
     },
     update: (id: string, review: ReviewUpdateRequest) => {
       if (!id.trim()) throw new Error('Se necesita el identificador de la reseña.');
@@ -143,12 +157,22 @@ export function createReviewsService(apiUrl: string | undefined, fetcher: typeof
   };
 }
 
+function isValidUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
+}
+
 export function listReviews() {
   return createReviewsService(getReviewsApiUrl()).list();
 }
 
 export function createReview(review: ReviewRequest) {
-  return createReviewsService(getReviewsApiUrl()).create(review);
+  return createReviewsService(
+    getReviewsApiUrl(),
+    fetch,
+    import.meta.env.DEV ? 'text' : 'comment'
+  ).create(review);
 }
 
 export function updateReview(id: string, review: ReviewUpdateRequest) {
