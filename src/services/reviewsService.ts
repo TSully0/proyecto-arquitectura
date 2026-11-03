@@ -70,8 +70,7 @@ function isBackendReview(value: unknown): value is BackendReview {
 
 export function createReviewsService(
   apiUrl: string | undefined,
-  fetcher: typeof fetch = fetch,
-  createTextField: 'text' | 'comment' = 'comment'
+  fetcher: typeof fetch = fetch
 ) {
   const baseUrl = apiUrl?.trim().replace(/\/+$/, '');
   if (!baseUrl) {
@@ -137,7 +136,7 @@ export function createReviewsService(
         userId: review.userId,
         placeId: review.placeId,
         rating: review.rating,
-        [createTextField]: review.text
+        comment: review.text
       });
     },
     update: (id: string, review: ReviewUpdateRequest) => {
@@ -168,11 +167,7 @@ export function listReviews() {
 }
 
 export function createReview(review: ReviewRequest) {
-  return createReviewsService(
-    getReviewsApiUrl(),
-    fetch,
-    import.meta.env.DEV ? 'text' : 'comment'
-  ).create(review);
+  return createReviewsService(getReviewsApiUrl()).create(review);
 }
 
 export function updateReview(id: string, review: ReviewUpdateRequest) {

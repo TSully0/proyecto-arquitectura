@@ -9,13 +9,13 @@ const review = {
   text: 'Muy buen lugar.'
 };
 
-test('creates a review with the backend POST contract', async () => {
+test('creates a review with the backend POST comment contract', async () => {
   const requests = [];
   const fetcher = async (input, init) => {
     requests.push({ url: String(input), init });
     return new Response(JSON.stringify({ id: 'review-789' }), { status: 201 });
   };
-  const service = createReviewsService('https://api.example.test/', fetcher, 'comment');
+  const service = createReviewsService('https://api.example.test/', fetcher);
 
   await service.create(review);
 
@@ -30,17 +30,22 @@ test('creates a review with the backend POST contract', async () => {
   assert.equal('text' in JSON.parse(requests[0].init.body), false);
 });
 
-test('uses the local backend POST contract in development', async () => {
+test('uses the same POST comment contract with the local backend URL', async () => {
   const requests = [];
   const fetcher = async (input, init) => {
     requests.push({ url: String(input), init });
     return new Response(JSON.stringify({ id: 'review-789' }), { status: 201 });
   };
-  const service = createReviewsService('http://localhost:4000', fetcher, 'text');
+  const service = createReviewsService('http://localhost:4000', fetcher);
 
   await service.create(review);
 
-  assert.deepEqual(JSON.parse(requests[0].init.body), review);
+  assert.deepEqual(JSON.parse(requests[0].init.body), {
+    userId: review.userId,
+    placeId: review.placeId,
+    rating: review.rating,
+    comment: review.text
+  });
 });
 
 test('updates a review with PATCH and encodes its id', async () => {

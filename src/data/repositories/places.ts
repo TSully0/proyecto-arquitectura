@@ -259,7 +259,7 @@ export async function fetchReviewsByPlaceIds(placeIds: string[]): Promise<Review
       place_id: row.placeId ?? row.place_id ?? '',
       user_id: row.userId ?? row.user_id ?? undefined,
       author_name:
-        row.authorName || row.author_name || row.User?.fullName || 'Estudiante Manta',
+        row.User?.fullName || row.authorName || row.author_name || 'Estudiante Manta',
       rating: row.rating ?? undefined,
       has_visited: row.rating !== null && row.rating !== undefined,
       comment: row.comment || row.text || '',
