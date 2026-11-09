@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trash2, Sparkles } from "lucide-react";
-import { fetchAdminUsers, fetchActivity, buildRanking, seedDemoActivity, clearActivity } from "../../../data/repositories/activity";
+import { fetchAdminUsers, fetchActivity, buildRanking } from "../../../data/repositories/activity";
 import type { AppUser, ActivityItem } from "../../../data/repositories/activity";
 import { PageHeader } from "../../components/admin/PageHeader";
 import { FilterTabs } from "../../components/admin/FilterTabs";
@@ -44,29 +43,6 @@ export function AdminActivityPage() {
     (r) => filter === "all" || r.user.role === filter
   );
 
-  const handleSeed = async () => {
-    setError("");
-
-    if (!(await seedDemoActivity(users))) {
-      setError("No se pudieron crear los datos de ejemplo.");
-      return;
-    }
-
-    setItems((await fetchActivity()) ?? []);
-  };
-
-  const handleClear = async () => {
-    setError("");
-
-    if (!(await clearActivity())) {
-      setError("No se pudo borrar la actividad.");
-      return;
-    }
-
-    // El historial de moderación se conserva, así que se vuelve a leer.
-    setItems((await fetchActivity()) ?? []);
-  };
-
   return (
     <div className="admin-page">
       <PageHeader
@@ -76,17 +52,6 @@ export function AdminActivityPage() {
 
       <div className="admin-toolbar">
         <FilterTabs options={FILTERS} value={filter} onChange={setFilter} />
-
-        <div className="admin-filters">
-          <button className="admin-btn secondary" onClick={handleSeed}>
-            <Sparkles size={16} /> Datos de ejemplo
-          </button>
-          {items.length > 0 && (
-            <button className="admin-btn danger" onClick={handleClear}>
-              <Trash2 size={16} /> Borrar actividad
-            </button>
-          )}
-        </div>
       </div>
 
       {error && (
@@ -100,8 +65,9 @@ export function AdminActivityPage() {
           <p className="admin-empty">Cargando…</p>
         ) : items.length === 0 ? (
           <p className="admin-empty">
-            Todavía no hay actividad registrada. Pulsa "Datos de ejemplo" para
-            ver cómo se vería el ranking.
+            Todavía no hay actividad registrada. El ranking se irá llenando
+            solo con las acciones de moderación y con la actividad de la
+            comunidad.
           </p>
         ) : (
           <RankingTable rows={ranking} />

@@ -112,7 +112,7 @@ El registro (`RegisterPage.tsx`) se hace en tres pasos, con un indicador de prog
   - **Filtros por rol:** Todos, Administradores, Moderadores y Usuarios.
   - **Orden:** Nombre A-Z, Nombre Z-A, Más antiguos primero y Más recientes primero. El orden por antigüedad usa la fecha de creación de la cuenta (`createdAt`).
   - El usuario afectado ve su rol nuevo la próxima vez que inicia sesión.
-- **Actividad:** ranking de los usuarios más activos y acciones de moderación por moderador, leídos de Supabase (`user_activity` y `moderation_log`). «Datos de ejemplo» genera actividad al azar para probar el ranking (se suma a la que ya haya) y «Borrar actividad» la elimina.
+- **Actividad:** ranking de los usuarios más activos y acciones de moderación por moderador, leídos de Supabase (`user_activity` y `moderation_log`). Empieza vacío y se llena solo: las acciones de moderación (baneos, suspensiones y levantamientos) suman desde el primer día; publicaciones, comentarios, «me gusta» y seguidos suman cuando el Home llame a `logActivity`.
 - **Historial:** registro de cada baneo, suspensión y levantamiento de sanción (consulta [Historial de moderación](#-historial-de-moderación)).
 - **Informes:** descarga en CSV del listado de usuarios reales y de la actividad, y del informe general en PDF. El botón «Imprimir / Guardar PDF» abre el diálogo de impresión del navegador: hay que elegir «Guardar como PDF» y la carpeta donde guardarlo.
 - Al sancionar a una cuenta con sesión abierta, se le avisa en pantalla con el detalle de la sanción y la sesión se cierra automáticamente en cuestión de segundos, aunque el administrador esté en otro navegador o equipo (`accountStatus.ts`, `AccountBlockToast.tsx`).
@@ -144,7 +144,6 @@ Las sanciones se configuran en `SanctionModal.tsx`:
 - Disponible para administradores (`/admin/history`) y moderadores (`/moderacion/historial`).
 - Búsqueda por persona o motivo, filtro por tipo de acción y **filtro por fecha**: todas, hoy, últimos 7 días, últimos 30 días, un día concreto o un mes concreto.
 - Muestra cuántas acciones se ven del total y permite **descargar el resultado filtrado en CSV**.
-- «Borrar actividad» en el panel de administración limpia los datos de ejemplo del ranking (`user_activity`), pero **conserva el historial de moderación** (`moderation_log`).
 
 ### 📝 Notas internas por usuario
 - Admin y moderadores pueden dejar notas sobre un usuario desde su tarjeta (botón **📝 Notas**, con la cantidad de notas). **El usuario nunca las ve.**
@@ -566,7 +565,6 @@ Antes de dar por terminado un cambio, comprobar:
 - Cierre automático de sesión y aviso en pantalla al sancionar una cuenta activa, probado con dos navegadores distintos (el administrador en uno y el usuario en otro).
 - Quitar una suspensión a mano: el usuario ve el aviso verde una sola vez, también con la pantalla de login ya abierta.
 - Historial: que cada sanción aparezca, los filtros por acción y por fecha (hoy, día y mes) y la descarga del CSV.
-- Que «Borrar actividad» no elimine el historial de moderación.
 - Notas internas: crear con etiqueta, crear con «Otro», borrar las propias, que el moderador no pueda borrar las de otros y que una nota hecha en un navegador aparezca en el otro.
 - Informes: el CSV y el PDF traen los mismos usuarios que Supabase.
 - Roles: la lista debe coincidir con la tabla `users`; buscador; filtros Todos / Administradores / Moderadores / Usuarios; orden por nombre A-Z, Z-A, más antiguos y más recientes; al subir o bajar de rol, la columna `role` de Supabase debe cambiar y el usuario debe entrar con el rol nuevo.

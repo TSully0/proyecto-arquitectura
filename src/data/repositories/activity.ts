@@ -232,56 +232,6 @@ export const ACTION_LABELS: Record<ModerationAction, string> = {
   review_restore: "Reseña restaurada"
 };
 
-// Borra la actividad (publicaciones, comentarios, datos de ejemplo...), pero conserva
-// el historial de moderación (tabla moderation_log): es un registro que no debe perderse.
-export const clearActivity = async (): Promise<boolean> => {
-  const { error } = await supabase
-    .from("user_activity")
-    .delete()
-    .gte("createdAt", "1970-01-01");
-
-  if (error) {
-    console.warn("No se pudo borrar la actividad:", error);
-    return false;
-  }
-
-  return true;
-};
-
-// datos de ejemplo para ver cómo luce el ranking
-export const seedDemoActivity = async (users: AppUser[]): Promise<boolean> => {
-  const types: ActivityType[] = ["post", "comment", "like", "follow"];
-  const rows: { userId: string; type: ActivityType }[] = [];
-  const rnd = (max: number) => Math.floor(Math.random() * max);
-
-  users
-    .filter((u) => u.role !== "admin")
-    .forEach((u) => {
-      types.forEach((type) => {
-        const n = rnd(12);
-        for (let i = 0; i < n; i++) rows.push({ userId: u.id, type });
-      });
-
-      if (u.role === "moderator") {
-        const n = 5 + rnd(20);
-        for (let i = 0; i < n; i++) rows.push({ userId: u.id, type: "moderation" });
-      }
-    });
-
-  for (let i = 0; i < rows.length; i += 500) {
-    const { error } = await supabase
-      .from("user_activity")
-      .insert(rows.slice(i, i + 500));
-
-    if (error) {
-      console.warn("No se pudieron crear los datos de ejemplo:", error);
-      return false;
-    }
-  }
-
-  return true;
-};
-
 /* =========================
    RANKING
 ========================= */
