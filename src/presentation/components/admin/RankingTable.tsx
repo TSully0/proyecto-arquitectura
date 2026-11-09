@@ -17,10 +17,9 @@ export function RankingTable({ rows }: RankingTableProps) {
             <th>#</th>
             <th>Usuario</th>
             <th>Rol</th>
-            <th>Publicaciones</th>
-            <th>Comentarios</th>
+            <th>Reseñas</th>
             <th>Likes</th>
-            <th>Seguidos</th>
+            <th>Favoritos</th>
             <th>Moderadas</th>
             <th>Total</th>
           </tr>
@@ -44,10 +43,9 @@ export function RankingTable({ rows }: RankingTableProps) {
               </td>
 
               <td><span className={`pill ${r.user.role}`}>{r.user.role}</span></td>
-              <td>{r.post}</td>
-              <td>{r.comment}</td>
+              <td>{r.review}</td>
               <td>{r.like}</td>
-              <td>{r.follow}</td>
+              <td>{r.favorite}</td>
               <td>{r.moderation}</td>
 
               <td>

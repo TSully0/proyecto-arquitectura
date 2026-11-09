@@ -14,7 +14,8 @@ export type AppUser = {
   suspendedUntil?: number | string | null;
 };
 
-export type ActivityType = "post" | "comment" | "like" | "follow" | "moderation";
+// Tipos que guarda la tabla user_activity (más "moderation", que sale de moderation_log)
+export type ActivityType = "review" | "like" | "favorite" | "moderation";
 
 /* Acciones de moderación que quedan en el historial */
 export type ModerationAction =
@@ -135,7 +136,7 @@ export const fetchActivity = async (): Promise<ActivityItem[] | null> => {
 };
 
 // 👉 llámala desde donde ocurra la acción real, por ejemplo:
-//    logActivity(user.id, "comment")
+//    logActivity(user.id, "review")
 export const logActivity = async (userId: string, type: ActivityType) => {
   const { error } = await supabase
     .from("user_activity")
@@ -237,10 +238,9 @@ export const ACTION_LABELS: Record<ModerationAction, string> = {
 ========================= */
 export type RankingRow = {
   user: AppUser;
-  post: number;
-  comment: number;
+  review: number;
   like: number;
-  follow: number;
+  favorite: number;
   moderation: number;
   total: number;
 };
@@ -256,10 +256,9 @@ export const buildRanking = (
     .forEach((u) =>
       map.set(u.id, {
         user: u,
-        post: 0,
-        comment: 0,
+        review: 0,
         like: 0,
-        follow: 0,
+        favorite: 0,
         moderation: 0,
         total: 0
       })
@@ -267,7 +266,8 @@ export const buildRanking = (
 
   items.forEach((i) => {
     const row = map.get(i.userId);
-    if (row) {
+    // Un tipo desconocido se ignora, así el total siempre es la suma de las columnas
+    if (row && typeof row[i.type] === "number") {
       row[i.type] += 1;
       row.total += 1;
     }

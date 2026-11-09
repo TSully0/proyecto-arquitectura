@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Download, Printer } from "lucide-react";
 import { fetchAdminUsers, fetchActivity, getStatus, buildRanking, downloadCSV } from "../../../data/repositories/activity";
 import type { AppUser, ActivityItem } from "../../../data/repositories/activity";
-
 import { PageHeader } from "../../components/admin/PageHeader";
 import { ReportSheet } from "../../components/admin/ReportSheet";
 import { today } from "../../components/admin/admin-utils";
@@ -56,16 +55,15 @@ export function AdminReportsPage() {
 
   const downloadActivity = () =>
     downloadCSV(`actividad-${today()}.csv`, [
-      ["Posición", "Nombre", "Correo", "Rol", "Publicaciones", "Comentarios", "Likes", "Seguidos", "Moderadas", "Total"],
+      ["Posición", "Nombre", "Correo", "Rol", "Reseñas", "Likes", "Favoritos", "Moderadas", "Total"],
       ...ranking.map((r, i) => [
         i + 1,
         r.user.name,
         r.user.email,
         r.user.role,
-        r.post,
-        r.comment,
+        r.review,
         r.like,
-        r.follow,
+        r.favorite,
         r.moderation,
         r.total
       ])
