@@ -1,15 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Trash2, Sparkles } from "lucide-react";
-
-import {
-  readUsers,
-  getActivity,
-  buildRanking,
-  seedDemoActivity,
-  clearActivity
-} from "../../../data/repositories/activity";
+import { fetchAdminUsers, fetchActivity, buildRanking, seedDemoActivity, clearActivity } from "../../../data/repositories/activity";
 import type { AppUser, ActivityItem } from "../../../data/repositories/activity";
-
 import { PageHeader } from "../../components/admin/PageHeader";
 import { FilterTabs } from "../../components/admin/FilterTabs";
 import { RankingTable } from "../../components/admin/RankingTable";
@@ -23,22 +15,56 @@ const FILTERS: { value: RoleFilter; label: string }[] = [
 ];
 
 export function AdminActivityPage() {
-  const [users] = useState<AppUser[]>(readUsers);
-  const [items, setItems] = useState<ActivityItem[]>(getActivity);
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [items, setItems] = useState<ActivityItem[]>([]);
   const [filter, setFilter] = useState<RoleFilter>("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([fetchAdminUsers(), fetchActivity()]).then(([u, a]) => {
+      if (!active) return;
+
+      if (u === null || a === null) {
+        setError("No se pudo cargar la actividad desde la base de datos.");
+      }
+      setUsers(u ?? []);
+      setItems(a ?? []);
+      setLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const ranking = buildRanking(users, items).filter(
     (r) => filter === "all" || r.user.role === filter
   );
 
-  const handleSeed = () => {
-    seedDemoActivity(users);
-    setItems(getActivity());
+  const handleSeed = async () => {
+    setError("");
+
+    if (!(await seedDemoActivity(users))) {
+      setError("No se pudieron crear los datos de ejemplo.");
+      return;
+    }
+
+    setItems((await fetchActivity()) ?? []);
   };
 
-  const handleClear = () => {
-    clearActivity();
-    setItems([]);
+  const handleClear = async () => {
+    setError("");
+
+    if (!(await clearActivity())) {
+      setError("No se pudo borrar la actividad.");
+      return;
+    }
+
+    // El historial de moderación se conserva, así que se vuelve a leer.
+    setItems((await fetchActivity()) ?? []);
   };
 
   return (
@@ -63,8 +89,16 @@ export function AdminActivityPage() {
         </div>
       </div>
 
+      {error && (
+        <p className="admin-empty" role="alert">
+          {error}
+        </p>
+      )}
+
       <div className="admin-panel">
-        {items.length === 0 ? (
+        {loading ? (
+          <p className="admin-empty">Cargando…</p>
+        ) : items.length === 0 ? (
           <p className="admin-empty">
             Todavía no hay actividad registrada. Pulsa "Datos de ejemplo" para
             ver cómo se vería el ranking.

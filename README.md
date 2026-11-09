@@ -25,7 +25,7 @@
 
 La aplicación incluye módulos de autenticación, perfiles, lugares y reseñas, favoritos, seguimiento de usuarios, mensajería, notificaciones, administración y moderación. El código está organizado por capas para separar la presentación, las reglas de negocio y el acceso a los datos.
 
-> **Estado actual:** el proyecto usa **Supabase** como base de datos para los lugares, las reseñas, los favoritos, el seguimiento de usuarios y las **cuentas de usuario** (registro, inicio de sesión, contraseña, nombre y rol, todo sobre la tabla `users`). La sesión, las sanciones, el historial de moderación, las notas internas, el chat y la actividad administrativa todavía se guardan en `localStorage` (consulta [Persistencia de datos](#-persistencia-de-datos)). Migrar esas partes y la autenticación a Supabase Auth es el siguiente paso del proyecto.
+> **Estado actual:** el proyecto usa **Supabase** como base de datos para los lugares, las reseñas, los favoritos, el seguimiento de usuarios, las **cuentas de usuario** (registro, inicio de sesión, contraseña, nombre y rol, sobre la tabla `users`) y toda la parte de **administración y moderación**: **sanciones** (baneos y suspensiones), **historial de moderación**, **notas internas** y **actividad**. Por eso un baneo, una suspensión o una nota hecha desde un navegador vale en cualquier otro navegador o equipo, y una cuenta sancionada con la sesión abierta se desconecta sola. La sesión, el chat y algunos avisos de la interfaz todavía se guardan en `localStorage` (consulta [Persistencia de datos](#-persistencia-de-datos)). El panel de moderación de **reseñas** sigue con datos de ejemplo. Migrar la autenticación a Supabase Auth es el siguiente paso del proyecto.
 
 ## 🎯 Objetivos
 
@@ -75,7 +75,7 @@ El registro (`RegisterPage.tsx`) se hace en tres pasos, con un indicador de prog
 
 #### Inicio de sesión
 - **El inicio de sesión consulta primero Supabase** (`loginWithSupabase`): si la cuenta existe en la tabla `users`, solo vale la contraseña guardada allí, aunque ese navegador tenga una copia local con otra clave. Si la cuenta no existe en Supabase (o no hay conexión), se usa la copia local como respaldo. Se puede entrar con el correo o con el nombre de usuario.
-- Al iniciar sesión correctamente se actualiza la copia local con los datos de Supabase (una sola entrada por correo) y se conservan las sanciones guardadas en el navegador.
+- Al iniciar sesión correctamente se actualiza la copia local con los datos de Supabase (una sola entrada por correo). Las **sanciones se leen siempre de Supabase** (tabla `user_sanctions`) y pisan cualquier copia local: un baneo o una suspensión puesta desde otro navegador bloquea el acceso igual.
 - Indicador de fortaleza de contraseña (`PasswordStrengthMeter.tsx`) y servicio `passwordStrength.ts`.
 - Protección contra fuerza bruta en el login (`loginGuard.ts`): 5 intentos fallidos consecutivos bloquean el acceso durante 1 minuto, por cuenta y por navegador.
 - Avisos claros en el login para cuentas sancionadas o recién liberadas (consulta [Sistema de sanciones](#️-sistema-de-sanciones)).
@@ -92,7 +92,7 @@ El registro (`RegisterPage.tsx`) se hace en tres pasos, con un indicador de prog
 - **`useResendTimer.ts`:** hook con la cuenta regresiva (por defecto `05:00`): `startTimer`, `clearTimer`, `isActive` y `formattedTime`.
 
 #### Sesión
-- Contexto de sesión en `AuthContext.tsx` (única fuente de verdad de la sesión). Al abrir la app y al volver a la pestaña, sincroniza el nombre de la sesión con Supabase.
+- Contexto de sesión en `AuthContext.tsx` (única fuente de verdad de la sesión). Al abrir la app y al volver a la pestaña, sincroniza el nombre de la sesión con Supabase. Ya no decide los bloqueos: de eso se encarga `accountStatus.ts`, que consulta la base de datos.
 
 > ⚠️ **Limitaciones de seguridad actuales.** Las contraseñas se almacenan codificadas con `btoa` (Base64), que **no es un hash ni cifrado**, y la tabla `users` es legible con la clave pública, por lo que cualquiera con acceso puede verlas. Los códigos de verificación del **registro** y de la **recuperación de contraseña** se generan en el navegador y se muestran en la consola; **no se envían por correo** y cualquiera puede leerlos. Estos flujos sirven para desarrollo y demostración, no como autenticación segura. Para producción debe usarse **Supabase Auth** (o un backend propio) con hash de contraseñas, tokens y envío real de correos.
 
@@ -105,17 +105,17 @@ El registro (`RegisterPage.tsx`) se hace en tres pasos, con un indicador de prog
 - Secciones de comunidad (`CommunitySection`, `CommunityList`).
 
 ### 🛡️ Administración (`/admin`)
-- **Resumen:** tarjetas con las estadísticas del sistema. La tarjeta «Baneados o suspendidos» es un enlace que abre **Usuarios** ya filtrado por sancionados. Incluye también la tarjeta **Últimas acciones** con los movimientos recientes de moderación (`RecentModerationCard`).
-- **Usuarios:** ver todos los usuarios con buscador, filtro por rol y filtro por estado (activos, sancionados, suspendidos, baneados), con contadores. Permite **banear** (permanente), **suspender** (temporal), revertir ambas sanciones y abrir las **notas internas** de cada usuario.
+- **Resumen:** tarjetas con las estadísticas del sistema. La tarjeta «Baneados o suspendidos» es un enlace que abre **Usuarios** ya filtrado por sancionados. Incluye también la tarjeta **Últimas acciones** con los movimientos recientes de moderación (`RecentModerationCard`). Todas las cifras salen de Supabase.
+- **Usuarios:** ver todos los usuarios con buscador, filtro por rol y filtro por estado (activos, sancionados, suspendidos, baneados), con contadores. Permite **banear** (permanente), **suspender** (temporal), revertir ambas sanciones y abrir las **notas internas** de cada usuario. La lista sale de Supabase y se actualiza sola (tiempo real, cada 15 s y al volver a la pestaña). Cada acción se guarda primero en la base de datos y, si falla, se muestra el error.
 - **Roles:** la lista de usuarios sale de la tabla `users` de Supabase y el cambio de rol entre `user` y `moderator` se guarda en la columna `role` (`MODERATOR` / `STUDENT`). Si la base de datos no confirma el cambio, se muestra un error y la pantalla no se modifica. Los botones son de color (verde para subir, rojo para bajar) y muestran «Guardando...» mientras trabajan. Los administradores no son editables. Incluye:
   - Buscador por nombre o correo.
   - **Filtros por rol:** Todos, Administradores, Moderadores y Usuarios.
   - **Orden:** Nombre A-Z, Nombre Z-A, Más antiguos primero y Más recientes primero. El orden por antigüedad usa la fecha de creación de la cuenta (`createdAt`).
   - El usuario afectado ve su rol nuevo la próxima vez que inicia sesión.
-- **Actividad:** ranking de los usuarios más activos y acciones de moderación por moderador.
+- **Actividad:** ranking de los usuarios más activos y acciones de moderación por moderador, leídos de Supabase (`user_activity` y `moderation_log`). «Datos de ejemplo» genera actividad al azar para probar el ranking (se suma a la que ya haya) y «Borrar actividad» la elimina.
 - **Historial:** registro de cada baneo, suspensión y levantamiento de sanción (consulta [Historial de moderación](#-historial-de-moderación)).
-- **Informes:** descarga de informes del sistema.
-- Al sancionar a una cuenta con sesión abierta, se le avisa en pantalla con el detalle de la sanción y la sesión se cierra automáticamente (`accountStatus.ts`, `AccountBlockToast.tsx`).
+- **Informes:** descarga en CSV del listado de usuarios reales y de la actividad, y del informe general en PDF. El botón «Imprimir / Guardar PDF» abre el diálogo de impresión del navegador: hay que elegir «Guardar como PDF» y la carpeta donde guardarlo.
+- Al sancionar a una cuenta con sesión abierta, se le avisa en pantalla con el detalle de la sanción y la sesión se cierra automáticamente en cuestión de segundos, aunque el administrador esté en otro navegador o equipo (`accountStatus.ts`, `AccountBlockToast.tsx`).
 
 ### 🧑‍⚖️ Moderación (`/moderacion`)
 - Panel propio con menú lateral (`ModeratorLayout`): **Reseñas**, **Usuarios**, **Historial** y **Volver al Home**.
@@ -133,23 +133,24 @@ Las sanciones se configuran en `SanctionModal.tsx`:
 | Suspensión | Administrador y moderador | 1–59 minutos, 1–23 horas o 1–28 días |
 
 - Cada sanción exige un motivo, con categorías predefinidas: *Spam, Contenido sensible, Contenido ilegal, Contenido inapropiado, Publicación improbable, Tema no relacionado* y *Otro*.
-- Una suspensión se guarda como fecha de vencimiento (`suspendedUntil`) y termina sola; al vencer, la cuenta vuelve a poder iniciar sesión.
+- **Jerarquía:** el administrador puede banear y suspender a moderadores y usuarios (no a otros administradores); el moderador solo puede suspender a usuarios con rol `user`; el usuario no puede sancionar a nadie.
+- Una suspensión se guarda en Supabase como fecha de vencimiento (`suspendedUntil`) y termina sola; al vencer, la cuenta vuelve a poder iniciar sesión.
 - Al intentar iniciar sesión, el usuario sancionado ve un aviso con el motivo y la duración. En una suspensión aparece una **cuenta regresiva** (horas : minutos : segundos); en un baneo, el aviso de bloqueo permanente (`SanctionNotices.tsx`).
-- Cuando un administrador o un moderador **quita una sanción**, se pide un motivo **opcional** (`LiftSanctionModal`). El usuario recibe un aviso verde de una sola vez la próxima vez que entra, que indica quién levantó la sanción. Si la suspensión termina sola, también se muestra el aviso de «Suspensión finalizada».
-- El estado de las cuentas se comparte entre pestañas del mismo navegador mediante eventos de `localStorage`.
+- Cuando un administrador o un moderador **quita una sanción**, se pide un motivo **opcional** (`LiftSanctionModal`). El usuario recibe un aviso verde de una sola vez la próxima vez que entra, que indica quién levantó la sanción. Si la suspensión termina sola, también se muestra el aviso de «Suspensión finalizada». El aviso se guarda en la base de datos (`liftedNotice`) y se borra después de mostrarse una vez. Si el usuario tiene abierta la pantalla de login, la tarjeta de la sanción pasa sola al aviso verde.
+- **Cierre inmediato de la sesión:** `accountStatus.ts` vigila la cuenta con la sesión abierta. Comprueba la base de datos al abrir la página, escucha Supabase Realtime sobre `user_sanctions` y, como respaldo, consulta cada 5 segundos y al volver a la pestaña. Si la cuenta está baneada o suspendida, se cierra la sesión y se muestra el aviso con el detalle. No cierra la sesión si la consulta falla y ignora las cuentas locales que no existen en Supabase.
 
 ### 🕘 Historial de moderación
-- Cada baneo, desbaneo, suspensión y suspensión quitada queda registrado con **quién lo hizo, su rol, a quién, cuándo y por qué** (`logModeration` en `activity.ts`). Está preparado para registrar también la eliminación y la restauración de reseñas.
+- Cada baneo, desbaneo, suspensión y suspensión quitada queda registrado en Supabase (tabla `moderation_log`, que solo permite leer y agregar) con **quién lo hizo, su rol, a quién, cuándo y por qué** (`logModeration` en `activity.ts`). Está preparado para registrar también la eliminación y la restauración de reseñas.
 - Disponible para administradores (`/admin/history`) y moderadores (`/moderacion/historial`).
 - Búsqueda por persona o motivo, filtro por tipo de acción y **filtro por fecha**: todas, hoy, últimos 7 días, últimos 30 días, un día concreto o un mes concreto.
 - Muestra cuántas acciones se ven del total y permite **descargar el resultado filtrado en CSV**.
-- «Borrar actividad» en el panel de administración limpia los datos de ejemplo del ranking, pero **conserva el historial de moderación**.
+- «Borrar actividad» en el panel de administración limpia los datos de ejemplo del ranking (`user_activity`), pero **conserva el historial de moderación** (`moderation_log`).
 
 ### 📝 Notas internas por usuario
 - Admin y moderadores pueden dejar notas sobre un usuario desde su tarjeta (botón **📝 Notas**, con la cantidad de notas). **El usuario nunca las ve.**
 - Cada nota se crea con una **etiqueta rápida** (Advertido por chat, Reincidente, Lenguaje ofensivo, Spam, Cuenta sospechosa, Revisar en 7 días u Otro) y un detalle opcional. Con **Otro** el texto es obligatorio.
-- Cada nota guarda autor, rol y fecha. Cada persona puede borrar sus propias notas y el administrador puede borrar cualquiera.
-- La lógica está en `userNotes.ts`; al migrar a Supabase solo habrá que cambiar el cuerpo de esas funciones.
+- Cada nota guarda autor, rol y fecha. Cada persona puede borrar sus propias notas y el administrador puede borrar cualquiera. Las notas viven en la tabla `user_notes`: las ven todos los administradores y moderadores desde cualquier navegador. Se cargan al abrirlas y el contador se actualiza con la lista.
+- La lógica está en `userNotes.ts` y guarda todo en Supabase.
 
 ### 💬 Chat y notificaciones
 - Widget flotante de mensajería (`MessengerWidget`) disponible para `user` y `moderator`; el administrador no lo usa.
@@ -173,11 +174,11 @@ Estilos separados por módulo: autenticación, inicio, perfil, chat, administrac
 | TypeScript | Tipado estático del código. |
 | Vite | Servidor de desarrollo y compilación. |
 | React Router DOM 7 | Navegación y rutas protegidas por rol. |
-| Supabase (`@supabase/supabase-js`) | Base de datos PostgreSQL para cuentas, lugares, reseñas, favoritos y seguimientos. |
+| Supabase (`@supabase/supabase-js`) | Base de datos PostgreSQL para cuentas, lugares, reseñas, favoritos, seguimientos, sanciones, historial, notas y actividad, y Realtime para avisar de los cambios. |
 | CSS | Estilos y diseño adaptable. |
 | Lucide React y React Icons | Iconografía. |
 | React Hooks y Context API | Estado y lógica reutilizable de la interfaz. |
-| `localStorage` / `sessionStorage` | Copia local de las cuentas, sesión, sanciones, historial, notas, chat, actividad y avisos temporales. |
+| `localStorage` / `sessionStorage` | Copia local de las cuentas, sesión, chat, foto de perfil y avisos temporales. |
 | oxlint | Análisis estático del código (`npm run lint`). |
 | Vercel | Despliegue; `vercel.json` redirige todas las rutas a `index.html` para la SPA. |
 
@@ -192,6 +193,7 @@ El código se organiza en capas y módulos:
 ├── vercel.json
 ├── supabase_schema.sql              # Esquema, políticas RLS y datos semilla
 ├── supabase_reviews_migration.sql   # Permite reseñas sin calificación
+├── supabase_sanctions_migration.sql # Sanciones, historial, notas, actividad, RLS y Realtime
 └── src/
     ├── App.tsx
     ├── App.css
@@ -205,7 +207,7 @@ El código se organiza en capas y módulos:
     │   └── vite.svg
     ├── business/
     │   ├── services/
-    │   │   ├── accountStatus.ts       # Avisos y estado de cuentas sancionadas
+    │   │   ├── accountStatus.ts       # Vigila la cuenta con la sesión abierta (Realtime + consulta periódica)
     │   │   ├── imageTools.ts
     │   │   ├── loginGuard.ts
     │   │   ├── loginHelpers.ts        # Apoyo del login (cuenta regresiva, bloqueos)
@@ -213,7 +215,7 @@ El código se organiza en capas y módulos:
     │   │   ├── passwordStrength.ts
     │   │   ├── registerAccount.ts     # Apoyo del registro (copia local, validaciones)
     │   │   ├── registerValidation.ts
-    │   │   └── userNotes.ts           # Notas internas del equipo
+    │   │   └── userNotes.ts           # Notas internas del equipo (Supabase)
     │   └── types/
     │       ├── follow.ts
     │       ├── place.ts
@@ -223,13 +225,14 @@ El código se organiza en capas y módulos:
     │   ├── supabase.ts
     │   ├── api/
     │   └── repositories/
-    │       ├── activity.ts            # Actividad, ranking e historial de moderación
+    │       ├── activity.ts            # Actividad, ranking e historial de moderación (Supabase)
     │       ├── follow.ts
     │       ├── followStore.ts
     │       ├── messages.ts
     │       ├── places.ts
     │       ├── profile.ts
     │       ├── profilePhoto.ts
+    │       ├── sanctions.ts           # Baneos y suspensiones (tabla user_sanctions) y su tiempo real
     │       └── users.ts               # Cuentas contra Supabase: login, registro, contraseña, nombre, roles y fecha de creación (createdAt)
     ├── presentation/
     │   ├── auth/
@@ -302,7 +305,7 @@ El código se organiza en capas y módulos:
     │   │       └── UserAvatar.tsx
     │   ├── hooks/
     │   │   ├── useFollows.ts
-    │   │   ├── useManagedUsers.ts        # Usuarios con sanciones (admin y moderador)
+    │   │   ├── useManagedUsers.ts        # Usuarios con sanciones desde Supabase (Realtime + refresco)
     │   │   ├── useMyProfile.ts
     │   │   ├── useProfilePhoto.ts
     │   │   └── useResendTimer.ts         # Cuenta regresiva (05:00) para reenviar el código
@@ -413,8 +416,9 @@ La conexión se configura en `src/data/supabase.ts` mediante `@supabase/supabase
 1. Abre tu proyecto en Supabase → **SQL Editor**.
 2. Ejecuta `supabase_schema.sql` (tablas, políticas RLS y datos semilla).
 3. Ejecuta **una sola vez** `supabase_reviews_migration.sql` (permite comentarios sin calificación).
-4. Verifica que exista la tabla `follows`, usada por el seguimiento de usuarios (`follower_id`, `following_id`, `status`, `created_at`). No está incluida en `supabase_schema.sql`; si no existe en tu proyecto, créala para que el seguimiento funcione.
-5. Comprueba que la tabla `users` tenga políticas RLS de **lectura, inserción y actualización** para el rol `anon`. Sin ellas, el login, el registro, el cambio de contraseña, el cambio de nombre y la gestión de roles fallan sin mostrar un error claro (Supabase rechaza la operación en silencio). Para desarrollo:
+4. Ejecuta **una sola vez** `supabase_sanctions_migration.sql`: crea `user_sanctions`, `moderation_log`, `user_notes` y `user_activity`, sus políticas RLS, el permiso de actualizar `users` y activa Realtime para `user_sanctions` y `moderation_log`. Es seguro repetirlo. Sin este script, las sanciones, el historial, las notas y la actividad no funcionan.
+5. Verifica que exista la tabla `follows`, usada por el seguimiento de usuarios (`follower_id`, `following_id`, `status`, `created_at`). No está incluida en `supabase_schema.sql`; si no existe en tu proyecto, créala para que el seguimiento funcione.
+6. Comprueba que la tabla `users` tenga políticas RLS de **lectura, inserción y actualización** para el rol `anon`. Sin ellas, el login, el registro, el cambio de contraseña, el cambio de nombre y la gestión de roles fallan sin mostrar un error claro (Supabase rechaza la operación en silencio). Para desarrollo:
 
 ```sql
 create policy "lectura temporal para pruebas" on public.users for select to anon using (true);
@@ -425,7 +429,7 @@ create policy "actualizar users (prueba)" on public.users for update to anon usi
 create policy "actualizar reviews (prueba)" on public.reviews for update to anon using (true) with check (true);
 ```
 
-6. Comprueba que la tabla `users` tenga la columna `"createdAt"` (fecha de creación de la cuenta). La pantalla **Roles** la consulta para ordenar por antigüedad; si no existe, la lista de usuarios no se carga.
+7. Comprueba que la tabla `users` tenga la columna `"createdAt"` (fecha de creación de la cuenta). La pantalla **Roles** la consulta para ordenar por antigüedad; si no existe, la lista de usuarios no se carga.
 
 ### Tablas
 
@@ -438,8 +442,12 @@ create policy "actualizar reviews (prueba)" on public.reviews for update to anon
 | `user_favorites` | Lugares favoritos por usuario. |
 | `place_likes` | «Me gusta» en lugares. |
 | `follows` | Solicitudes y relaciones de seguimiento. |
+| `user_sanctions` | Baneo (`banned`) o suspensión (`suspendedUntil`) de cada usuario, con motivo, categoría y el aviso de levantamiento. Va aparte de `users` para poder activar Realtime sin exponer `passwordHash`. |
+| `moderation_log` | Historial de moderación: acción, quién la hizo, a quién, motivo y duración. Solo se puede leer y agregar. |
+| `user_notes` | Notas internas del equipo sobre un usuario. |
+| `user_activity` | Actividad para el ranking (publicaciones, comentarios, «me gusta», seguidos). |
 
-> ⚠️ **Seguridad de la base de datos.** Las políticas RLS actuales usan `USING (true)` / `WITH CHECK (true)`, es decir, permiten lectura y escritura abiertas con la clave pública. Esto es útil para desarrollo, pero antes de publicar el proyecto deben restringirse (por ejemplo, con Supabase Auth y políticas basadas en `auth.uid()`). En particular, hoy cualquiera con la clave pública puede leer `passwordHash` y modificar el `role` de cualquier usuario. Además, la clave y la URL de Supabase están escritas directamente en `supabase.ts`: se recomienda moverlas a variables de entorno (`VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`). La clave pública (*publishable/anon*) está pensada para el navegador, pero nunca se debe incluir la clave `service_role`.
+> ⚠️ **Seguridad de la base de datos.** Las políticas RLS actuales usan `USING (true)` / `WITH CHECK (true)`, es decir, permiten lectura y escritura abiertas con la clave pública. Esto es útil para desarrollo, pero antes de publicar el proyecto deben restringirse (por ejemplo, con Supabase Auth y políticas basadas en `auth.uid()`). En particular, hoy cualquiera con la clave pública puede leer `passwordHash` y modificar el `role` de cualquier usuario. Además, la clave y la URL de Supabase están escritas directamente en `supabase.ts`: se recomienda moverlas a variables de entorno (`VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`). La clave pública (*publishable/anon*) está pensada para el navegador, pero nunca se debe incluir la clave `service_role`. Lo mismo vale para las tablas nuevas (`user_sanctions`, `moderation_log`, `user_notes`, `user_activity`): cualquiera con la clave pública podría leerlas o modificarlas, así que un baneo no es una protección real hasta que se use Supabase Auth con políticas por rol.
 
 ## 💾 Persistencia de datos
 
@@ -452,18 +460,19 @@ create policy "actualizar reviews (prueba)" on public.reviews for update to anon
 | Código de verificación (registro y recuperación) | Solo en la memoria del componente, mientras la página está abierta; se muestra en la consola y no se guarda en ningún almacenamiento |
 | Correo de la recuperación en curso | `localStorage` (`reset_email`) |
 | Sesión iniciada | `localStorage` (`user`) |
-| Sanciones (con avisos de levantamiento) | `localStorage` (`app_users`) |
+| Sanciones (con avisos de levantamiento) | **Supabase** (`user_sanctions`) |
 | Intentos de login | `localStorage` (`login_attempts`) |
 | Chat y mensajes | `localStorage` (`app_messages`) |
-| Actividad, ranking e **historial de moderación** | `localStorage` (`app_activity`) |
-| **Notas internas** de usuarios | `localStorage` (`app_user_notes`) |
+| Actividad y ranking | **Supabase** (`user_activity`) |
+| **Historial de moderación** | **Supabase** (`moderation_log`) |
+| **Notas internas** de usuarios | **Supabase** (`user_notes`) |
 | Foto de perfil y fecha del último cambio de nombre | `localStorage` |
 | Nota de permisos del moderador cerrada | `localStorage` (`moderator_note_dismissed`) |
 | Avisos temporales de la interfaz | `sessionStorage` |
 
-Las cuentas, la contraseña, el nombre y el rol ya se comparten entre navegadores y equipos porque la base de datos manda. Mientras las sanciones, el historial, las notas y la espera de 7 días del nombre vivan en `localStorage`, solo son efectivos en el navegador donde se crearon: **un baneo, una suspensión o una nota hecha por un administrador no afectan a otros equipos**. Los datos guardados en el navegador tampoco son una fuente confiable de autorización, porque pueden editarse desde las herramientas del navegador.
+Las cuentas, la contraseña, el nombre, el rol, las sanciones, el historial, las notas y la actividad se comparten entre navegadores y equipos porque la base de datos manda: un baneo, una suspensión o una nota hecha por un administrador se aplica en todos lados. Solo la espera de 7 días del nombre, el chat, la foto de perfil y la sesión siguen en `localStorage` y valen únicamente en ese navegador. Los datos guardados en el navegador tampoco son una fuente confiable de autorización, porque pueden editarse desde las herramientas del navegador.
 
-Dos detalles de la sesión: un usuario con la sesión abierta no ve un cambio de **rol** hasta que cierra sesión y vuelve a entrar (el **nombre** sí se actualiza solo al volver a la pestaña), y si cambia su contraseña desde otro navegador, la sesión ya abierta sigue válida hasta que se cierre.
+Dos detalles de la sesión: un usuario con la sesión abierta no ve un cambio de **rol** hasta que cierra sesión y vuelve a entrar (el **nombre** sí se actualiza solo al volver a la pestaña), y si cambia su contraseña desde otro navegador, la sesión ya abierta sigue válida hasta que se cierre. Además, las listas del panel (usuarios, notas, actividad) se refrescan por Realtime, cada 15 segundos y al volver a la pestaña, así que un cambio hecho en otro navegador puede tardar unos segundos en verse.
 
 ## ⚙️ Instalación y ejecución
 
@@ -554,10 +563,12 @@ Antes de dar por terminado un cambio, comprobar:
 - Sanciones: baneo (solo admin), suspensión en minutos, horas y días, y reversión con y sin motivo.
 - Avisos del login: cuenta regresiva de la suspensión, baneo permanente y aviso verde de sanción levantada.
 - Que el moderador vea solo usuarios con rol `user` y no pueda banear.
-- Cierre automático de sesión y aviso en pantalla al sancionar una cuenta activa.
+- Cierre automático de sesión y aviso en pantalla al sancionar una cuenta activa, probado con dos navegadores distintos (el administrador en uno y el usuario en otro).
+- Quitar una suspensión a mano: el usuario ve el aviso verde una sola vez, también con la pantalla de login ya abierta.
 - Historial: que cada sanción aparezca, los filtros por acción y por fecha (hoy, día y mes) y la descarga del CSV.
 - Que «Borrar actividad» no elimine el historial de moderación.
-- Notas internas: crear con etiqueta, crear con «Otro», borrar las propias y que el moderador no pueda borrar las de otros.
+- Notas internas: crear con etiqueta, crear con «Otro», borrar las propias, que el moderador no pueda borrar las de otros y que una nota hecha en un navegador aparezca en el otro.
+- Informes: el CSV y el PDF traen los mismos usuarios que Supabase.
 - Roles: la lista debe coincidir con la tabla `users`; buscador; filtros Todos / Administradores / Moderadores / Usuarios; orden por nombre A-Z, Z-A, más antiguos y más recientes; al subir o bajar de rol, la columna `role` de Supabase debe cambiar y el usuario debe entrar con el rol nuevo.
 - Lugares, reseñas, comentarios sin calificación y favoritos contra Supabase.
 - Seguimiento de usuarios.
@@ -579,26 +590,26 @@ Antes de dar por terminado un cambio, comprobar:
 | Recuperación de contraseña | En 3 etapas con `OtpInput` y `useResendTimer`; actualiza Supabase. El código se genera en el navegador y falta el envío real por correo. |
 | Cambio de nombre | En Supabase y en las reseñas; la espera de 7 días sigue en `localStorage`. |
 | Gestión de roles (`user` / `moderator`) | En Supabase (`users.role`), con filtros por rol y orden por nombre o antigüedad (`createdAt`). Una sesión ya abierta toma el rol nuevo al volver a iniciar sesión. |
-| Sanciones (baneo y suspensión) | Funcionan en el navegador, con avisos en el login; falta persistirlas en Supabase. |
-| Historial de moderación | Funciona en el navegador, con filtros y CSV; falta persistirlo en Supabase. |
-| Notas internas por usuario | Funcionan en el navegador; falta persistirlas en Supabase. |
+| Sanciones (baneo y suspensión) | En Supabase (`user_sanctions`), con Realtime, avisos en el login y cierre inmediato de la sesión abierta. |
+| Historial de moderación | En Supabase (`moderation_log`), con filtros y CSV. |
+| Notas internas por usuario | En Supabase (`user_notes`). |
 | Panel de moderación de reseñas | Interfaz lista con datos de ejemplo; falta conectarla a `reviews`. |
 | Chat y notificaciones | Locales; sin entrega entre dispositivos. |
-| Actividad e informes de administración | Basados en `localStorage`; el ranking solo tiene datos reales de moderación hasta que el Home registre la actividad. |
+| Actividad e informes de administración | En Supabase (`user_activity` y `moderation_log`); informes en CSV y PDF. El ranking solo tiene datos reales de moderación hasta que el Home registre la actividad. |
 | Políticas RLS | Abiertas (desarrollo); deben restringirse. |
 | Pruebas automatizadas | Pendiente. |
 
 ### Mejoras previstas
 
 1. Migrar la autenticación a **Supabase Auth** (hash de contraseñas, sesiones y envío real del código de verificación por correo, tanto en el registro como en la recuperación de contraseña).
-2. Mover sanciones, historial, notas y la espera de 7 días del nombre a tablas o columnas de Supabase para que apliquen en todos los dispositivos.
+2. Mover la espera de 7 días del nombre a Supabase para que valga en todos los dispositivos.
 3. Conectar el panel de moderación a las reseñas reales: borrado lógico de reseñas con registro en el historial y restauración (acciones `review_delete` y `review_restore`, ya previstas en el historial).
 4. Registrar en el historial los cambios de rol (subir o bajar a moderador).
 5. Actualizar el rol de las sesiones abiertas sin cerrar sesión (hoy `AuthContext` solo sincroniza el nombre).
 6. Registrar la actividad real de los usuarios (publicaciones, comentarios, «me gusta» y seguimientos) con `logActivity` desde el Home, para que el ranking use datos reales.
 7. Restringir las políticas RLS según el usuario autenticado y su rol.
 8. Mover la URL y la clave de Supabase a variables de entorno.
-9. Migrar mensajes, notificaciones y actividad a servicios compartidos (por ejemplo, Supabase Realtime).
+9. Migrar mensajes y notificaciones a servicios compartidos (por ejemplo, Supabase Realtime).
 10. Añadir pruebas automatizadas (por ejemplo con Vitest para el registro, el login y las sanciones) y mejorar el manejo de errores.
 11. Optimizar la carga de imágenes y la accesibilidad, y dividir los archivos más grandes del Home (`FacebookFeed.tsx` y `home.css`).
 12. Hacer que el código de verificación caduque (hoy el temporizador solo controla cuándo se puede reenviar, no la validez del código).

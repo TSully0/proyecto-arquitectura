@@ -1,4 +1,4 @@
-import type { User } from "../../../business/types/user";
+import type { ManagedAccount } from "../../../data/repositories/sanctions";
 
 export type Role = "admin" | "moderator" | "user";
 
@@ -17,12 +17,5 @@ export const STATUS_PARAMS: Record<string, StatusFilter> = {
   baneados: "BANEADO",
 };
 
-export type ManagedUser = User & {
-  banned?: boolean;
-  suspendedUntil?: number | null;
-  sanctionReason?: string;
-  sanctionCategory?: string;
-  suspensionLabel?: string;
-  liftedNotice?: "suspension" | "ban";
-  liftedBy?: string;
-};
+// Usuario con su estado de sanción; viene de Supabase (ver data/repositories/sanctions.ts).
+export type ManagedUser = ManagedAccount;

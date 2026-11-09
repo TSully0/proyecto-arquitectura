@@ -1,10 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  ACTION_LABELS,
-  getModerationLog,
-  type ModerationAction
-} from "../../../data/repositories/activity";
+import { ACTION_LABELS, fetchModerationLog, type ActivityItem, type ModerationAction } from "../../../data/repositories/activity";
 import "../../../styles/admin/admin-history.css";
 
 const formatDate = (iso: string) =>
@@ -24,7 +20,19 @@ interface RecentModerationCardProps {
 export const RecentModerationCard = ({
   historyPath = "/admin/history"
 }: RecentModerationCardProps) => {
-  const [recent] = useState(() => getModerationLog().slice(0, 5));
+  const [recent, setRecent] = useState<ActivityItem[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    fetchModerationLog().then((log) => {
+      if (active) setRecent((log ?? []).slice(0, 5));
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <section className="admin-panel recent-card">

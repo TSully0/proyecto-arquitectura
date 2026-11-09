@@ -1,12 +1,9 @@
 import type { User } from "../types/user";
-
-type ManagedAccount = User & {
-  banned?: boolean;
-  suspendedUntil?: number | null;
-  sanctionReason?: string;
-  sanctionCategory?: string;
-  suspensionLabel?: string;
-};
+import {
+  fetchSanctionOf,
+  subscribeToSanctions,
+  type SanctionFields,
+} from "../../data/repositories/sanctions";
 
 /** Datos de la sanción para mostrarlos con detalle (motivo, tiempo...). */
 export interface AccountBlockNotice {
@@ -19,82 +16,39 @@ export interface AccountBlockNotice {
   until: number | null;
 }
 
-const USERS_KEY = "app_users";
 const SESSION_KEY = "user";
-const ACCOUNT_STATUS_EVENT = "account-status-changed";
 const DEFAULT_REASON = "Incumplimiento de las normas de la comunidad.";
 
-function findAccount(sessionUser: User): ManagedAccount | null {
-  try {
-    const rawUsers = localStorage.getItem(USERS_KEY);
-    if (!rawUsers) return null;
+// Cada cuánto se comprueba la base de datos como respaldo del tiempo real.
+const POLL_MS = 5_000;
 
-    const parsed: unknown = JSON.parse(rawUsers);
-    if (!Array.isArray(parsed)) return null;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-    return (
-      (parsed as ManagedAccount[]).find(
-        (item) => String(item.id) === String(sessionUser.id)
-      ) ?? null
-    );
-  } catch (error) {
-    console.error("No se pudo verificar el estado de la cuenta:", error);
-    return null;
-  }
-}
+/** La sanción vigente, o null si la cuenta está libre. */
+export function getBlockNotice(state: SanctionFields): AccountBlockNotice | null {
+  const reason = state.sanctionReason?.trim() || DEFAULT_REASON;
 
-export function isAccountBlocked(sessionUser: User): boolean {
-  const current = findAccount(sessionUser);
-
-  if (!current) return false;
-  if (current.banned === true) return true;
-
-  return Boolean(current.suspendedUntil && current.suspendedUntil > Date.now());
-}
-
-export function getAccountBlockNotice(
-  sessionUser: User
-): AccountBlockNotice | null {
-  const current = findAccount(sessionUser);
-  if (!current) return null;
-
-  const reason = current.sanctionReason?.trim() || DEFAULT_REASON;
-  const category = current.sanctionCategory?.trim() || "";
-
-  if (current.banned) {
+  if (state.banned) {
     return { type: "ban", reason, category: "", label: "", until: null };
   }
 
-  if (current.suspendedUntil && current.suspendedUntil > Date.now()) {
+  if (state.suspendedUntil && state.suspendedUntil > Date.now()) {
     return {
       type: "suspension",
       reason,
-      category,
-      label: current.suspensionLabel?.trim() || "",
-      until: current.suspendedUntil,
+      category: state.sanctionCategory?.trim() || "",
+      label: state.suspensionLabel?.trim() || "",
+      until: state.suspendedUntil,
     };
   }
 
   return null;
 }
 
-export function getAccountBlockMessage(sessionUser: User): string {
-  try {
-    const rawUsers = localStorage.getItem(USERS_KEY);
-
-    if (!rawUsers) return "Tu cuenta no está disponible.";
-
-    if (!findAccount(sessionUser)) return "Tu cuenta no está disponible.";
-
-    const notice = getAccountBlockNotice(sessionUser);
-    if (!notice) return "";
-
-    return notice.type === "ban"
-      ? `Cuenta bloqueada permanentemente. Motivo: ${notice.reason}`
-      : `Tu cuenta está suspendida temporalmente. Motivo: ${notice.reason}`;
-  } catch {
-    return "No se pudo verificar el estado de tu cuenta.";
-  }
+export function getBlockMessage(notice: AccountBlockNotice): string {
+  return notice.type === "ban"
+    ? `Cuenta bloqueada permanentemente. Motivo: ${notice.reason}`
+    : `Tu cuenta está suspendida temporalmente. Motivo: ${notice.reason}`;
 }
 
 /**
@@ -117,46 +71,54 @@ function clearSessionIfOwnedBy(sessionUser: User): void {
 }
 
 /**
- * Escucha cambios de sanciones y permite que la aplicación
- * cierre la sesión cuando la cuenta actual quede bloqueada.
+ * Vigila la cuenta con la sesión abierta. Si la banean o la suspenden (desde
+ * cualquier navegador), Supabase avisa en tiempo real y la sesión se cierra
+ * al instante. También comprueba al abrir la página, al volver a la pestaña y
+ * cada pocos segundos, por si el tiempo real no estuviera activado.
  * El segundo argumento de onBlocked trae el detalle de la sanción.
  */
 export function subscribeToAccountStatus(
   sessionUser: User,
   onBlocked: (message: string, notice: AccountBlockNotice | null) => void
 ): () => void {
-  let handled = false;
+  const userId = String(sessionUser.id);
 
-  const checkStatus = () => {
-    if (handled || !isAccountBlocked(sessionUser)) return;
+  // Las cuentas de prueba que solo existen en el navegador no están en Supabase.
+  if (!UUID.test(userId)) return () => {};
+
+  let handled = false;
+  let disposed = false;
+
+  const check = async () => {
+    if (handled || disposed) return;
+
+    const state = await fetchSanctionOf(userId);
+
+    // Si no se pudo consultar no se cierra la sesión por error.
+    if (handled || disposed || !state) return;
+
+    const notice = getBlockNotice(state);
+    if (!notice) return;
 
     handled = true;
 
-    const message = getAccountBlockMessage(sessionUser);
-    const notice = getAccountBlockNotice(sessionUser);
-
     clearSessionIfOwnedBy(sessionUser);
-    onBlocked(message || "Tu cuenta ya no tiene acceso.", notice);
+    onBlocked(getBlockMessage(notice), notice);
   };
 
-  const handleStorage = (event: StorageEvent) => {
-    if (event.key === USERS_KEY) {
-      checkStatus();
-    }
-  };
+  check();
 
-  const handleCustomEvent = () => {
-    checkStatus();
-  };
+  const unsubscribe = subscribeToSanctions((changedId) => {
+    if (changedId === null || changedId === userId) check();
+  });
 
-  window.addEventListener("storage", handleStorage);
-  window.addEventListener(ACCOUNT_STATUS_EVENT, handleCustomEvent);
-
-  // Comprobar también al iniciar la suscripción.
-  checkStatus();
+  const interval = window.setInterval(check, POLL_MS);
+  window.addEventListener("focus", check);
 
   return () => {
-    window.removeEventListener("storage", handleStorage);
-    window.removeEventListener(ACCOUNT_STATUS_EVENT, handleCustomEvent);
+    disposed = true;
+    unsubscribe();
+    window.clearInterval(interval);
+    window.removeEventListener("focus", check);
   };
 }

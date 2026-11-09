@@ -1,5 +1,9 @@
 // data/repositories/activity.ts
-// Datos y utilidades para el panel de administración (actividad e informes)
+// Datos y utilidades para el panel de administración (actividad e informes).
+// Todo se guarda en Supabase: usuarios, actividad e historial de moderación.
+
+import { supabase } from "../supabase";
+import { fetchManagedUsers } from "./sanctions";
 
 export type AppUser = {
   id: string;
@@ -36,19 +40,22 @@ export type ActivityItem = {
   duration?: string; // por ejemplo "2 días"
 };
 
-const ACTIVITY_KEY = "app_activity";
-
 /* =========================
-   USUARIOS
+   USUARIOS (desde Supabase)
 ========================= */
-export const readUsers = (): AppUser[] => {
-  try {
-    const raw = localStorage.getItem("app_users");
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+// null en la lista = no se pudo consultar; las pantallas muestran el aviso.
+export const fetchAdminUsers = async (): Promise<AppUser[] | null> => {
+  const users = await fetchManagedUsers();
+  if (!users) return null;
+
+  return users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    banned: u.banned,
+    suspendedUntil: u.suspendedUntil ?? null
+  }));
 };
 
 export const getStatus = (u: AppUser, now: number) => {
@@ -60,29 +67,81 @@ export const getStatus = (u: AppUser, now: number) => {
 };
 
 /* =========================
+   AYUDAS DE LECTURA
+========================= */
+const PAGE = 1000; // Supabase devuelve como máximo 1000 filas por consulta
+
+type Row = Record<string, unknown>;
+
+// Lee una tabla completa por páginas.
+const fetchAllRows = async (
+  table: string,
+  columns: string,
+  orderBy: string
+): Promise<Row[] | null> => {
+  const all: Row[] = [];
+
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(columns)
+      .order(orderBy, { ascending: false })
+      .range(from, from + PAGE - 1);
+
+    if (error || !data) {
+      console.warn(`No se pudo leer ${table}:`, error);
+      return null;
+    }
+
+    all.push(...(data as unknown as Row[]));
+    if (data.length < PAGE) return all;
+  }
+};
+
+/* =========================
    ACTIVIDAD
 ========================= */
-export const getActivity = (): ActivityItem[] => {
-  try {
-    const raw = localStorage.getItem(ACTIVITY_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+// Actividad de la comunidad + acciones de moderación (cuentan para el ranking).
+export const fetchActivity = async (): Promise<ActivityItem[] | null> => {
+  const [activity, moderation] = await Promise.all([
+    fetchAllRows("user_activity", "id, userId, type, createdAt", "createdAt"),
+    fetchAllRows(
+      "moderation_log",
+      "id, actorId, action, createdAt",
+      "createdAt"
+    )
+  ]);
+
+  if (!activity || !moderation) return null;
+
+  return [
+    ...activity.map(
+      (r): ActivityItem => ({
+        id: String(r.id),
+        userId: String(r.userId),
+        type: r.type as ActivityType,
+        at: String(r.createdAt)
+      })
+    ),
+    ...moderation.map(
+      (r): ActivityItem => ({
+        id: String(r.id),
+        userId: String(r.actorId),
+        type: "moderation",
+        at: String(r.createdAt)
+      })
+    )
+  ];
 };
 
 // 👉 llámala desde donde ocurra la acción real, por ejemplo:
 //    logActivity(user.id, "comment")
-export const logActivity = (userId: string, type: ActivityType) => {
-  const items = getActivity();
-  items.push({
-    id: crypto.randomUUID(),
-    userId,
-    type,
-    at: new Date().toISOString()
-  });
-  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(items));
+export const logActivity = async (userId: string, type: ActivityType) => {
+  const { error } = await supabase
+    .from("user_activity")
+    .insert({ userId, type });
+
+  if (error) console.warn("No se pudo registrar la actividad:", error);
 };
 
 /* =========================
@@ -115,26 +174,54 @@ const readSessionActor = (): { id: string; name: string; role: string } => {
 };
 
 // 👉 llámala cuando alguien banea, suspende, desbanea, elimina una reseña, etc.
-export const logModeration = (input: ModerationLogInput) => {
+export const logModeration = async (input: ModerationLogInput): Promise<boolean> => {
   const actor = readSessionActor();
-  const items = getActivity();
-  items.push({
-    id: crypto.randomUUID(),
-    userId: actor.id,
-    type: "moderation",
-    at: new Date().toISOString(),
+
+  const { error } = await supabase.from("moderation_log").insert({
+    action: input.action,
+    actorId: actor.id,
     actorName: actor.name,
     actorRole: actor.role,
-    ...input
+    targetId: input.targetId ?? null,
+    targetName: input.targetName ?? null,
+    reason: input.reason ?? null,
+    duration: input.duration ?? null
   });
-  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(items));
+
+  if (error) {
+    console.warn("No se pudo guardar el historial de moderación:", error);
+    return false;
+  }
+
+  return true;
 };
 
 // Solo las acciones reales (sin los datos de ejemplo), la más reciente primero
-export const getModerationLog = (): ActivityItem[] =>
-  getActivity()
-    .filter((i) => i.type === "moderation" && i.action)
-    .sort((a, b) => b.at.localeCompare(a.at));
+export const fetchModerationLog = async (): Promise<ActivityItem[] | null> => {
+  const rows = await fetchAllRows(
+    "moderation_log",
+    "id, action, actorId, actorName, actorRole, targetId, targetName, reason, duration, createdAt",
+    "createdAt"
+  );
+
+  if (!rows) return null;
+
+  return rows.map(
+    (r): ActivityItem => ({
+      id: String(r.id),
+      userId: String(r.actorId),
+      type: "moderation",
+      at: String(r.createdAt),
+      action: r.action as ModerationAction,
+      actorName: String(r.actorName ?? ""),
+      actorRole: String(r.actorRole ?? ""),
+      targetId: r.targetId ? String(r.targetId) : undefined,
+      targetName: r.targetName ? String(r.targetName) : undefined,
+      reason: r.reason ? String(r.reason) : undefined,
+      duration: r.duration ? String(r.duration) : undefined
+    })
+  );
+};
 
 export const ACTION_LABELS: Record<ModerationAction, string> = {
   ban: "Baneo",
@@ -146,24 +233,25 @@ export const ACTION_LABELS: Record<ModerationAction, string> = {
 };
 
 // Borra la actividad (publicaciones, comentarios, datos de ejemplo...), pero conserva
-// el historial de moderación (items con "action"): es un registro que no debe perderse.
-export const clearActivity = () => {
-  const moderationLog = getActivity().filter(
-    (item) => item.type === "moderation" && item.action
-  );
+// el historial de moderación (tabla moderation_log): es un registro que no debe perderse.
+export const clearActivity = async (): Promise<boolean> => {
+  const { error } = await supabase
+    .from("user_activity")
+    .delete()
+    .gte("createdAt", "1970-01-01");
 
-  if (moderationLog.length === 0) {
-    localStorage.removeItem(ACTIVITY_KEY);
-    return;
+  if (error) {
+    console.warn("No se pudo borrar la actividad:", error);
+    return false;
   }
 
-  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(moderationLog));
+  return true;
 };
 
 // datos de ejemplo para ver cómo luce el ranking
-export const seedDemoActivity = (users: AppUser[]) => {
+export const seedDemoActivity = async (users: AppUser[]): Promise<boolean> => {
   const types: ActivityType[] = ["post", "comment", "like", "follow"];
-  const items: ActivityItem[] = [];
+  const rows: { userId: string; type: ActivityType }[] = [];
   const rnd = (max: number) => Math.floor(Math.random() * max);
 
   users
@@ -171,30 +259,27 @@ export const seedDemoActivity = (users: AppUser[]) => {
     .forEach((u) => {
       types.forEach((type) => {
         const n = rnd(12);
-        for (let i = 0; i < n; i++) {
-          items.push({
-            id: crypto.randomUUID(),
-            userId: u.id,
-            type,
-            at: new Date().toISOString()
-          });
-        }
+        for (let i = 0; i < n; i++) rows.push({ userId: u.id, type });
       });
 
       if (u.role === "moderator") {
         const n = 5 + rnd(20);
-        for (let i = 0; i < n; i++) {
-          items.push({
-            id: crypto.randomUUID(),
-            userId: u.id,
-            type: "moderation",
-            at: new Date().toISOString()
-          });
-        }
+        for (let i = 0; i < n; i++) rows.push({ userId: u.id, type: "moderation" });
       }
     });
 
-  localStorage.setItem(ACTIVITY_KEY, JSON.stringify([...getActivity(), ...items]));
+  for (let i = 0; i < rows.length; i += 500) {
+    const { error } = await supabase
+      .from("user_activity")
+      .insert(rows.slice(i, i + 500));
+
+    if (error) {
+      console.warn("No se pudieron crear los datos de ejemplo:", error);
+      return false;
+    }
+  }
+
+  return true;
 };
 
 /* =========================

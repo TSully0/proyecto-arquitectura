@@ -1,15 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  MAX_NOTE_LENGTH,
-  NOTE_TAGS,
-  OTHER_TAG,
-  addNote,
-  canDeleteNote,
-  deleteNote,
-  getNoteActor,
-  getNotesFor,
-  type UserNote,
-} from "../../../business/services/userNotes";
+import { MAX_NOTE_LENGTH, NOTE_TAGS, OTHER_TAG, addNote, canDeleteNote, deleteNote, getNoteActor, getNotesFor, type UserNote } from "../../../business/services/userNotes";
 
 interface UserNotesModalProps {
   isOpen: boolean;
@@ -46,12 +36,26 @@ export const UserNotesModal = ({
   const [text, setText] = useState("");
   const [tag, setTag] = useState("");
 
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
   useEffect(() => {
-    if (isOpen && userId) {
-      setNotes(getNotesFor(userId));
-      setText("");
-      setTag("");
-    }
+    if (!isOpen || !userId) return;
+
+    let active = true;
+
+    setText("");
+    setTag("");
+    setError("");
+    setNotes([]);
+
+    getNotesFor(userId).then((loaded) => {
+      if (active) setNotes(loaded);
+    });
+
+    return () => {
+      active = false;
+    };
   }, [isOpen, userId]);
 
   if (!isOpen || !userId) return null;
@@ -63,19 +67,37 @@ export const UserNotesModal = ({
   // Con etiqueta basta; con «Otro» (o sin etiqueta) hay que escribir.
   const canSave = Boolean(tag && !isOther) || text.trim().length > 0;
 
-  const handleSave = () => {
-    if (!canSave) return;
+  const handleSave = async () => {
+    if (!canSave || saving) return;
 
-    addNote(userId, text, tag);
-    setNotes(getNotesFor(userId));
+    setSaving(true);
+    setError("");
+
+    const saved = await addNote(userId, text, tag);
+
+    if (!saved) {
+      setSaving(false);
+      setError("No se pudo guardar la nota en la base de datos.");
+      return;
+    }
+
+    setNotes(await getNotesFor(userId));
+    setSaving(false);
     setText("");
     setTag("");
     onChanged();
   };
 
-  const handleDelete = (noteId: string) => {
-    deleteNote(noteId);
-    setNotes(getNotesFor(userId));
+  const handleDelete = async (note: UserNote) => {
+    const removed = await deleteNote(note);
+
+    if (!removed) {
+      setError("No se pudo borrar la nota.");
+      return;
+    }
+
+    setError("");
+    setNotes(await getNotesFor(userId));
     onChanged();
   };
 
@@ -138,7 +160,7 @@ export const UserNotesModal = ({
                     <button
                       type="button"
                       className="notes-delete"
-                      onClick={() => handleDelete(note.id)}
+                      onClick={() => handleDelete(note)}
                     >
                       Borrar
                     </button>
@@ -195,6 +217,12 @@ export const UserNotesModal = ({
           </>
         )}
 
+        {error && (
+          <p className="notes-empty" role="alert" style={{ color: "#a12622" }}>
+            {error}
+          </p>
+        )}
+
         <div className="sanction-actions">
           <button type="button" className="sanction-cancel" onClick={onClose}>
             Cerrar
@@ -204,7 +232,7 @@ export const UserNotesModal = ({
             type="button"
             className="sanction-confirm"
             onClick={handleSave}
-            disabled={!canSave}
+            disabled={!canSave || saving}
           >
             Guardar nota
           </button>

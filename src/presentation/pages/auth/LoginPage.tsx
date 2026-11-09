@@ -1,26 +1,11 @@
 import { useEffect, useState } from 'react';
 import { initialUsers, loginWithSupabase } from '../../../data/repositories/users';
+import { clearLiftedNotice } from '../../../data/repositories/sanctions';
 import type { User } from '../../../business/types/user';
-import {
-  getGuardKey,
-  isLoginLocked,
-  registerFailedLogin,
-  clearLoginAttempts
-} from '../../../business/services/loginGuard';
+import { getGuardKey, isLoginLocked, registerFailedLogin, clearLoginAttempts } from '../../../business/services/loginGuard';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import {
-  BanNotice,
-  LiftedNotice,
-  SuspensionCard,
-  type SuspensionNotice
-} from '../../components/auth/SanctionNotices';
-import {
-  DEFAULT_REASON,
-  MSG_LOCKED,
-  MSG_LOCKED_NOW,
-  encodePassword,
-  getRemainingSeconds
-} from '../../../business/services/loginHelpers';
+import { BanNotice, LiftedNotice, SuspensionCard, type SuspensionNotice } from '../../components/auth/SanctionNotices';
+import { DEFAULT_REASON,MSG_LOCKED, MSG_LOCKED_NOW, encodePassword, getRemainingSeconds } from '../../../business/services/loginHelpers';
 
 interface LoginPageProps {
   onNavigateToRegister: () => void;
@@ -130,11 +115,10 @@ export function LoginPage({
           (u) => u.email.trim().toLowerCase() === remote.user.email.trim().toLowerCase()
         );
 
-        // Se conservan las sanciones locales y se reemplaza la clave y los datos por los de Supabase.
+        // Supabase manda también en las sanciones: baneo, suspensión y avisos salen de la base de datos.
         user = {
           ...local,
-          ...remote.user,
-          banned: Boolean(local?.banned) || Boolean(remote.user.banned)
+          ...remote.user
         };
 
         // Sin duplicados: una sola copia local por correo.
@@ -216,6 +200,9 @@ export function LoginPage({
       } catch {
         /* si no se puede guardar, el aviso saldrá otra vez */
       }
+
+      // El aviso se muestra una sola vez: también se borra en la base de datos.
+      await clearLiftedNotice(user.id);
 
       clearLoginAttempts(key);
       setRemainingSeconds(0);

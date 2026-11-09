@@ -1,7 +1,8 @@
 // business/services/userNotes.ts
 // Notas internas del equipo (admin + moderadores) sobre un usuario.
-// Hoy se guardan en localStorage; cuando exista la base de datos solo hay que
-// cambiar el cuerpo de estas funciones, las pantallas no se tocan.
+// Se guardan en Supabase (tabla user_notes), así las ven todos los navegadores.
+
+import { supabase } from "../../data/supabase";
 
 export type UserNote = {
   id: string;
@@ -16,7 +17,6 @@ export type UserNote = {
 
 export type NoteActor = { id: string; name: string; role: string };
 
-const NOTES_KEY = "app_user_notes";
 export const MAX_NOTE_LENGTH = 500;
 
 // Etiquetas rápidas. "Otro" abre el cuadro para escribir libremente.
@@ -51,35 +51,68 @@ export const getNoteActor = (): NoteActor => {
   return { id: "desconocido", name: "Desconocido", role: "" };
 };
 
-export const getAllNotes = (): UserNote[] => {
-  try {
-    const raw = localStorage.getItem(NOTES_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+const NOTE_COLUMNS =
+  "id, userId, tag, text, authorId, authorName, authorRole, createdAt";
+
+type NoteRow = {
+  id: string;
+  userId: string;
+  tag: string | null;
+  text: string | null;
+  authorId: string;
+  authorName: string | null;
+  authorRole: string | null;
+  createdAt: string;
 };
 
-const saveAll = (notes: UserNote[]) => {
-  try {
-    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
-  } catch (error) {
-    console.error("No se pudieron guardar las notas:", error);
+const toNote = (row: NoteRow): UserNote => ({
+  id: String(row.id),
+  userId: String(row.userId),
+  tag: row.tag ?? undefined,
+  text: row.text ?? "",
+  authorId: String(row.authorId),
+  authorName: row.authorName ?? "Desconocido",
+  authorRole: row.authorRole ?? "",
+  at: String(row.createdAt),
+});
+
+// Todas las notas, la más reciente primero. [] si no se pudo consultar.
+export const getAllNotes = async (): Promise<UserNote[]> => {
+  const { data, error } = await supabase
+    .from("user_notes")
+    .select(NOTE_COLUMNS)
+    .order("createdAt", { ascending: false })
+    .limit(1000);
+
+  if (error || !data) {
+    console.warn("No se pudieron leer las notas:", error);
+    return [];
   }
+
+  return (data as unknown as NoteRow[]).map(toNote);
 };
 
 // Las notas de un usuario, la más reciente primero
-export const getNotesFor = (userId: string): UserNote[] =>
-  getAllNotes()
-    .filter((note) => note.userId === userId)
-    .sort((a, b) => b.at.localeCompare(a.at));
+export const getNotesFor = async (userId: string): Promise<UserNote[]> => {
+  const { data, error } = await supabase
+    .from("user_notes")
+    .select(NOTE_COLUMNS)
+    .eq("userId", userId)
+    .order("createdAt", { ascending: false });
 
-export const addNote = (
+  if (error || !data) {
+    console.warn("No se pudieron leer las notas:", error);
+    return [];
+  }
+
+  return (data as unknown as NoteRow[]).map(toNote);
+};
+
+export const addNote = async (
   userId: string,
   text: string,
   tag?: string
-): UserNote | null => {
+): Promise<UserNote | null> => {
   const clean = text.trim().slice(0, MAX_NOTE_LENGTH);
   const cleanTag = tag && tag !== OTHER_TAG ? tag : undefined;
 
@@ -88,33 +121,44 @@ export const addNote = (
 
   const actor = getNoteActor();
 
-  const note: UserNote = {
-    id: crypto.randomUUID(),
-    userId,
-    tag: cleanTag,
-    text: clean,
-    authorId: actor.id,
-    authorName: actor.name,
-    authorRole: actor.role,
-    at: new Date().toISOString(),
-  };
+  const { data, error } = await supabase
+    .from("user_notes")
+    .insert({
+      userId,
+      tag: cleanTag ?? null,
+      text: clean,
+      authorId: actor.id,
+      authorName: actor.name,
+      authorRole: actor.role,
+    })
+    .select(NOTE_COLUMNS)
+    .single();
 
-  saveAll([...getAllNotes(), note]);
-  return note;
+  if (error || !data) {
+    console.warn("No se pudo guardar la nota:", error);
+    return null;
+  }
+
+  return toNote(data as unknown as NoteRow);
 };
 
 // Cada quien borra sus notas; el admin puede borrar cualquiera.
 export const canDeleteNote = (note: UserNote, actor: NoteActor): boolean =>
   actor.role === "admin" || note.authorId === actor.id;
 
-export const deleteNote = (noteId: string) => {
+export const deleteNote = async (note: UserNote): Promise<boolean> => {
   const actor = getNoteActor();
-  const all = getAllNotes();
-  const target = all.find((note) => note.id === noteId);
 
-  if (!target || !canDeleteNote(target, actor)) return;
+  if (!canDeleteNote(note, actor)) return false;
 
-  saveAll(all.filter((note) => note.id !== noteId));
+  const { error } = await supabase.from("user_notes").delete().eq("id", note.id);
+
+  if (error) {
+    console.warn("No se pudo borrar la nota:", error);
+    return false;
+  }
+
+  return true;
 };
 
 export const countNotesByUser = (notes: UserNote[]): Record<string, number> => {

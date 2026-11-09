@@ -1,5 +1,10 @@
 import { type User } from '../../business/types/user';
 import { supabase } from '../supabase';
+import {
+  SANCTION_EMBED,
+  toSanctionFields,
+  type ManagedAccount
+} from './sanctions';
 
 /* =========================
    USUARIOS BASE DEL SISTEMA
@@ -313,7 +318,7 @@ export async function updatePasswordInSupabase(
    LOGIN: SUPABASE MANDA
    ========================= */
 export type RemoteLoginResult =
-  | { status: 'ok'; user: User }
+  | { status: 'ok'; user: ManagedAccount }
   | { status: 'wrong_password' } // la cuenta existe en Supabase, pero la clave no coincide
   | { status: 'not_found' }      // no existe en Supabase
   | { status: 'error' };         // no se pudo consultar
@@ -328,7 +333,7 @@ export async function loginWithSupabase(
 
     const { data, error } = await supabase
       .from('users')
-      .select('id, email, passwordHash, fullName, role, isActive')
+      .select(`id, email, passwordHash, fullName, role, isActive, ${SANCTION_EMBED}`)
       .or(`email.eq.${clean},fullName.ilike.${clean}`)
       .limit(5);
 
@@ -339,7 +344,17 @@ export async function loginWithSupabase(
 
     if (!data || data.length === 0) return { status: 'not_found' };
 
-    const row = data.find((r) => r.passwordHash === encodedPassword);
+    const rows = data as unknown as {
+      id: string;
+      email: string;
+      passwordHash: string;
+      fullName: string;
+      role: unknown;
+      isActive: boolean | null;
+      user_sanctions?: unknown;
+    }[];
+
+    const row = rows.find((r) => r.passwordHash === encodedPassword);
     if (!row) return { status: 'wrong_password' };
 
     const role = String(row.role).toUpperCase();
@@ -352,7 +367,8 @@ export async function loginWithSupabase(
         password: row.passwordHash,
         name: row.fullName,
         role: role === 'ADMIN' ? 'admin' : role === 'MODERATOR' ? 'moderator' : 'user',
-        banned: row.isActive === false
+        // Baneo, suspensión y avisos salen de la base de datos (user_sanctions).
+        ...toSanctionFields(row.user_sanctions, row.isActive)
       }
     };
   } catch (err) {

@@ -1,15 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Users, Wrench, Ban, Activity, Shield, TrendingUp, FileDown } from "lucide-react";
-
-import {
-  readUsers,
-  getActivity,
-  getStatus,
-  buildRanking
-} from "../../../data/repositories/activity";
+import { fetchAdminUsers, fetchActivity, getStatus, buildRanking } from "../../../data/repositories/activity";
 import type { AppUser, ActivityItem } from "../../../data/repositories/activity";
-
 import { PageHeader } from "../../components/admin/PageHeader";
 import { StatCard } from "../../components/admin/StatCard";
 import { RecentModerationCard } from "../../components/admin/RecentModerationCard";
@@ -30,9 +23,29 @@ const cardLinkStyle = {
 } as const;
 
 export function AdminOverviewPage() {
-  const [users] = useState<AppUser[]>(readUsers);
-  const [items] = useState<ActivityItem[]>(getActivity);
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [items, setItems] = useState<ActivityItem[]>([]);
   const [now] = useState(() => Date.now());
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  // Todo sale de Supabase, así que se ve igual en cualquier navegador.
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([fetchAdminUsers(), fetchActivity()]).then(([u, a]) => {
+      if (!active) return;
+
+      if (u === null || a === null) setLoadError(true);
+      setUsers(u ?? []);
+      setItems(a ?? []);
+      setLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const moderators = users.filter((u) => u.role === "moderator").length;
   const blocked = users.filter((u) => getStatus(u, now) !== "ACTIVO").length;
@@ -41,6 +54,13 @@ export function AdminOverviewPage() {
   return (
     <div className="admin-page">
       <PageHeader title="📊 Resumen general" subtitle="Vista rápida de MantaCampus" />
+
+      {loadError && (
+        <p className="admin-empty" role="alert">
+          No se pudieron cargar todos los datos desde la base de datos.
+        </p>
+      )}
+      {loading && <p className="admin-empty">Cargando…</p>}
 
       <div className="admin-stats">
         <StatCard tone="blue" icon={<Users size={20} />} value={users.length} label="Usuarios registrados" />

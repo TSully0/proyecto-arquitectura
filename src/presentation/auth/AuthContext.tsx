@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { User } from "../../business/types/user";
 import { fetchNameFromSupabase } from "../../data/repositories/users";
@@ -52,25 +45,26 @@ const findStoredUser = (user: User): User | null => {
 // Datos más recientes del usuario (app_users manda sobre la sesión).
 const resolveUser = (user: User): User => findStoredUser(user) ?? user;
 
-// Cuenta baneada o con suspensión vigente.
+// Solo los campos de sanción del usuario que acaba de entrar (no los de la copia local).
+const pickSanction = (user: User) => ({
+  banned: user.banned,
+  suspendedUntil: user.suspendedUntil ?? null,
+});
+
+// Cuenta baneada o con suspensión vigente (según lo que trajo el login de Supabase).
 const isBlocked = (user: User): boolean =>
   Boolean(user.banned) ||
   (typeof user.suspendedUntil === "number" && user.suspendedUntil > Date.now());
 
-// Lee la sesión guardada, la actualiza y la invalida si la cuenta está bloqueada.
+// Lee la sesión guardada y la actualiza con los datos locales (nombre, rol...).
+// Los baneos y suspensiones NO se miran aquí: los vigila Supabase en
+// subscribeToAccountStatus, que cierra la sesión apenas la cuenta queda bloqueada.
 const readStoredUser = (): User | null => {
   const raw = localStorage.getItem(SESSION_KEY);
   if (!raw) return null;
 
   try {
-    const current = resolveUser(JSON.parse(raw) as User);
-
-    if (isBlocked(current)) {
-      localStorage.removeItem(SESSION_KEY);
-      return null;
-    }
-
-    const sessionUser = toSessionUser(current);
+    const sessionUser = toSessionUser(resolveUser(JSON.parse(raw) as User));
     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
     return sessionUser;
   } catch {
@@ -157,7 +151,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user?.email]);
 
   const login = useCallback((loggedUser: User) => {
-    const current = resolveUser(loggedUser);
+    // El login ya trae el estado real de la cuenta desde Supabase.
+    const current = { ...resolveUser(loggedUser), ...pickSanction(loggedUser) };
 
     if (isBlocked(current)) {
       localStorage.removeItem(SESSION_KEY);

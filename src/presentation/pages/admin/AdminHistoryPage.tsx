@@ -1,10 +1,5 @@
-import { useMemo, useState } from "react";
-import {
-  ACTION_LABELS,
-  downloadCSV,
-  getModerationLog,
-  type ModerationAction
-} from "../../../data/repositories/activity";
+import { useEffect, useMemo, useState } from "react";
+import { ACTION_LABELS, downloadCSV, fetchModerationLog, type ActivityItem, type ModerationAction } from "../../../data/repositories/activity";
 import "../../../styles/admin/admin-history.css";
 
 type Filter = "all" | ModerationAction;
@@ -55,12 +50,31 @@ const ROLE_LABEL: Record<string, string> = {
 
 /* Historial de acciones de moderación. Lo usan el admin y el moderador. */
 export const AdminHistoryPage = () => {
-  const [log] = useState(getModerationLog);
+  const [log, setLog] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [dateMode, setDateMode] = useState<DateMode>("all");
   const [day, setDay] = useState("");
   const [month, setMonth] = useState("");
+
+  // El historial vive en Supabase: lo ven igual el admin y el moderador, en cualquier navegador.
+  useEffect(() => {
+    let active = true;
+
+    fetchModerationLog().then((loaded) => {
+      if (!active) return;
+
+      if (loaded === null) setLoadError(true);
+      setLog(loaded ?? []);
+      setLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -209,7 +223,15 @@ export const AdminHistoryPage = () => {
         </p>
       )}
 
-      {visible.length === 0 ? (
+      {loadError && (
+        <p className="history-empty" role="alert">
+          No se pudo cargar el historial desde la base de datos.
+        </p>
+      )}
+
+      {loading ? (
+        <p className="history-empty">Cargando…</p>
+      ) : visible.length === 0 ? (
         <p className="history-empty">
           {log.length === 0
             ? "Todavía no hay acciones registradas. Aparecerán aquí cuando alguien banee o suspenda."

@@ -1,13 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, Printer } from "lucide-react";
-
-import {
-  readUsers,
-  getActivity,
-  getStatus,
-  buildRanking,
-  downloadCSV
-} from "../../../data/repositories/activity";
+import { fetchAdminUsers, fetchActivity, getStatus, buildRanking, downloadCSV } from "../../../data/repositories/activity";
 import type { AppUser, ActivityItem } from "../../../data/repositories/activity";
 
 import { PageHeader } from "../../components/admin/PageHeader";
@@ -15,9 +8,28 @@ import { ReportSheet } from "../../components/admin/ReportSheet";
 import { today } from "../../components/admin/admin-utils";
 
 export function AdminReportsPage() {
-  const [users] = useState<AppUser[]>(readUsers);
-  const [items] = useState<ActivityItem[]>(getActivity);
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [items, setItems] = useState<ActivityItem[]>([]);
   const [now] = useState(() => Date.now());
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([fetchAdminUsers(), fetchActivity()]).then(([u, a]) => {
+      if (!active) return;
+
+      if (u === null || a === null) setLoadError(true);
+      setUsers(u ?? []);
+      setItems(a ?? []);
+      setLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const ranking = buildRanking(users, items);
   const topActive = ranking.filter((r) => r.total > 0).slice(0, 5);
@@ -77,6 +89,13 @@ export function AdminReportsPage() {
           <Printer size={16} /> Imprimir / Guardar PDF
         </button>
       </div>
+
+      {loadError && (
+        <p className="admin-empty" role="alert">
+          No se pudieron cargar todos los datos desde la base de datos.
+        </p>
+      )}
+      {loading && <p className="admin-empty">Cargando…</p>}
 
       {/* esto es lo que se imprime */}
       <ReportSheet
