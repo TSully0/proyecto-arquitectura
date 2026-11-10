@@ -1,11 +1,10 @@
 import { Suspense, useState } from "react";
-import { PageLoader } from "../../components/ui/PageLoader";
+import { PageLoader } from "../components/ui/PageLoader";
 import { NavLink, Outlet } from "react-router-dom";
 import { MessageSquare, Users, History, Home, LogOut } from "lucide-react";
-
-import type { User } from "../../../business/types/user";
-import "../../../styles/admin/admin-dashboard.css";
-import "../../../styles/moderation/moderation-panel.css";
+import type { User } from "../../business/types/user";
+import "../../styles/admin/admin-dashboard.css";
+import "../../styles/moderation/moderation-panel.css";
 
 interface ModeratorLayoutProps {
   user: User;

@@ -1,18 +1,9 @@
 import { Suspense } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { PageLoader } from "../../components/ui/PageLoader";
-import {
-  LayoutDashboard,
-  Users,
-  Shield,
-  TrendingUp,
-  History,
-  FileDown,
-  LogOut
-} from "lucide-react";
-
-import type { User } from "../../../business/types/user";
-import "../../../styles/admin/admin-dashboard.css";
+import { PageLoader } from "../components/ui/PageLoader";
+import { LayoutDashboard, Users, Shield, TrendingUp, History, FileDown, LogOut } from "lucide-react";
+import type { User } from "../../business/types/user";
+import "../../styles/admin/admin-dashboard.css";
 
 interface AdminLayoutProps {
   user: User;

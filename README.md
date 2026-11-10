@@ -60,7 +60,7 @@ El registro (`RegisterPage.tsx`) se hace en tres pasos, con un indicador de prog
 | Paso | Nombre | Qué se hace |
 |---|---|---|
 | 1 | **Cuenta** | Nombre de usuario y correo. Se validan el formato y que ninguno exista ya en la tabla `users` de Supabase. |
-| 2 | **Seguridad** | Contraseña, confirmación y aceptación de los términos. Al pulsar «Continuar» se valida la contraseña y se genera el código de verificación. **Todavía no se crea la cuenta.** |
+| 2 | **Seguridad** | Contraseña, confirmación y aceptación de los **términos y condiciones y la política de privacidad** (`RegisterTerms.tsx`). Al pulsar «Continuar» se valida la contraseña y se genera el código de verificación. **Todavía no se crea la cuenta.** |
 | 3 | **Verificar correo** | Código de 6 dígitos (`OtpInput`) con temporizador de reenvío de 5 minutos (`useResendTimer`). Solo cuando el código coincide se crea la cuenta. |
 
 - La cuenta se crea **al final**, cuando ya están todos los datos y el correo está verificado, así no quedan cuentas a medias si el usuario abandona el proceso.
@@ -69,6 +69,7 @@ El registro (`RegisterPage.tsx`) se hace en tres pasos, con un indicador de prog
 - El paso 3 está separado en el componente `RegisterVerifyStep.tsx`, y el botón secundario «Atrás» usa la clase `register-back-btn` (`auth-register.css`).
 
 #### Reglas del registro
+- Las pantallas de login, registro y recuperación comparten el mismo fondo y tarjeta mediante `AuthLayout.tsx` (`presentation/layouts/`).
 - Validación de nombre (3–30 caracteres), correo y contraseña (8–64 caracteres). La lógica de apoyo está en `registerAccount.ts`.
 - Solo se aceptan correos de Gmail, Hotmail, Outlook y Email.com.
 - **El registro usa Supabase como fuente de verdad:** el paso 1 comprueba en la tabla `users` que el correo y el nombre no existan (aunque el navegador tenga datos viejos en `localStorage`), y la cuenta se crea primero en Supabase (`registerUserInSupabase`). Solo si eso funciona se guarda la copia local, con el `id` real de la base de datos. Si Supabase no responde, la cuenta no se crea y se muestra un error.
@@ -112,13 +113,13 @@ El registro (`RegisterPage.tsx`) se hace en tres pasos, con un indicador de prog
   - **Filtros por rol:** Todos, Administradores, Moderadores y Usuarios.
   - **Orden:** Nombre A-Z, Nombre Z-A, Más antiguos primero y Más recientes primero. El orden por antigüedad usa la fecha de creación de la cuenta (`createdAt`).
   - El usuario afectado ve su rol nuevo la próxima vez que inicia sesión.
-- **Actividad:** ranking de los usuarios más activos y acciones de moderación por moderador, leídos de Supabase (`user_activity` y `moderation_log`). Muestra las columnas Reseñas, Likes, Favoritos y Moderadas. Las reseñas, likes y favoritos salen de `user_activity` (cargados desde las tablas originales, con su fecha real) y las moderadas suman solas desde `moderation_log`. Registrar automáticamente las actividades nuevas desde el Home sigue pendiente.
+- **Actividad:** ranking de los usuarios más activos y acciones de moderación por moderador, leídos de Supabase (`user_activity` y `moderation_log`). Muestra las columnas Reseñas, Likes, Favoritos, Moderadas y Total, con filtros por periodo. Las reseñas, likes y favoritos (tipos `review`, `like` y `favorite`) salen de `user_activity`, cargada desde las tablas originales con su fecha real, y las moderadas suman solas desde `moderation_log` (no se duplican en `user_activity`). La pantalla ya no tiene botones de datos de ejemplo ni de borrado: empieza vacía y se llena con la actividad real. Registrar automáticamente las actividades nuevas desde el Home sigue pendiente.
 - **Historial:** registro de cada baneo, suspensión y levantamiento de sanción (consulta [Historial de moderación](#-historial-de-moderación)).
-- **Informes:** descarga en CSV del listado de usuarios reales y de la actividad, y del informe general en PDF. El botón «Imprimir / Guardar PDF» abre el diálogo de impresión del navegador: hay que elegir «Guardar como PDF» y la carpeta donde guardarlo.
+- **Informes:** descarga en CSV del listado de usuarios reales y de la actividad (con las columnas Posición, Nombre, Correo, Rol, Reseñas, Likes, Favoritos, Moderadas y Total), y del informe general en PDF. El botón «Imprimir / Guardar PDF» abre el diálogo de impresión del navegador: hay que elegir «Guardar como PDF» y la carpeta donde guardarlo.
 - Al sancionar a una cuenta con sesión abierta, se le avisa en pantalla con el detalle de la sanción y la sesión se cierra automáticamente en cuestión de segundos, aunque el administrador esté en otro navegador o equipo (`accountStatus.ts`, `AccountBlockToast.tsx`).
 
 ### 🧑‍⚖️ Moderación (`/moderacion`)
-- Panel propio con menú lateral (`ModeratorLayout`): **Reseñas**, **Usuarios**, **Historial** y **Volver al Home**.
+- Panel propio con menú lateral (`layouts/ModeratorLayout`): **Reseñas**, **Usuarios**, **Historial** y **Volver al Home**.
 - **Panel de moderación:** cola de reseñas con filtros (todas, pendientes, aprobadas), aprobar y eliminar. Actualmente trabaja con datos de ejemplo; todavía no está conectada a las reseñas reales de Supabase.
 - **Usuarios** (`/moderacion/usuarios`): reutiliza la pantalla del administrador en modo moderador. El moderador **solo ve usuarios con rol `user`** y **solo puede suspender**; no puede banear ni desbanear. También puede usar las notas internas.
 - **Historial** (`/moderacion/historial`): la misma pantalla de historial que ve el administrador.
@@ -258,7 +259,7 @@ El código se organiza en capas y módulos:
     │   │   │   ├── RegisterActions.tsx
     │   │   │   ├── RegisterProgress.tsx      # Indicador «Paso X de 3»
     │   │   │   ├── RegisterSecurityFields.tsx # Registro, paso 2: seguridad
-    │   │   │   ├── RegisterTerms.tsx
+    │   │   │   ├── RegisterTerms.tsx         # Términos y condiciones y política de privacidad
     │   │   │   ├── RegisterVerifyStep.tsx    # Registro, paso 3: verificar correo
     │   │   │   └── SanctionNotices.tsx       # Avisos de baneo, suspensión y levantamiento
     │   │   ├── chat/
@@ -309,13 +310,15 @@ El código se organiza en capas y módulos:
     │   │   ├── useProfilePhoto.ts
     │   │   └── useResendTimer.ts         # Cuenta regresiva (05:00) para reenviar el código
     │   ├── layouts/
+    │   │   ├── AdminLayout.tsx          # Menú lateral y contenedor del panel de administración
+    │   │   ├── AuthLayout.tsx           # Fondo y tarjeta compartidos por login, registro y recuperación
+    │   │   └── ModeratorLayout.tsx      # Menú lateral y contenedor del panel de moderación
     │   ├── pages/
     │   │   ├── HomePage.tsx
     │   │   ├── MyProfilePage.tsx
     │   │   ├── admin/
     │   │   │   ├── AdminActivityPage.tsx
     │   │   │   ├── AdminHistoryPage.tsx
-    │   │   │   ├── AdminLayout.tsx
     │   │   │   ├── AdminOverviewPage.tsx
     │   │   │   ├── AdminReportsPage.tsx
     │   │   │   ├── AdminRolesPage.tsx    # Lista, filtra, ordena y cambia roles contra Supabase
@@ -328,7 +331,6 @@ El código se organiza en capas y módulos:
     │   │   │   └── ResetPasswordPage.tsx
     │   │   └── moderation/
     │   │       ├── ModerationPage.tsx
-    │   │       ├── ModeratorLayout.tsx
     │   │       └── ModeratorUsersPage.tsx
     │   └── routes/
     │       ├── AccountBlockToast.tsx     # Aviso en pantalla al ser sancionado
@@ -444,7 +446,7 @@ create policy "actualizar reviews (prueba)" on public.reviews for update to anon
 | `user_sanctions` | Baneo (`banned`) o suspensión (`suspendedUntil`) de cada usuario, con motivo, categoría y el aviso de levantamiento. Va aparte de `users` para poder activar Realtime sin exponer `passwordHash`. |
 | `moderation_log` | Historial de moderación: acción, quién la hizo, a quién, motivo y duración. Solo se puede leer y agregar. |
 | `user_notes` | Notas internas del equipo sobre un usuario. |
-| `user_activity` | Actividad para el ranking (publicaciones, comentarios, «me gusta», seguidos). |
+| `user_activity` | Actividad para el ranking: una fila por acción (`review`, `like` o `favorite`) con el usuario y la fecha. Las acciones de moderación no se guardan aquí, se cuentan desde `moderation_log`. |
 
 > ⚠️ **Seguridad de la base de datos.** Las políticas RLS actuales usan `USING (true)` / `WITH CHECK (true)`, es decir, permiten lectura y escritura abiertas con la clave pública. Esto es útil para desarrollo, pero antes de publicar el proyecto deben restringirse (por ejemplo, con Supabase Auth y políticas basadas en `auth.uid()`). En particular, hoy cualquiera con la clave pública puede leer `passwordHash` y modificar el `role` de cualquier usuario. Además, la clave y la URL de Supabase están escritas directamente en `supabase.ts`: se recomienda moverlas a variables de entorno (`VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`). La clave pública (*publishable/anon*) está pensada para el navegador, pero nunca se debe incluir la clave `service_role`. Lo mismo vale para las tablas nuevas (`user_sanctions`, `moderation_log`, `user_notes`, `user_activity`): cualquiera con la clave pública podría leerlas o modificarlas, así que un baneo no es una protección real hasta que se use Supabase Auth con políticas por rol.
 
@@ -536,7 +538,7 @@ npm run lint
 
 ## 🚀 Despliegue
 
-El proyecto incluye `vercel.json` con una regla de reescritura que envía todas las rutas a `index.html`, necesaria para que React Router funcione al recargar la página en rutas como `/perfil` o `/admin`.
+El proyecto incluye `vercel.json` con una regla de reescritura que envía todas las rutas a `index.html`, necesaria para que React Router funcione al recargar la página en rutas como `/perfil` o `/admin`. Las peticiones de reseñas pasan por `/api`, que `vercel.json` redirige al backend alojado en Render; en desarrollo local esa ruta necesita un proxy o la variable `VITE_API_URL`, porque el navegador bloquea (CORS) las llamadas directas al backend desde `localhost`.
 
 ## 🧪 Pruebas recomendadas
 
@@ -567,6 +569,8 @@ Antes de dar por terminado un cambio, comprobar:
 - Historial: que cada sanción aparezca, los filtros por acción y por fecha (hoy, día y mes) y la descarga del CSV.
 - Notas internas: crear con etiqueta, crear con «Otro», borrar las propias, que el moderador no pueda borrar las de otros y que una nota hecha en un navegador aparezca en el otro.
 - Informes: el CSV y el PDF traen los mismos usuarios que Supabase.
+- Actividad: el ranking coincide con `user_activity` y `moderation_log`, y las columnas del CSV son las del ranking.
+- Layouts: login, registro y recuperación se ven igual (`AuthLayout`) y los paneles de administración y moderación cargan con su menú lateral.
 - Roles: la lista debe coincidir con la tabla `users`; buscador; filtros Todos / Administradores / Moderadores / Usuarios; orden por nombre A-Z, Z-A, más antiguos y más recientes; al subir o bajar de rol, la columna `role` de Supabase debe cambiar y el usuario debe entrar con el rol nuevo.
 - Lugares, reseñas, comentarios sin calificación y favoritos contra Supabase.
 - Seguimiento de usuarios.
@@ -593,7 +597,7 @@ Antes de dar por terminado un cambio, comprobar:
 | Notas internas por usuario | En Supabase (`user_notes`). |
 | Panel de moderación de reseñas | Interfaz lista con datos de ejemplo; falta conectarla a `reviews`. |
 | Chat y notificaciones | Locales; sin entrega entre dispositivos. |
-| Actividad e informes de administración | En Supabase (`user_activity` y `moderation_log`); informes en CSV y PDF. El ranking solo tiene datos reales de moderación hasta que el Home registre la actividad. |
+| Actividad e informes de administración | En Supabase (`user_activity` y `moderation_log`); informes en CSV y PDF. El ranking muestra datos reales (reseñas, likes y favoritos cargados desde las tablas originales, más la moderación); las acciones nuevas del Home aún no se registran solas. |
 | Políticas RLS | Abiertas (desarrollo); deben restringirse. |
 | Pruebas automatizadas | Pendiente. |
 
@@ -604,7 +608,7 @@ Antes de dar por terminado un cambio, comprobar:
 3. Conectar el panel de moderación a las reseñas reales: borrado lógico de reseñas con registro en el historial y restauración (acciones `review_delete` y `review_restore`, ya previstas en el historial).
 4. Registrar en el historial los cambios de rol (subir o bajar a moderador).
 5. Actualizar el rol de las sesiones abiertas sin cerrar sesión (hoy `AuthContext` solo sincroniza el nombre).
-6. Registrar la actividad real de los usuarios (publicaciones, comentarios, «me gusta» y seguimientos) con `logActivity` desde el Home, para que el ranking use datos reales.
+6. Registrar automáticamente la actividad nueva (reseñas, «me gusta» y favoritos) con `logActivity` desde el Home, o con una vista en Supabase que la calcule desde las tablas originales.
 7. Restringir las políticas RLS según el usuario autenticado y su rol.
 8. Mover la URL y la clave de Supabase a variables de entorno.
 9. Migrar mensajes y notificaciones a servicios compartidos (por ejemplo, Supabase Realtime).

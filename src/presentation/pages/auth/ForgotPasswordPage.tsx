@@ -2,6 +2,7 @@ import { useState } from "react";
 import { emailExistsInSupabase } from "../../../data/repositories/users";
 import { OtpInput } from "../../components/auth/OtpInput";
 import { useResendTimer } from "../../hooks/useResendTimer";
+import { AuthLayout } from "../../layouts/AuthLayout";
 
 type Step = "email" | "code" | "verified";
 
@@ -141,133 +142,131 @@ export function ForgotPasswordPage({
   // ================= INTERFAZ =================
 
   return (
-    <div className="auth-fixed">
-      <div className="auth-container">
+    <AuthLayout>
 
-        <h2>Recuperar contraseña</h2>
+      <h2>Recuperar contraseña</h2>
 
-        {message && (
-          <p className={isSuccess ? "success" : "error"}>
-            {message}
+      {message && (
+        <p className={isSuccess ? "success" : "error"}>
+          {message}
+        </p>
+      )}
+
+      {/* CORREO */}
+
+      {step === "email" && (
+        <>
+          <label htmlFor="recovery-email">
+            Correo registrado
+          </label>
+
+          <input
+            id="recovery-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="ejemplo@gmail.com"
+            autoComplete="email"
+          />
+
+          <button
+            type="button"
+            onClick={sendCode}
+            disabled={sending}
+          >
+            {sending
+              ? "Verificando..."
+              : "Enviar código"}
+          </button>
+        </>
+      )}
+
+      {/* CÓDIGO */}
+
+      {step === "code" && (
+        <>
+          <p className="otp-email-info">
+            Hemos generado un código de verificación para:
+            <strong> {email}</strong>
           </p>
-        )}
 
-        {/* CORREO */}
+          <label>
+            Ingresa el código de 6 dígitos
+          </label>
 
-        {step === "email" && (
-          <>
-            <label htmlFor="recovery-email">
-              Correo registrado
-            </label>
+          <OtpInput onChange={setCode} />
 
-            <input
-              id="recovery-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ejemplo@gmail.com"
-              autoComplete="email"
-            />
+          <button
+            type="button"
+            onClick={verifyCode}
+            disabled={code.length !== 6}
+          >
+            Verificar código
+          </button>
 
-            <button
-              type="button"
-              onClick={sendCode}
-              disabled={sending}
-            >
-              {sending
-                ? "Verificando..."
-                : "Enviar código"}
-            </button>
-          </>
-        )}
+          {/* REENVIAR CÓDIGO */}
 
-        {/* CÓDIGO */}
+          <div className="resend-code-container">
+            <p>¿No recibiste el código?</p>
 
-        {step === "code" && (
-          <>
-            <p className="otp-email-info">
-              Hemos generado un código de verificación para:
-              <strong> {email}</strong>
-            </p>
+            {isActive ? (
+              <>
+                <p className="resend-countdown">
+                  Podrás solicitar otro código en
+                </p>
 
-            <label>
-              Ingresa el código de 6 dígitos
-            </label>
+                <strong className="resend-timer">
+                  {formattedTime}
+                </strong>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="resend-code-btn"
+                onClick={resendCode}
+                disabled={sending}
+              >
+                Reenviar código
+              </button>
+            )}
+          </div>
+        </>
+      )}
 
-            <OtpInput onChange={setCode} />
+      {/* VERIFICADO */}
 
-            <button
-              type="button"
-              onClick={verifyCode}
-              disabled={code.length !== 6}
-            >
-              Verificar código
-            </button>
+      {step === "verified" && (
+        <>
+          <p
+            style={{
+              color: "#16a34a",
+              fontWeight: "bold"
+            }}
+          >
+            ✔ Identidad verificada
+          </p>
 
-            {/* REENVIAR CÓDIGO */}
+          <button
+            type="button"
+            onClick={() =>
+              window.location.assign("/reset-password")
+            }
+          >
+            Cambiar contraseña
+          </button>
+        </>
+      )}
 
-            <div className="resend-code-container">
-              <p>¿No recibiste el código?</p>
+      {/* VOLVER */}
 
-              {isActive ? (
-                <>
-                  <p className="resend-countdown">
-                    Podrás solicitar otro código en
-                  </p>
+      <button
+        type="button"
+        onClick={onBack}
+        style={{ marginTop: 15 }}
+      >
+        Volver al login
+      </button>
 
-                  <strong className="resend-timer">
-                    {formattedTime}
-                  </strong>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="resend-code-btn"
-                  onClick={resendCode}
-                  disabled={sending}
-                >
-                  Reenviar código
-                </button>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* VERIFICADO */}
-
-        {step === "verified" && (
-          <>
-            <p
-              style={{
-                color: "#16a34a",
-                fontWeight: "bold"
-              }}
-            >
-              ✔ Identidad verificada
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                window.location.assign("/reset-password")
-              }
-            >
-              Cambiar contraseña
-            </button>
-          </>
-        )}
-
-        {/* VOLVER */}
-
-        <button
-          type="button"
-          onClick={onBack}
-          style={{ marginTop: 15 }}
-        >
-          Volver al login
-        </button>
-
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

@@ -5,7 +5,8 @@ import type { User } from '../../../business/types/user';
 import { getGuardKey, isLoginLocked, registerFailedLogin, clearLoginAttempts } from '../../../business/services/loginGuard';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { BanNotice, LiftedNotice, SuspensionCard, type SuspensionNotice } from '../../components/auth/SanctionNotices';
-import { DEFAULT_REASON,MSG_LOCKED, MSG_LOCKED_NOW, encodePassword, getRemainingSeconds } from '../../../business/services/loginHelpers';
+import { DEFAULT_REASON, MSG_LOCKED, MSG_LOCKED_NOW, encodePassword, getRemainingSeconds } from '../../../business/services/loginHelpers';
+import { AuthLayout } from '../../layouts/AuthLayout';
 
 interface LoginPageProps {
   onNavigateToRegister: () => void;
@@ -229,108 +230,106 @@ export function LoginPage({
   };
 
   return (
-    <div className="auth-fixed">
-      <div className="auth-container">
-        <h2>Iniciar Sesión</h2>
+    <AuthLayout>
+      <h2>Iniciar Sesión</h2>
 
-        {error && (
-          <p className="error" role="alert" style={{ whiteSpace: 'pre-line' }}>
-            {error}
+      {error && (
+        <p className="error" role="alert" style={{ whiteSpace: 'pre-line' }}>
+          {error}
 
-            {remainingSeconds > 0 && (
-              <span>
-                {'\n'}Puedes intentarlo nuevamente en{' '}
-                <strong>{remainingSeconds} s</strong>.
-              </span>
-            )}
-          </p>
-        )}
+          {remainingSeconds > 0 && (
+            <span>
+              {'\n'}Puedes intentarlo nuevamente en{' '}
+              <strong>{remainingSeconds} s</strong>.
+            </span>
+          )}
+        </p>
+      )}
 
-        {liftedMessage && (
-          <LiftedNotice
-            title={liftedMessage}
-            text="Tu cuenta ya está activa. Vuelve a presionar «Entrar» para iniciar sesión."
+      {liftedMessage && (
+        <LiftedNotice
+          title={liftedMessage}
+          text="Tu cuenta ya está activa. Vuelve a presionar «Entrar» para iniciar sesión."
+        />
+      )}
+
+      {suspensionEnded && (
+        <LiftedNotice
+          title="Suspensión finalizada"
+          text="Tu cuenta ya está activa. Ya puedes iniciar sesión."
+        />
+      )}
+
+      {banReason !== null && <BanNotice reason={banReason} />}
+
+      {suspension && (
+        <SuspensionCard
+          notice={suspension}
+          onEnd={() => {
+            setSuspension(null);
+            setSuspensionEnded(true);
+          }}
+        />
+      )}
+
+      <form onSubmit={handleLogin}>
+        <div>
+          <label htmlFor="login-identifier">Correo o usuario</label>
+
+          <input
+            id="login-identifier"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="usuario@ejemplo.com"
+            autoComplete="username"
+            required
           />
-        )}
+        </div>
 
-        {suspensionEnded && (
-          <LiftedNotice
-            title="Suspensión finalizada"
-            text="Tu cuenta ya está activa. Ya puedes iniciar sesión."
-          />
-        )}
+        <div>
+          <label htmlFor="login-password">Contraseña</label>
 
-        {banReason !== null && <BanNotice reason={banReason} />}
-
-        {suspension && (
-          <SuspensionCard
-            notice={suspension}
-            onEnd={() => {
-              setSuspension(null);
-              setSuspensionEnded(true);
-            }}
-          />
-        )}
-
-        <form onSubmit={handleLogin}>
-          <div>
-            <label htmlFor="login-identifier">Correo o usuario</label>
-
+          <div className="password-wrapper">
             <input
-              id="login-identifier"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="usuario@ejemplo.com"
-              autoComplete="username"
+              id="login-password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••"
+              autoComplete="current-password"
               required
             />
+
+            <button
+              type="button"
+              className="eye-icon"
+              onClick={() => setShowPassword((previous) => !previous)}
+              aria-label={
+                showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+              }
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
           </div>
+        </div>
 
-          <div>
-            <label htmlFor="login-password">Contraseña</label>
+        <button type="submit" disabled={remainingSeconds > 0}>
+          {remainingSeconds > 0 ? `Bloqueado (${remainingSeconds}s)` : 'Entrar'}
+        </button>
+      </form>
 
-            <div className="password-wrapper">
-              <input
-                id="login-password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••"
-                autoComplete="current-password"
-                required
-              />
+      <p>
+        <button type="button" onClick={onNavigateToForgotPassword}>
+          ¿Olvidaste tu contraseña?
+        </button>
+      </p>
 
-              <button
-                type="button"
-                className="eye-icon"
-                onClick={() => setShowPassword((previous) => !previous)}
-                aria-label={
-                  showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
-                }
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" disabled={remainingSeconds > 0}>
-            {remainingSeconds > 0 ? `Bloqueado (${remainingSeconds}s)` : 'Entrar'}
-          </button>
-        </form>
-
-        <p>
-          <button type="button" onClick={onNavigateToForgotPassword}>
-            ¿Olvidaste tu contraseña?
-          </button>
-        </p>
-
-        <p>
-          ¿No tienes cuenta?{' '}
-          <button type="button" onClick={onNavigateToRegister}>
-            Regístrate
-          </button>
-        </p>
-      </div>
-    </div>
+      <p>
+        ¿No tienes cuenta?{' '}
+        <button type="button" onClick={onNavigateToRegister}>
+          Regístrate
+        </button>
+      </p>
+    </AuthLayout>
   );
 }

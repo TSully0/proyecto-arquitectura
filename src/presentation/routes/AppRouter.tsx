@@ -23,7 +23,7 @@ import { PageLoader } from "../components/ui/PageLoader";
    normales no bajan el código de admin ni de moderación.
 ========================= */
 const AdminLayout = lazy(() =>
-  import("../pages/admin/AdminLayout").then((m) => ({ default: m.AdminLayout }))
+  import("../layouts/AdminLayout").then((m) => ({ default: m.AdminLayout }))
 );
 const AdminOverviewPage = lazy(() =>
   import("../pages/admin/AdminSections").then((m) => ({ default: m.AdminOverviewPage }))
@@ -44,7 +44,7 @@ const AdminHistoryPage = lazy(() =>
   import("../pages/admin/AdminHistoryPage").then((m) => ({ default: m.AdminHistoryPage }))
 );
 const ModeratorLayout = lazy(() =>
-  import("../pages/moderation/ModeratorLayout").then((m) => ({ default: m.ModeratorLayout }))
+  import("../layouts/ModeratorLayout").then((m) => ({ default: m.ModeratorLayout }))
 );
 const ModerationPage = lazy(() =>
   import("../pages/moderation/ModerationPage").then((m) => ({ default: m.ModerationPage }))

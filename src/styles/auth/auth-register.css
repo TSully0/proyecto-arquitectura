@@ -405,3 +405,120 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* =========================================
+   TÉRMINOS Y POLÍTICA DE PRIVACIDAD
+========================================= */
+
+.register-terms-section {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+}
+
+/* Botones para desplegar los documentos */
+.register-terms .register-terms-section > .register-secondary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  align-self: stretch;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #d9c4b2;
+  border-radius: 8px;
+  background: #fffaf5;
+  color: var(--primary);
+  font-size: 13px;
+  text-align: left;
+}
+
+.register-terms .register-terms-section > .register-secondary-btn:hover {
+  border-color: var(--primary);
+  background: rgba(167, 95, 55, 0.08);
+}
+
+/* Contenido de los documentos */
+.register-terms-content {
+  width: 100%;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 15px;
+  border: 1px solid #d6c4b6;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-main);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
+  scrollbar-color: #c49a7d #f5eee8;
+}
+
+.register-terms-content h4 {
+  margin: 0 0 12px;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+.register-terms-content h5 {
+  margin: 15px 0 5px;
+  color: var(--primary-hover);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.register-terms-content p {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.register-terms-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Aceptación de ambos documentos */
+.register-terms-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  width: 100%;
+  margin-top: 5px;
+  color: var(--text-main);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.register-terms-checkbox input {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  accent-color: var(--primary);
+}
+
+.register-terms-checkbox span {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .register-terms-content {
+    max-height: 240px;
+    padding: 12px;
+    font-size: 12px;
+  }
+
+  .register-terms-content p {
+    font-size: 12px;
+  }
+
+  .register-terms .register-terms-section > .register-secondary-btn {
+    font-size: 12px;
+  }
+}

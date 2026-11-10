@@ -1,28 +1,14 @@
 import { useState, type FormEvent } from 'react';
-import {
-  registerUserInSupabase,
-  checkUserExistsInSupabase
-} from '../../../data/repositories/users';
-import {
-  validateName,
-  validateEmail,
-  getPasswordStrength,
-  MIN_PASSWORD_LENGTH,
-  MAX_PASSWORD_LENGTH
-} from '../../../business/services/registerValidation';
+import { registerUserInSupabase, checkUserExistsInSupabase } from '../../../data/repositories/users';
+import { validateName, validateEmail, getPasswordStrength, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from '../../../business/services/registerValidation';
 import { RegisterProgress } from '../../components/auth/RegisterProgress';
 import { RegisterAccountFields } from '../../components/auth/RegisterAccountFields';
 import { RegisterSecurityFields } from '../../components/auth/RegisterSecurityFields';
 import { RegisterTerms } from '../../components/auth/RegisterTerms';
 import { RegisterVerifyStep } from '../../components/auth/RegisterVerifyStep';
 import { useResendTimer } from '../../hooks/useResendTimer';
-import {
-  buildNewUser,
-  getStrengthLabel,
-  getUsers,
-  saveUsersLocally,
-  validatePasswordStep
-} from '../../../business/services/registerAccount';
+import { buildNewUser, getStrengthLabel, getUsers, saveUsersLocally, validatePasswordStep } from '../../../business/services/registerAccount';
+import { AuthLayout } from '../../layouts/AuthLayout';
 import '../../../styles/auth/auth-register.css';
 
 interface RegisterPageProps {
@@ -269,7 +255,7 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
   };
 
   return (
-    <div className="auth-container">
+    <AuthLayout fixed={false}>
       <h2>Crear Cuenta</h2>
 
       {/* Indicador del paso actual. */}
@@ -365,6 +351,6 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
           Inicia sesión
         </button>
       </p>
-    </div>
+    </AuthLayout>
   );
 }
