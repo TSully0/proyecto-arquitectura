@@ -1,10 +1,4 @@
-
-import {
-  ArrowLeft,
-  MoreHorizontal,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ArrowLeft, MoreHorizontal, Trash2, X } from "lucide-react";
 import type { User } from "../../../business/types/user";
 
 type ChatHeaderProps = {
@@ -83,7 +77,10 @@ export function ChatHeader({
             <div className="chat-menu">
               {confirmClear ? (
                 <div className="chat-menu-confirm">
-                  <p>¿Vaciar toda la conversación?</p>
+                  <p>
+                    ¿Eliminar este chat? Solo se borra para ti.
+                    {" "}{peer.name} conserva sus mensajes y, si te escribe, el chat vuelve.
+                  </p>
 
                   <div>
                     <button
@@ -91,7 +88,7 @@ export function ChatHeader({
                       className="chat-confirm-yes"
                       onClick={onConfirmClear}
                     >
-                      Sí, vaciar
+                      Sí, eliminar
                     </button>
 
                     <button
@@ -110,7 +107,7 @@ export function ChatHeader({
                   onClick={onRequestClear}
                 >
                   <Trash2 size={16} />
-                  Vaciar conversación
+                  Eliminar chat
                 </button>
               )}
             </div>

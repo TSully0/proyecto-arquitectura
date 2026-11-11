@@ -25,7 +25,7 @@
 
 La aplicación incluye módulos de autenticación, perfiles, lugares y reseñas, favoritos, seguimiento de usuarios, mensajería, notificaciones, administración y moderación. El código está organizado por capas para separar la presentación, las reglas de negocio y el acceso a los datos.
 
-> **Estado actual:** el proyecto usa **Supabase** como base de datos para los lugares, las reseñas, los favoritos, el seguimiento de usuarios, las **cuentas de usuario** (registro, inicio de sesión, contraseña, nombre y rol, sobre la tabla `users`) y toda la parte de **administración y moderación**: **sanciones** (baneos y suspensiones), **historial de moderación**, **notas internas** y **actividad**. Por eso un baneo, una suspensión o una nota hecha desde un navegador vale en cualquier otro navegador o equipo, y una cuenta sancionada con la sesión abierta se desconecta sola. La sesión, el chat y algunos avisos de la interfaz todavía se guardan en `localStorage` (consulta [Persistencia de datos](#-persistencia-de-datos)). El panel de moderación de **reseñas** sigue con datos de ejemplo. Migrar la autenticación a Supabase Auth es el siguiente paso del proyecto.
+> **Estado actual:** el proyecto usa **Supabase** como base de datos para los lugares, las reseñas, los favoritos, las **fotos de perfil**, el **seguimiento entre usuarios**, las **cuentas de usuario** (registro, inicio de sesión, contraseña, nombre y rol, sobre la tabla `users`) y toda la parte de **administración y moderación**: **sanciones** (baneos y suspensiones), **historial de moderación**, **notas internas** y **actividad**. Por eso un baneo, una suspensión o una nota hecha desde un navegador vale en cualquier otro navegador o equipo, y una cuenta sancionada con la sesión abierta se desconecta sola. El **chat** también está en Supabase (mensajes y adjuntos en tiempo real entre navegadores). La sesión y algunos avisos de la interfaz todavía se guardan en `localStorage` (consulta [Persistencia de datos](#-persistencia-de-datos)). El panel de moderación de **reseñas** sigue con datos de ejemplo. Migrar la autenticación a Supabase Auth es el siguiente paso del proyecto.
 
 ## 🎯 Objetivos
 
@@ -98,12 +98,15 @@ El registro (`RegisterPage.tsx`) se hace en tres pasos, con un indicador de prog
 > ⚠️ **Limitaciones de seguridad actuales.** Las contraseñas se almacenan codificadas con `btoa` (Base64), que **no es un hash ni cifrado**, y la tabla `users` es legible con la clave pública, por lo que cualquiera con acceso puede verlas. Los códigos de verificación del **registro** y de la **recuperación de contraseña** se generan en el navegador y se muestran en la consola; **no se envían por correo** y cualquiera puede leerlos. Estos flujos sirven para desarrollo y demostración, no como autenticación segura. Para producción debe usarse **Supabase Auth** (o un backend propio) con hash de contraseñas, tokens y envío real de correos.
 
 ### 👤 Perfil y comunidad
-- Visualización del perfil, estadísticas y publicaciones.
+- **Mi perfil** (`/perfil`): foto, nombre, estadísticas y mis publicaciones (reseñas y comentarios reales de Supabase).
+- Los contadores **Seguidores** y **Siguiendo** se pueden pulsar para ver la lista de personas, y la sección **Comunidad** muestra 5 personas con un botón **Ver más**.
+- **Perfil público de otras personas** (`/usuario/:id`, `PublicProfilePage`): foto, nombre, correo, rol, fecha de registro, contadores de publicaciones, seguidores y seguidos, y sus reseñas reales. Desde ahí se puede **seguir**, **aceptar o rechazar** su solicitud si ella te la envió, y abrir el chat con el botón **Mensaje**. Solo lee de `users` los datos que muestra (nunca la contraseña). Si el id es el propio, redirige a `/perfil`; si la cuenta no existe o es de un administrador, muestra «Usuario no encontrado».
+- **Cómo se llega a un perfil:** tocando el nombre o la foto del autor en las reseñas y comentarios del inicio (`AuthorLink` en `FacebookFeed`), o con el **buscador de personas** del header (`UserSearch`, busca por nombre o por correo desde 2 letras, sin administradores). El botón muestra un punto rojo y un aviso cuando alguien te envió una solicitud de seguimiento.
 - Cambio de nombre con validación de formato y una espera de 7 días entre cambios (`nameChange.ts`). El nombre se guarda en Supabase (`users.fullName`), comprobando antes que no lo use otra cuenta, y también se actualiza en las reseñas ya publicadas si las políticas de la tabla `reviews` lo permiten. La fecha del último cambio sigue guardándose en `localStorage`.
 - Los demás navegadores con la sesión abierta toman el nombre nuevo al volver a la pestaña (`AuthContext.tsx`), y el login acepta el nombre nuevo y rechaza el anterior.
-- Foto de perfil con recorte y compresión de imagen (`imageTools.ts`, `ProfilePhotoModal`); se guarda localmente como imagen pequeña.
-- Seguimiento de usuarios con estado `pending`/aceptado (tabla `follows` de Supabase, `FollowButton`, `useFollows`).
-- Secciones de comunidad (`CommunitySection`, `CommunityList`).
+- Foto de perfil con recorte y compresión de imagen (`imageTools.ts`, `ProfilePhotoModal`). Se sube a Supabase Storage (bucket `profile-photos`) y su URL se guarda en la tabla `profile_photos`, así que otras personas la ven en tu perfil.
+- **Seguimiento de usuarios en Supabase** (tabla `follows`, `follow.ts`, hook `useFollows`): el botón Seguir envía una solicitud (`pending`); la otra persona la **acepta o rechaza** desde la sección «Solicitudes de seguimiento» de su perfil (`FollowRequests`) o desde el perfil de quien la envió. Mientras está pendiente se puede cancelar, y una relación aceptada se puede dejar de seguir. Los contadores de seguidores y seguidos cuentan solo las relaciones aceptadas. Se actualiza solo (Realtime, cada 10 s y al volver a la pestaña), así que la solicitud llega a la otra cuenta desde otro navegador o equipo.
+- **Comunidad** (`CommunityList`): lista de usuarios reales de Supabase (sin administradores ni uno mismo) con su foto, el botón Seguir y el botón Mensaje, y el nombre enlaza a su perfil.
 
 ### 🛡️ Administración (`/admin`)
 - **Resumen:** tarjetas con las estadísticas del sistema. La tarjeta «Baneados o suspendidos» es un enlace que abre **Usuarios** ya filtrado por sancionados. Incluye también la tarjeta **Últimas acciones** con los movimientos recientes de moderación (`RecentModerationCard`). Todas las cifras salen de Supabase.
@@ -153,10 +156,11 @@ Las sanciones se configuran en `SanctionModal.tsx`:
 - La lógica está en `userNotes.ts` y guarda todo en Supabase.
 
 ### 💬 Chat y notificaciones
-- Widget flotante de mensajería (`MessengerWidget`) disponible para `user` y `moderator`; el administrador no lo usa.
+- Widget flotante de mensajería (`MessengerWidget`) disponible para `user` y `moderator`; el administrador no lo usa. Los mensajes se guardan en Supabase (tabla `messages`, adjuntos en el bucket `chat-files`, script `supabase_chat_migration.sql`) y llegan en **tiempo real** entre navegadores, con contador de **no leídos**. **Eliminar chat** es solo para quien lo elimina (la otra persona conserva todo y, si le escriben, el chat vuelve con los mensajes nuevos), y cada mensaje se puede eliminar **para mí** o **para todos** (tabla `chat_state` y columna `deleted_for`, script `supabase_chat_delete_migration.sql`). El botón **Mensaje** de un perfil lo abre con esa persona (`openChat.ts`).
 - Conversaciones, composición de mensajes (máx. 500 caracteres), adjuntos, vista previa de imágenes y archivos, y enlaces automáticos (`LinkifiedText`).
 - Menú desplegable de notificaciones (`NotificationsDropdown`).
-- Los mensajes se guardan en `localStorage`, por lo que **no se sincronizan entre dispositivos ni entre usuarios en equipos distintos**.
+- Adjuntos del chat: fotos (hasta 8 MB, se reducen antes de subir), vídeos (hasta 2 MB) y documentos PDF, Word, Excel, TXT o CSV (hasta 1 MB). Se suben al bucket `chat-files` y en el mensaje solo se guarda su URL.
+- La lista de chats separa **Chats** (conversaciones con mensajes visibles; «tú» siempre primero, para notas propias) y **Otras personas** (para empezar un chat nuevo). Las notificaciones del menú (`NotificationsDropdown`) todavía son locales.
 
 ### ⚡ Rendimiento
 - Las páginas de administración y de moderación se cargan **bajo demanda** con `React.lazy` y `Suspense` (`PageLoader.tsx`). Un usuario normal no descarga el código ni los estilos de los paneles.
@@ -174,11 +178,11 @@ Estilos separados por módulo: autenticación, inicio, perfil, chat, administrac
 | TypeScript | Tipado estático del código. |
 | Vite | Servidor de desarrollo y compilación. |
 | React Router DOM 7 | Navegación y rutas protegidas por rol. |
-| Supabase (`@supabase/supabase-js`) | Base de datos PostgreSQL para cuentas, lugares, reseñas, favoritos, seguimientos, sanciones, historial, notas y actividad, y Realtime para avisar de los cambios. |
+| Supabase (`@supabase/supabase-js`) | Base de datos PostgreSQL para cuentas, lugares, reseñas, favoritos, seguimientos, mensajes del chat, sanciones, historial, notas y actividad; Storage para fotos y adjuntos; y Realtime para avisar de los cambios. |
 | CSS | Estilos y diseño adaptable. |
 | Lucide React y React Icons | Iconografía. |
 | React Hooks y Context API | Estado y lógica reutilizable de la interfaz. |
-| `localStorage` / `sessionStorage` | Copia local de las cuentas, sesión, chat, foto de perfil y avisos temporales. |
+| `localStorage` / `sessionStorage` | Copia local de las cuentas, sesión, foto de perfil y avisos temporales. |
 | oxlint | Análisis estático del código (`npm run lint`). |
 | Vercel | Despliegue; `vercel.json` redirige todas las rutas a `index.html` para la SPA. |
 
@@ -194,6 +198,10 @@ El código se organiza en capas y módulos:
 ├── supabase_schema.sql              # Esquema, políticas RLS y datos semilla
 ├── supabase_reviews_migration.sql   # Permite reseñas sin calificación
 ├── supabase_sanctions_migration.sql # Sanciones, historial, notas, actividad, RLS y Realtime
+├── supabase_profile_photos_migration.sql # Tabla profile_photos (fotos de perfil en Storage)
+├── supabase_follows_migration.sql   # Tabla follows (seguidores), RLS y Realtime
+├── supabase_chat_migration.sql      # Tabla messages, bucket chat-files, RLS y Realtime
+├── supabase_chat_delete_migration.sql # Eliminar para mí: columna deleted_for y tabla chat_state
 └── src/
     ├── App.tsx
     ├── App.css
@@ -226,12 +234,12 @@ El código se organiza en capas y módulos:
     │   ├── api/
     │   └── repositories/
     │       ├── activity.ts            # Actividad, ranking e historial de moderación (Supabase)
-    │       ├── follow.ts
-    │       ├── followStore.ts
+    │       ├── follow.ts              # Seguidores y solicitudes contra Supabase (tabla follows)
     │       ├── messages.ts
     │       ├── places.ts
     │       ├── profile.ts
     │       ├── profilePhoto.ts
+    │       ├── publicProfile.ts       # Perfil público (datos mínimos) y búsqueda de personas
     │       ├── sanctions.ts           # Baneos y suspensiones (tabla user_sanctions) y su tiempo real
     │       └── users.ts               # Cuentas contra Supabase: login, registro, contraseña, nombre, roles y fecha de creación (createdAt)
     ├── presentation/
@@ -263,6 +271,7 @@ El código se organiza en capas y módulos:
     │   │   │   ├── RegisterVerifyStep.tsx    # Registro, paso 3: verificar correo
     │   │   │   └── SanctionNotices.tsx       # Avisos de baneo, suspensión y levantamiento
     │   │   ├── chat/
+    │   │   │   ├── openChat.ts           # Abre el chat con una persona desde cualquier pantalla
     │   │   │   ├── ChatAttachmentPreview.tsx
     │   │   │   ├── ChatBox.tsx
     │   │   │   ├── ChatComposer.tsx
@@ -281,12 +290,14 @@ El código se organiza en capas y módulos:
     │   │   │   ├── NotificationsDropdown.tsx
     │   │   │   ├── PlaceCard.tsx
     │   │   │   ├── ReviewModal.tsx
-    │   │   │   └── Sidebar.tsx
+    │   │   │   ├── Sidebar.tsx
+    │   │   │   └── UserSearch.tsx        # Buscador de personas del header
     │   │   ├── profile/
     │   │   │   ├── CommunityList.tsx
     │   │   │   ├── CommunitySection.tsx
     │   │   │   ├── EditNameModal.tsx
     │   │   │   ├── FollowButton.tsx
+    │   │   │   ├── FollowRequests.tsx    # Solicitudes de seguimiento recibidas (aceptar / rechazar)
     │   │   │   ├── index.ts
     │   │   │   ├── PostGrid.tsx
     │   │   │   ├── ProfileAbout.tsx
@@ -304,7 +315,7 @@ El código se organiza en capas y módulos:
     │   │       ├── ToastProvider.tsx
     │   │       └── UserAvatar.tsx
     │   ├── hooks/
-    │   │   ├── useFollows.ts
+    │   │   ├── useFollows.ts             # Seguidores, seguidos y solicitudes (Supabase + Realtime)
     │   │   ├── useManagedUsers.ts        # Usuarios con sanciones desde Supabase (Realtime + refresco)
     │   │   ├── useMyProfile.ts
     │   │   ├── useProfilePhoto.ts
@@ -315,7 +326,6 @@ El código se organiza en capas y módulos:
     │   │   └── ModeratorLayout.tsx      # Menú lateral y contenedor del panel de moderación
     │   ├── pages/
     │   │   ├── HomePage.tsx
-    │   │   ├── MyProfilePage.tsx
     │   │   ├── admin/
     │   │   │   ├── AdminActivityPage.tsx
     │   │   │   ├── AdminHistoryPage.tsx
@@ -324,6 +334,9 @@ El código se organiza en capas y módulos:
     │   │   │   ├── AdminRolesPage.tsx    # Lista, filtra, ordena y cambia roles contra Supabase
     │   │   │   ├── AdminSections.tsx
     │   │   │   └── AdminUsersPage.tsx
+    │   │   ├── profile/
+    │   │   │   ├── MyProfilePage.tsx      # Mi perfil (/perfil)
+    │   │   │   └── PublicProfilePage.tsx  # Perfil de otra persona (/usuario/:id)
     │   │   ├── auth/
     │   │   │   ├── ForgotPasswordPage.tsx # Recuperación en 3 etapas con OTP
     │   │   │   ├── LoginPage.tsx
@@ -358,7 +371,7 @@ El código se organiza en capas y módulos:
         │   └── chat-widget.css
         ├── home/        (home.css)
         ├── moderation/  (moderation-panel.css, moderation.css)
-        ├── profile/     (profile.css)
+        ├── profile/     (profile.css, public-profile.css)
         └── ui/          (avatar.css, footer.css, ui.css)
 ```
 
@@ -397,6 +410,7 @@ Definidas en `src/presentation/routes/AppRouter.tsx`:
 | `/forgot-password` | Pública | `ForgotPasswordPage` |
 | `/reset-password` | Pública | `ResetPasswordPage` |
 | `/perfil` | `user`, `moderator` | `MyProfilePage` |
+| `/usuario/:id` | `user`, `moderator` | `PublicProfilePage` (perfil de otra persona) |
 | `/moderacion` | `moderator` | `ModerationPage` |
 | `/moderacion/usuarios` | `moderator` | `ModeratorUsersPage` |
 | `/moderacion/historial` | `moderator` | `AdminHistoryPage` |
@@ -418,7 +432,10 @@ La conexión se configura en `src/data/supabase.ts` mediante `@supabase/supabase
 2. Ejecuta `supabase_schema.sql` (tablas, políticas RLS y datos semilla).
 3. Ejecuta **una sola vez** `supabase_reviews_migration.sql` (permite comentarios sin calificación).
 4. Ejecuta **una sola vez** `supabase_sanctions_migration.sql`: crea `user_sanctions`, `moderation_log`, `user_notes` y `user_activity`, sus políticas RLS, el permiso de actualizar `users` y activa Realtime para `user_sanctions` y `moderation_log`. Es seguro repetirlo. Sin este script, las sanciones, el historial, las notas y la actividad no funcionan.
-5. Verifica que exista la tabla `follows`, usada por el seguimiento de usuarios (`follower_id`, `following_id`, `status`, `created_at`). No está incluida en `supabase_schema.sql`; si no existe en tu proyecto, créala para que el seguimiento funcione.
+5. Ejecuta **una sola vez** `supabase_profile_photos_migration.sql` (tabla `profile_photos`) y comprueba que exista el bucket público `profile-photos` en Storage. Sin eso las fotos de perfil no se guardan.
+5b. Ejecuta `supabase_follows_migration.sql`: crea (o ajusta) la tabla `follows` con una sola relación por pareja, borrado en cascada con `users`, RLS abierta para desarrollo y Realtime. Es seguro repetirlo. Sin este script, Seguir, las solicitudes y los contadores no funcionan.
+5c. Ejecuta `supabase_chat_migration.sql`: crea la tabla `messages`, el bucket público `chat-files` para los adjuntos, las políticas RLS abiertas para desarrollo y Realtime. Es seguro repetirlo. Sin este script el chat no funciona.
+5d. Ejecuta `supabase_chat_delete_migration.sql` (después del anterior): añade la columna `deleted_for` a `messages` y crea la tabla `chat_state`, necesarias para «Eliminar para mí» y «Eliminar chat». Es seguro repetirlo.
 6. Comprueba que la tabla `users` tenga políticas RLS de **lectura, inserción y actualización** para el rol `anon`. Sin ellas, el login, el registro, el cambio de contraseña, el cambio de nombre y la gestión de roles fallan sin mostrar un error claro (Supabase rechaza la operación en silencio). Para desarrollo:
 
 ```sql
@@ -442,7 +459,10 @@ create policy "actualizar reviews (prueba)" on public.reviews for update to anon
 | `reviews` | Reseñas y comentarios (`rating` puede ser `NULL`). |
 | `user_favorites` | Lugares favoritos por usuario. |
 | `place_likes` | «Me gusta» en lugares. |
-| `follows` | Solicitudes y relaciones de seguimiento. |
+| `follows` | Solicitudes y relaciones de seguimiento: `follower_id` sigue a `following_id`, con `status` `pending` o `accepted`. Una sola fila por pareja y se borra sola si se borra el usuario. |
+| `messages` | Mensajes del chat: emisor, receptor, texto (máx. 500), URL de imagen o archivo adjunto, fecha, `read_at` (leído) y `deleted_for` (quiénes lo eliminaron solo para sí). Los adjuntos viven en el bucket `chat-files`. |
+| `chat_state` | «Eliminar chat» solo para mí: desde `cleared_at` cada persona ve la conversación; la otra conserva todo. Una fila por pareja (usuario, otra persona). |
+| `profile_photos` | URL y ruta en Storage de la foto de perfil de cada usuario. |
 | `user_sanctions` | Baneo (`banned`) o suspensión (`suspendedUntil`) de cada usuario, con motivo, categoría y el aviso de levantamiento. Va aparte de `users` para poder activar Realtime sin exponer `passwordHash`. |
 | `moderation_log` | Historial de moderación: acción, quién la hizo, a quién, motivo y duración. Solo se puede leer y agregar. |
 | `user_notes` | Notas internas del equipo sobre un usuario. |
@@ -456,22 +476,23 @@ create policy "actualizar reviews (prueba)" on public.reviews for update to anon
 |---|---|
 | Lugares, reseñas y comentarios | **Supabase** |
 | Favoritos | **Supabase** |
-| Seguimiento de usuarios | **Supabase** (con `followStore.ts` como almacén local complementario) |
+| Seguimiento de usuarios y solicitudes | **Supabase** (`follows`) |
 | Cuentas: registro, contraseña, nombre, rol y fecha de creación | **Supabase** (tabla `users`), con una copia local en `localStorage` (`app_users`) como respaldo |
 | Código de verificación (registro y recuperación) | Solo en la memoria del componente, mientras la página está abierta; se muestra en la consola y no se guarda en ningún almacenamiento |
 | Correo de la recuperación en curso | `localStorage` (`reset_email`) |
 | Sesión iniciada | `localStorage` (`user`) |
 | Sanciones (con avisos de levantamiento) | **Supabase** (`user_sanctions`) |
 | Intentos de login | `localStorage` (`login_attempts`) |
-| Chat y mensajes | `localStorage` (`app_messages`) |
+| Chat: mensajes, adjuntos y chats eliminados | **Supabase** (`messages`, `chat_state` y Storage `chat-files`) |
 | Actividad y ranking | **Supabase** (`user_activity`) |
 | **Historial de moderación** | **Supabase** (`moderation_log`) |
 | **Notas internas** de usuarios | **Supabase** (`user_notes`) |
-| Foto de perfil y fecha del último cambio de nombre | `localStorage` |
+| Foto de perfil | **Supabase** (Storage `profile-photos` y tabla `profile_photos`) |
+| Fecha del último cambio de nombre | `localStorage` |
 | Nota de permisos del moderador cerrada | `localStorage` (`moderator_note_dismissed`) |
 | Avisos temporales de la interfaz | `sessionStorage` |
 
-Las cuentas, la contraseña, el nombre, el rol, las sanciones, el historial, las notas y la actividad se comparten entre navegadores y equipos porque la base de datos manda: un baneo, una suspensión o una nota hecha por un administrador se aplica en todos lados. Solo la espera de 7 días del nombre, el chat, la foto de perfil y la sesión siguen en `localStorage` y valen únicamente en ese navegador. Los datos guardados en el navegador tampoco son una fuente confiable de autorización, porque pueden editarse desde las herramientas del navegador.
+Las cuentas, la contraseña, el nombre, el rol, las sanciones, el historial, las notas y la actividad se comparten entre navegadores y equipos porque la base de datos manda: un baneo, una suspensión o una nota hecha por un administrador se aplica en todos lados. Solo la espera de 7 días del nombre y la sesión siguen en `localStorage` y valen únicamente en ese navegador. Los datos guardados en el navegador tampoco son una fuente confiable de autorización, porque pueden editarse desde las herramientas del navegador.
 
 Dos detalles de la sesión: un usuario con la sesión abierta no ve un cambio de **rol** hasta que cierra sesión y vuelve a entrar (el **nombre** sí se actualiza solo al volver a la pestaña), y si cambia su contraseña desde otro navegador, la sesión ya abierta sigue válida hasta que se cierre. Además, las listas del panel (usuarios, notas, actividad) se refrescan por Realtime, cada 15 segundos y al volver a la pestaña, así que un cambio hecho en otro navegador puede tardar unos segundos en verse.
 
@@ -573,9 +594,13 @@ Antes de dar por terminado un cambio, comprobar:
 - Layouts: login, registro y recuperación se ven igual (`AuthLayout`) y los paneles de administración y moderación cargan con su menú lateral.
 - Roles: la lista debe coincidir con la tabla `users`; buscador; filtros Todos / Administradores / Moderadores / Usuarios; orden por nombre A-Z, Z-A, más antiguos y más recientes; al subir o bajar de rol, la columna `role` de Supabase debe cambiar y el usuario debe entrar con el rol nuevo.
 - Lugares, reseñas, comentarios sin calificación y favoritos contra Supabase.
-- Seguimiento de usuarios.
+- **Perfil público:** buscar a alguien con el botón de personas del header y abrir su perfil; tocar el nombre o la foto del autor en una reseña; entrar a tu propio id (debe llevar a `/perfil`); abrir `/usuario/12345` (debe decir «Usuario no encontrado»); comprobar que no se ve el correo de nadie ni aparecen administradores.
+- **Seguimiento (con dos cuentas en dos navegadores):** la cuenta A sigue a B y queda «Pendiente»; B ve el punto rojo en el botón de personas y la solicitud en su perfil; B la acepta y a ambos les cambian los contadores (A: Siguiendo +1, B: Seguidores +1); A deja de seguir y los contadores bajan; rechazar y cancelar una solicitud pendiente.
+- Comunidad y buscador: aparecen las cuentas reales de Supabase, y el buscador encuentra por nombre y por correo.
 - Perfil, cambio de nombre y foto.
-- Chat y notificaciones.
+- **Chat (con dos cuentas en dos navegadores):** un mensaje enviado por A llega a B sin recargar y aparece el contador rojo de no leídos; foto y documento pequeño; **Eliminar para todos** en un mensaje propio lo borra en las dos cuentas; **Eliminar para mí** solo en la propia; **Eliminar chat** lo saca de la lista de quien lo elimina pero la otra persona lo conserva, y si esta escribe, el chat reaparece solo con los mensajes nuevos.
+- **Listas de seguidores:** al pulsar Seguidores o Siguiendo (en tu perfil y en el de otra persona) se abre la lista con foto, nombre y rol, y cada persona enlaza a su perfil. **Comunidad** muestra 5 personas y «Ver más» las despliega.
+- Notificaciones.
 - Diseño en pantallas pequeñas.
 - Manejo de errores y estados de carga.
 - Resultado de `npm run build`.
@@ -586,7 +611,9 @@ Antes de dar por terminado un cambio, comprobar:
 |---|---|
 | React, TypeScript y Vite | Configurados. |
 | Organización por capas | Implementada; archivos largos separados y paneles con carga diferida. |
-| Supabase: lugares, reseñas, favoritos, seguimiento | Conectado y en uso. |
+| Supabase: lugares, reseñas, favoritos y fotos de perfil | Conectado y en uso. |
+| Perfil público y buscador de personas | Hechos (`/usuario/:id` y botón del header), con contadores, Seguir, aceptar solicitudes y botón Mensaje. |
+| Seguimiento de usuarios | En Supabase (`follows`) con solicitudes, aceptar o rechazar, Realtime y contadores reales. |
 | Registro de cuentas | En 3 pasos (cuenta, seguridad y verificación del correo); se guarda en Supabase (`users`) solo tras verificar el código. El código se genera en el navegador (falta el envío real por correo). |
 | Inicio de sesión | Consulta primero Supabase; contraseñas en Base64 (pendiente migrar a Supabase Auth). |
 | Recuperación de contraseña | En 3 etapas con `OtpInput` y `useResendTimer`; actualiza Supabase. El código se genera en el navegador y falta el envío real por correo. |
@@ -596,25 +623,28 @@ Antes de dar por terminado un cambio, comprobar:
 | Historial de moderación | En Supabase (`moderation_log`), con filtros y CSV. |
 | Notas internas por usuario | En Supabase (`user_notes`). |
 | Panel de moderación de reseñas | Interfaz lista con datos de ejemplo; falta conectarla a `reviews`. |
-| Chat y notificaciones | Locales; sin entrega entre dispositivos. |
+| Chat | En Supabase (`messages`, `chat_state`, bucket `chat-files`) con Realtime, no leídos, adjuntos y eliminar chat/mensajes solo para mí. |
+| Notificaciones | Locales; sin entrega entre dispositivos. |
 | Actividad e informes de administración | En Supabase (`user_activity` y `moderation_log`); informes en CSV y PDF. El ranking muestra datos reales (reseñas, likes y favoritos cargados desde las tablas originales, más la moderación); las acciones nuevas del Home aún no se registran solas. |
 | Políticas RLS | Abiertas (desarrollo); deben restringirse. |
 | Pruebas automatizadas | Pendiente. |
 
 ### Mejoras previstas
 
-1. Migrar la autenticación a **Supabase Auth** (hash de contraseñas, sesiones y envío real del código de verificación por correo, tanto en el registro como en la recuperación de contraseña).
-2. Mover la espera de 7 días del nombre a Supabase para que valga en todos los dispositivos.
-3. Conectar el panel de moderación a las reseñas reales: borrado lógico de reseñas con registro en el historial y restauración (acciones `review_delete` y `review_restore`, ya previstas en el historial).
-4. Registrar en el historial los cambios de rol (subir o bajar a moderador).
-5. Actualizar el rol de las sesiones abiertas sin cerrar sesión (hoy `AuthContext` solo sincroniza el nombre).
-6. Registrar automáticamente la actividad nueva (reseñas, «me gusta» y favoritos) con `logActivity` desde el Home, o con una vista en Supabase que la calcule desde las tablas originales.
-7. Restringir las políticas RLS según el usuario autenticado y su rol.
-8. Mover la URL y la clave de Supabase a variables de entorno.
-9. Migrar mensajes y notificaciones a servicios compartidos (por ejemplo, Supabase Realtime).
-10. Añadir pruebas automatizadas (por ejemplo con Vitest para el registro, el login y las sanciones) y mejorar el manejo de errores.
-11. Optimizar la carga de imágenes y la accesibilidad, y dividir los archivos más grandes del Home (`FacebookFeed.tsx` y `home.css`).
-12. Hacer que el código de verificación caduque (hoy el temporizador solo controla cuándo se puede reenviar, no la validez del código).
+1. Modo claro y oscuro.
+2. Chat: confirmación de lectura visible (✓✓), indicador «escribiendo…» y limitar quién puede escribir (por ejemplo, solo seguidores aceptados).
+3. Migrar la autenticación a **Supabase Auth** (hash de contraseñas, sesiones y envío real del código de verificación por correo, tanto en el registro como en la recuperación de contraseña).
+4. Mover la espera de 7 días del nombre a Supabase para que valga en todos los dispositivos.
+5. Conectar el panel de moderación a las reseñas reales: borrado lógico de reseñas con registro en el historial y restauración (acciones `review_delete` y `review_restore`, ya previstas en el historial).
+6. Registrar en el historial los cambios de rol (subir o bajar a moderador).
+7. Actualizar el rol de las sesiones abiertas sin cerrar sesión (hoy `AuthContext` solo sincroniza el nombre).
+8. Registrar automáticamente la actividad nueva (reseñas, «me gusta» y favoritos) con `logActivity` desde el Home, o con una vista en Supabase que la calcule desde las tablas originales.
+9. Restringir las políticas RLS según el usuario autenticado y su rol.
+10. Mover la URL y la clave de Supabase a variables de entorno.
+11. Migrar las notificaciones a un servicio compartido (por ejemplo, Supabase Realtime) y, junto con RLS, restringir el chat para que solo los dos participantes lean sus mensajes.
+12. Añadir pruebas automatizadas (por ejemplo con Vitest para el registro, el login y las sanciones) y mejorar el manejo de errores.
+13. Optimizar la carga de imágenes y la accesibilidad, y dividir los archivos más grandes del Home (`FacebookFeed.tsx` y `home.css`).
+14. Hacer que el código de verificación caduque (hoy el temporizador solo controla cuándo se puede reenviar, no la validez del código).
 
 ## 👨‍💻 Información académica
 

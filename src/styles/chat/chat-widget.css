@@ -316,3 +316,86 @@
   color: #999999;
   font-size: 11px;
 }
+
+/* =====================================================
+   NO LEÍDOS
+===================================================== */
+.msg-fab {
+  position: fixed;
+}
+
+.msg-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  background: #e11d48;
+  border: 2px solid #fff;
+  border-radius: 999px;
+}
+
+.msg-unread-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  background: #e11d48;
+  border-radius: 999px;
+}
+
+.msg-item.unread .msg-item-name,
+.msg-item.unread .msg-item-preview {
+  color: #111827;
+  font-weight: 800;
+}
+
+/* =====================================================
+   ELIMINAR CHAT (solo para mí) + secciones de la lista
+===================================================== */
+.msg-item-wrap {
+  position: relative;
+}
+
+.msg-item-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: #b91c1c;
+  background: #fff;
+  border: 1px solid #fecaca;
+  border-radius: 50% !important;
+  cursor: pointer;
+}
+
+.msg-item-wrap:hover .msg-item-delete {
+  display: flex;
+}
+
+.msg-section-title {
+  padding: 12px 10px 4px;
+  color: var(--chat-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
-import { MessageCircle, Search, X } from "lucide-react";
-
+import { useCallback, useEffect, useState } from "react";
+import { MessageCircle, Search, Trash2, X } from "lucide-react";
 import type { User } from "../../../business/types/user";
 import { ChatBox } from "./ChatBox";
+import { OPEN_CHAT_EVENT, type ChatPeer } from "./openChat";
 import { UserAvatar } from "../ui/UserAvatar";
-import {
-  getContacts,
-  getMessages,
-  MESSAGES_KEY
-} from "../../../data/repositories/messages";
-import type { Contact } from "../../../data/repositories/messages";
+import { Modal } from "../ui/Modal";
+import { Button } from "../ui/Button";
+import { useToast } from "../ui/toast-context";
+import { deleteChatForMe, fetchChatSummaries, fetchContacts, subscribeToMessages } from "../../../data/repositories/messages";
+import type { ChatSummary, Contact } from "../../../data/repositories/messages";
+import { getSupabaseUserId } from "../../../data/repositories/places";
 
 import "../../../styles/chat/chat.css";
 
@@ -39,39 +39,163 @@ export function MessengerWidget({ me }: MessengerWidgetProps) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<Contact | null>(null);
   const [search, setSearch] = useState("");
-  const [, setTick] = useState(0);
+  const [toDelete, setToDelete] = useState<Contact | null>(null);
+  const { success, error } = useToast();
+  const [myId, setMyId] = useState<string>(me.id);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [summaries, setSummaries] = useState<Record<string, ChatSummary>>({});
 
-  // refrescar la lista si otra pestaña escribe un mensaje
+  // el id de la sesión puede no ser el de Supabase (cuentas viejas): se busca por correo
   useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === MESSAGES_KEY || e.key === null) setTick((t) => t + 1);
+    let cancelled = false;
+    getSupabaseUserId(me.email)
+      .then((id) => {
+        if (!cancelled) setMyId(id);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [me.email]);
+
+  const refresh = useCallback(async () => {
+    try {
+      const [people, sums] = await Promise.all([
+        fetchContacts(myId),
+        fetchChatSummaries(myId)
+      ]);
+      setContacts(people);
+      setSummaries(sums);
+    } catch (err) {
+      console.warn(err);
+    }
+  }, [myId]);
+
+  // lista de chats y no leídos en tiempo real (+ respaldo cada 15 s y al volver a la pestaña)
+  useEffect(() => {
+    void refresh();
+
+    const stop = subscribeToMessages(() => void refresh());
+    const timer = window.setInterval(() => void refresh(), 15000);
+    const onFocus = () => void refresh();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      stop();
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [refresh]);
+
+  // al cerrar una conversación se actualiza la lista (ya quedó leída)
+  useEffect(() => {
+    if (!active) void refresh();
+  }, [active, refresh]);
+
+  // abrir una conversación desde otra pantalla (botón «Mensaje» de un perfil)
+  useEffect(() => {
+    const onOpenChat = (e: Event) => {
+      const peer = (e as CustomEvent<ChatPeer>).detail;
+      if (!peer?.id) return;
+
+      setActive({ id: peer.id, name: peer.name, role: peer.role });
+      setOpen(true);
     };
 
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener(OPEN_CHAT_EVENT, onOpenChat);
+    return () => window.removeEventListener(OPEN_CHAT_EVENT, onOpenChat);
   }, []);
 
   /* =========================
      LISTA DE CHATS
   ========================= */
-  const selfContact: Contact = { id: me.id, name: me.name, role: me.role };
+  const selfContact: Contact = { id: myId, name: me.name, role: me.role };
 
-  const rows = [selfContact, ...getContacts(me.id)]
-    .map((contact) => {
-      const msgs = getMessages(me.id, contact.id);
-      return { contact, last: msgs[msgs.length - 1] };
-    })
-    .filter((r) =>
-      r.contact.name.toLowerCase().includes(search.trim().toLowerCase())
-    )
+  const totalUnread = Object.entries(summaries).reduce(
+    (sum, [peerId, entry]) => (peerId === myId ? sum : sum + entry.unread),
+    0
+  );
+
+  const term = search.trim().toLowerCase();
+
+  const allRows = [selfContact, ...contacts]
+    .map((contact) => ({
+      contact,
+      last: summaries[contact.id]?.last ?? null,
+      unread: summaries[contact.id]?.unread ?? 0
+    }))
+    .filter((r) => r.contact.name.toLowerCase().includes(term));
+
+  // «Chats»: conversaciones con mensajes visibles (tú siempre primero). Lo eliminado vuelve a aparecer si te escriben.
+  const chatRows = allRows
+    .filter((r) => r.contact.id === myId || r.last)
     .sort((a, b) => {
-      if (a.contact.id === me.id) return -1; // tú siempre primero
-      if (b.contact.id === me.id) return 1;
-      if (a.last && b.last) return b.last.createdAt.localeCompare(a.last.createdAt);
-      if (a.last) return -1;
-      if (b.last) return 1;
-      return a.contact.name.localeCompare(b.contact.name);
+      if (a.contact.id === myId) return -1;
+      if (b.contact.id === myId) return 1;
+      return (b.last?.createdAt ?? "").localeCompare(a.last?.createdAt ?? "");
     });
+
+  // «Otras personas»: para empezar un chat nuevo
+  const otherRows = allRows
+    .filter((r) => r.contact.id !== myId && !r.last)
+    .sort((a, b) => a.contact.name.localeCompare(b.contact.name));
+
+  const confirmDeleteChat = async () => {
+    const contact = toDelete;
+    if (!contact) return;
+    setToDelete(null);
+    try {
+      await deleteChatForMe(myId, contact.id);
+      await refresh();
+      success(`Chat con ${contact.name} eliminado`);
+    } catch (err) {
+      error(err instanceof Error ? err.message : "No se pudo eliminar el chat");
+    }
+  };
+
+  const renderRow = ({ contact, last, unread }: (typeof allRows)[number]) => {
+    const isSelf = contact.id === myId;
+
+    const preview = last
+      ? `${last.senderId === myId && !isSelf ? "Tú: " : ""}${last.text || (last.image ? "📷 Foto" : "📎 Archivo")}`
+      : isSelf
+      ? "Escribe una nota para ti"
+      : "Sin mensajes todavía";
+
+    return (
+      <div key={contact.id} className="msg-item-wrap">
+        <button
+          type="button"
+          className={`msg-item${unread > 0 ? " unread" : ""}`}
+          onClick={() => setActive(contact)}
+        >
+          <UserAvatar userId={contact.id} name={contact.name} size={46} shape="circle" />
+
+          <div className="msg-item-info">
+            <span className="msg-item-name">
+              {isSelf ? `${contact.name} (Tú)` : contact.name}
+            </span>
+            <span className="msg-item-preview">{preview}</span>
+          </div>
+
+          {last && <span className="msg-item-time">{shortTime(last.createdAt)}</span>}
+
+          {unread > 0 && <span className="msg-unread-badge">{unread}</span>}
+        </button>
+
+        {last && (
+          <button
+            type="button"
+            className="msg-item-delete"
+            title="Eliminar chat (solo para ti)"
+            onClick={() => setToDelete(contact)}
+          >
+            <Trash2 size={15} />
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -82,6 +206,7 @@ export function MessengerWidget({ me }: MessengerWidgetProps) {
             <ChatBox
               key={active.id}
               me={me}
+              myId={myId}
               peer={active}
               onBack={() => setActive(null)}
               onClose={() => setOpen(false)}
@@ -111,53 +236,43 @@ export function MessengerWidget({ me }: MessengerWidgetProps) {
               </div>
 
               <div className="msg-list">
-                {rows.length === 0 && (
+                {chatRows.length === 0 && otherRows.length === 0 && (
                   <div className="msg-empty">No se encontraron personas</div>
                 )}
 
-                {rows.map(({ contact, last }) => {
-                  const isSelf = contact.id === me.id;
+                {chatRows.map(renderRow)}
 
-                  const preview = last
-                    ? `${last.senderId === me.id && !isSelf ? "Tú: " : ""}${last.text || "📷 Foto"}`
-                    : isSelf
-                    ? "Escribe una nota para ti"
-                    : "Sin mensajes todavía";
-
-                  return (
-                    <button
-                      key={contact.id}
-                      type="button"
-                      className="msg-item"
-                      onClick={() => setActive(contact)}
-                    >
-                      <UserAvatar
-                        userId={contact.id}
-                        name={contact.name}
-                        size={46}
-                        shape="circle"
-                      />
-
-                      <div className="msg-item-info">
-                        <span className="msg-item-name">
-                          {isSelf ? `${contact.name} (Tú)` : contact.name}
-                        </span>
-                        <span className="msg-item-preview">{preview}</span>
-                      </div>
-
-                      {last && (
-                        <span className="msg-item-time">
-                          {shortTime(last.createdAt)}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                {otherRows.length > 0 && (
+                  <div className="msg-section-title">Otras personas</div>
+                )}
+                {otherRows.map(renderRow)}
               </div>
             </>
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={toDelete !== null}
+        title="Eliminar chat"
+        onClose={() => setToDelete(null)}
+        maxWidth={400}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setToDelete(null)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={() => void confirmDeleteChat()}>
+              Eliminar chat
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Se elimina solo para ti. {toDelete?.name} conserva sus mensajes y, si te
+          escribe, el chat vuelve a aparecer con los mensajes nuevos.
+        </p>
+      </Modal>
 
       {/* BOTÓN REDONDO (siempre visible) */}
       <button
@@ -167,6 +282,9 @@ export function MessengerWidget({ me }: MessengerWidgetProps) {
         onClick={() => setOpen((o) => !o)}
       >
         {open ? <X size={24} /> : <MessageCircle size={24} />}
+        {!open && totalUnread > 0 && (
+          <span className="msg-fab-badge">{totalUnread > 9 ? "9+" : totalUnread}</span>
+        )}
       </button>
     </>
   );

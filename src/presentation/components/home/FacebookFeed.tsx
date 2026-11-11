@@ -1,17 +1,7 @@
 import { useState, useEffect } from 'react';
-import {
-  ThumbsUp,
-  MessageCircle,
-  Share2,
-  Bookmark,
-  MoreHorizontal,
-  Camera,
-  Star,
-  MapPin,
-  Send,
-  Check,
-  Globe
-} from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, Bookmark, MoreHorizontal, Camera, Star, MapPin, Send, Check, Globe } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import type { User } from '../../../business/types/user';
 import type { Place, CommunityPost, CommunityComment, CategoryId } from '../../../business/types/place';
 import { CommentModal } from './CommentModal';
@@ -23,6 +13,16 @@ import {
   resolvePlaceId,
   setPlaceLike
 } from '../../../data/repositories/places';
+
+// Lleva al perfil de quien escribió (solo si se conoce su id; los datos de ejemplo no tienen).
+function AuthorLink({ userId, children }: { userId?: string; children: ReactNode }) {
+  if (!userId) return <>{children}</>;
+  return (
+    <Link to={`/usuario/${userId}`} className="fb-author-link">
+      {children}
+    </Link>
+  );
+}
 
 // Avatar por defecto para los comentarios que vienen de la base de datos
 const COMMENT_AVATAR =
@@ -673,6 +673,7 @@ export function FacebookFeed({
             {/* Header del Post */}
             <div className="fb-post-header">
               <div className="fb-author-info">
+                <AuthorLink userId={post.authorUserId}>
                 {post.authorUserId && post.authorUserId === currentSupabaseUserId ? (
                   <UserAvatar
                     userId={user.id}
@@ -688,9 +689,12 @@ export function FacebookFeed({
                     className="fb-post-avatar"
                   />
                 )}
+                </AuthorLink>
                 <div>
                   <div className="fb-author-name-row">
-                    <span className="fb-author-name">{post.authorName}</span>
+                    <AuthorLink userId={post.authorUserId}>
+                      <span className="fb-author-name">{post.authorName}</span>
+                    </AuthorLink>
                     <span className="fb-role-tag">{post.authorRole}</span>
                   </div>
                   <div className="fb-post-meta">
@@ -849,6 +853,7 @@ export function FacebookFeed({
             <div className="fb-comments-section">
               {post.comments.map((comment) => (
                 <div key={comment.id} className="fb-comment-item">
+                  <AuthorLink userId={comment.authorUserId}>
                   {comment.authorUserId && comment.authorUserId === currentSupabaseUserId ? (
                     <UserAvatar
                       userId={user.id}
@@ -864,9 +869,12 @@ export function FacebookFeed({
                       className="fb-comment-avatar"
                     />
                   )}
+                  </AuthorLink>
                   <div className="fb-comment-bubble">
                     <div className="fb-comment-header-row">
-                      <span className="fb-comment-author">{comment.authorName}</span>
+                      <AuthorLink userId={comment.authorUserId}>
+                        <span className="fb-comment-author">{comment.authorName}</span>
+                      </AuthorLink>
                       {comment.hasVisited && comment.rating && (
                         <span className="fb-comment-rating-tag">
                           ★ {comment.rating}.0 (Visitado)

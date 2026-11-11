@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { User } from "../../../business/types/user";
-import { getMessages, sendMessage, deleteMessage, clearConversation, MESSAGES_KEY, MAX_MESSAGE_LENGTH } from "../../../data/repositories/messages";
+import { fetchMessages, sendMessage, deleteMessageForEveryone, deleteMessageForMe, deleteChatForMe, markConversationRead, subscribeToMessages, MAX_MESSAGE_LENGTH } from "../../../data/repositories/messages";
 import type { Message } from "../../../data/repositories/messages";
 import { fileToChatImage } from "../../../business/services/imageTools";
 import { useToast } from "../ui/toast-context";
+import { Modal } from "../ui/Modal";
+import { Button } from "../ui/Button";
 import { ChatHeader } from "./ChatHeader";
 import { ChatMessages } from "./ChatMessages";
 import { ChatComposer } from "./ChatComposer";
@@ -14,6 +16,7 @@ import "../../../styles/chat/chat.css";
 
 interface ChatBoxProps {
   me: User;
+  myId: string; // id de Supabase de quien tiene la sesión
   peer: { id: string; name: string; role?: string };
   onBack?: () => void;
   onClose?: () => void;
@@ -50,15 +53,16 @@ const readFileAsDataUrl = (file: File): Promise<string> =>
   });
 export function ChatBox({
   me,
+  myId,
   peer,
   onBack,
   onClose,
 }: ChatBoxProps) {
-  const isSelf = me.id === peer.id;
+  const isSelf = myId === peer.id;
   const { error } = useToast();
-  const [messages, setMessages] = useState<Message[]>(() =>
-    getMessages(me.id, peer.id)
-  );
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
   const [pending, setPending] =
     useState<PendingAttachment | null>(null);
@@ -66,58 +70,74 @@ export function ChatBox({
   const [menuOpen, setMenuOpen] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [deleting, setDeleting] = useState<Message | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === MESSAGES_KEY || event.key === null) {
-        setMessages(getMessages(me.id, peer.id));
+  const refresh = useCallback(async () => {
+    try {
+      const loaded = await fetchMessages(myId, peer.id);
+      setMessages(loaded);
+
+      // si tengo mensajes nuevos de esta persona, quedan leídos
+      if (loaded.some((m) => m.receiverId === myId && m.senderId !== myId && !m.readAt)) {
+        void markConversationRead(myId, peer.id);
       }
-    };
-    window.addEventListener("storage", onStorage);
+    } catch (err) {
+      console.warn(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [myId, peer.id]);
+
+  // carga inicial + tiempo real (+ respaldo cada 8 s y al volver a la pestaña)
+  useEffect(() => {
+    setLoading(true);
+    void refresh();
+
+    const stop = subscribeToMessages(() => void refresh());
+    const timer = window.setInterval(() => void refresh(), 8000);
+    const onFocus = () => void refresh();
+    window.addEventListener("focus", onFocus);
+
     return () => {
-      window.removeEventListener("storage", onStorage);
+      stop();
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
     };
-  }, [me.id, peer.id]);
+  }, [refresh]);
+
   useEffect(() => {
     const element = listRef.current;
     if (element) {
       element.scrollTop = element.scrollHeight;
     }
   }, [messages.length]);
-  const refresh = () => {
-    setMessages(getMessages(me.id, peer.id));
-  };
   const closeMenu = () => {
     setMenuOpen(false);
     setConfirmClear(false);
   };
-  const canSend = Boolean(text.trim() || pending);
-  const handleSend = () => {
+  const canSend = Boolean(text.trim() || pending) && !sending;
+  const handleSend = async () => {
     if (!canSend) return;
     const image =
       pending?.kind === "image" ? pending.data : undefined;
     const file =
       pending?.kind === "file" ? pending.file : undefined;
-    const result = sendMessage(
-      me.id,
-      peer.id,
-      text,
-      image,
-      file
-    );
+
+    setSending(true);
+    const result = await sendMessage(myId, peer.id, text, image, file);
+    setSending(false);
+
     if (!result.ok) {
-      if (result.reason === "storage") {
-        error(
-          "No hay espacio para guardar este archivo. Vacía algunos chats o elige un archivo más pequeño."
-        );
+      if (result.reason !== "empty") {
+        error(result.detail ?? "No se pudo enviar el mensaje.");
       }
       return;
     }
-    refresh();
     setText("");
     setPending(null);
     setAttachMenuOpen(false);
+    await refresh();
   };
   const handlePickMedia = async (
     event: ChangeEvent<HTMLInputElement>
@@ -221,14 +241,34 @@ export function ChatBox({
       textRef.current?.focus();
     });
   };
+  // abre la ventana «Eliminar mensaje»
   const handleDelete = (id: string) => {
-    deleteMessage(id);
-    refresh();
+    setDeleting(messages.find((m) => m.id === id) ?? null);
   };
-  const handleClear = () => {
-    clearConversation(me.id, peer.id);
-    refresh();
+  const confirmDelete = async (scope: "me" | "everyone") => {
+    const target = deleting;
+    if (!target) return;
+    setDeleting(null);
+    try {
+      if (scope === "everyone") {
+        await deleteMessageForEveryone(target);
+      } else {
+        await deleteMessageForMe(target, myId);
+      }
+      await refresh();
+    } catch (err) {
+      error(err instanceof Error ? err.message : "No se pudo eliminar el mensaje.");
+    }
+  };
+  const handleClear = async () => {
+    try {
+      await deleteChatForMe(myId, peer.id);
+      await refresh();
+    } catch (err) {
+      error(err instanceof Error ? err.message : "No se pudo eliminar el chat.");
+    }
     closeMenu();
+    onBack?.(); // vuelve a la lista, como en Instagram
   };
   return (
     <div className="chat-box">
@@ -253,11 +293,13 @@ export function ChatBox({
       <div ref={listRef} className="chat-messages-container">
         <ChatMessages
           messages={messages}
-          myId={me.id}
+          myId={myId}
           onDelete={handleDelete}
           onViewImage={setViewing}
           emptyMessage={
-            isSelf
+            loading
+              ? "Cargando mensajes..."
+              : isSelf
               ? "Escribe notas, enlaces o recordatorios para ti, o guarda una foto 📝"
               : `Empieza la conversación con ${peer.name} 👋`
           }
@@ -269,7 +311,7 @@ export function ChatBox({
         menuOpen={attachMenuOpen}
         maxLength={MAX_MESSAGE_LENGTH}
         onTextChange={setText}
-        onSend={handleSend}
+        onSend={() => void handleSend()}
         onRemoveAttachment={() => setPending(null)}
         onToggleAttachmentMenu={() =>
           setAttachMenuOpen((open) => !open)
@@ -278,6 +320,34 @@ export function ChatBox({
         onSelectFile={handlePickDocument}
         onInsertLink={handleInsertLink}
       />
+      <Modal
+        isOpen={deleting !== null}
+        title="Eliminar mensaje"
+        onClose={() => setDeleting(null)}
+        maxWidth={380}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleting(null)}>
+              Cancelar
+            </Button>
+            <Button variant="secondary" onClick={() => void confirmDelete("me")}>
+              Eliminar para mí
+            </Button>
+            {deleting?.senderId === myId && !isSelf && (
+              <Button variant="danger" onClick={() => void confirmDelete("everyone")}>
+                Eliminar para todos
+              </Button>
+            )}
+          </>
+        }
+      >
+        <p>
+          «Para mí» lo oculta solo en tu chat.
+          {deleting?.senderId === myId && !isSelf
+            ? ` «Para todos» también lo borra del chat de ${peer.name}.`
+            : ""}
+        </p>
+      </Modal>
       <ChatMediaViewer
         image={viewing}
         onClose={() => setViewing(null)}

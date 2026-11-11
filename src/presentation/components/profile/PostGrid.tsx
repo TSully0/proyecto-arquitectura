@@ -1,24 +1,29 @@
 import { Heart, MapPin, MessageCircle } from "lucide-react";
-
 import type { ProfilePost } from "../../../business/types/profile";
 
 interface PostGridProps {
   posts: ProfilePost[];
   title?: string;
   loading?: boolean;
+  loadingMessage?: string;
+  emptyMessage?: string;
 }
 
-export function PostGrid({ posts, title = "Tus publicaciones", loading = false }: PostGridProps) {
+export function PostGrid({
+  posts,
+  title = "Tus publicaciones",
+  loading = false,
+  loadingMessage = "Cargando tus publicaciones...",
+  emptyMessage = "Aún no tienes publicaciones. Comenta o reseña un lugar desde el inicio y aparecerá aquí."
+}: PostGridProps) {
   return (
     <section className="profile-section">
       <h2>{title}</h2>
 
-      {loading && <p className="profile-empty">Cargando tus publicaciones...</p>}
+      {loading && <p className="profile-empty">{loadingMessage}</p>}
 
       {!loading && posts.length === 0 && (
-        <p className="profile-empty">
-          Aún no tienes publicaciones. Comenta o reseña un lugar desde el inicio y aparecerá aquí.
-        </p>
+        <p className="profile-empty">{emptyMessage}</p>
       )}
 
       <div className="profile-posts-grid">

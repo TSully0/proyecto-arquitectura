@@ -1,12 +1,5 @@
-import {
-  Download,
-  FileText,
-  Trash2,
-} from "lucide-react";
-import type {
-  Message,
-  ChatFile,
-} from "../../../data/repositories/messages";
+import { Download, FileText, Trash2 } from "lucide-react";
+import type { Message, ChatFile } from "../../../data/repositories/messages";
 import { LinkifiedText } from "./LinkifiedText";
 
 type ChatMessagesProps = {
@@ -160,17 +153,15 @@ export function ChatMessages({
                 <div className="chat-meta">
                   <span>{formatTime(message.createdAt)}</span>
 
-                  {mine && (
-                    <button
-                      type="button"
-                      className="chat-delete"
-                      onClick={() => onDelete(message.id)}
-                      aria-label="Eliminar mensaje"
-                      title="Eliminar mensaje"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="chat-delete"
+                    onClick={() => onDelete(message.id)}
+                    aria-label="Eliminar mensaje"
+                    title="Eliminar mensaje"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
               </div>
             </div>

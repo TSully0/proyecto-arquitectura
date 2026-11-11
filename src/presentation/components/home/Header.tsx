@@ -1,22 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Search,
-  Bell,
-  Plus,
-  ChevronDown,
-  LayoutDashboard,
-  Wrench,
-  LogOut,
-  User
-} from 'lucide-react';
-
+import { Search, Bell, Plus, ChevronDown, LayoutDashboard, Wrench, LogOut, User } from 'lucide-react';
 import type { User as UserType } from '../../../business/types/user';
 import type { NotificationItem } from '../../../business/types/place';
-
 import { BrandLogo } from './BrandLogo';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { UserAvatar } from '../ui/UserAvatar';
+import { UserSearch } from './UserSearch';
 
 interface HeaderProps {
   user: UserType;
@@ -75,6 +65,9 @@ export function Header({
 
       {/* RIGHT SIDE */}
       <div className="header-right">
+
+        {/* BUSCAR PERSONAS */}
+        <UserSearch user={user} />
 
         {/* NOTIFICATIONS */}
         <div className="notif-wrapper">

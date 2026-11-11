@@ -5,14 +5,12 @@ import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "../pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "../pages/auth/ResetPasswordPage";
-import { MyProfilePage } from "../pages/MyProfilePage";
+import { MyProfilePage } from "../pages/profile/MyProfilePage";
+import { PublicProfilePage } from "../pages/profile/PublicProfilePage";
 import type { User } from "../../business/types/user";
 import { RoleRoute } from "./RoleRoute";
 import { MessengerWidget } from "../components/chat/MessengerWidget";
-import {
-  subscribeToAccountStatus,
-  type AccountBlockNotice,
-} from "../../business/services/accountStatus";
+import { subscribeToAccountStatus, type AccountBlockNotice } from "../../business/services/accountStatus";
 import { AccountBlockToast } from "./AccountBlockToast";
 import { useAuth } from "../auth/AuthContext";
 import { PageLoader } from "../components/ui/PageLoader";
@@ -208,6 +206,16 @@ const AppRoutes = () => {
             element={
               user ? (
                 <MyProfilePage user={user} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/usuario/:id"
+            element={
+              user ? (
+                <PublicProfilePage user={user} />
               ) : (
                 <Navigate to="/login" replace />
               )
