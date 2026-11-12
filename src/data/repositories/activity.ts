@@ -234,6 +234,33 @@ export const ACTION_LABELS: Record<ModerationAction, string> = {
 };
 
 /* =========================
+   SEGUIDORES (suman al total del ranking)
+========================= */
+export type FollowCounts = Record<string, { followers: number; following: number }>;
+
+// Cuenta solo las relaciones aceptadas, igual que los contadores del perfil.
+export const fetchFollowCounts = async (): Promise<FollowCounts | null> => {
+  const rows = await fetchAllRows(
+    "follows",
+    "id, follower_id, following_id, status",
+    "created_at"
+  );
+
+  if (!rows) return null;
+
+  const counts: FollowCounts = {};
+  const entry = (id: string) => (counts[id] ??= { followers: 0, following: 0 });
+
+  for (const r of rows) {
+    if (r.status !== "accepted") continue;
+    entry(String(r.follower_id)).following += 1;
+    entry(String(r.following_id)).followers += 1;
+  }
+
+  return counts;
+};
+
+/* =========================
    RANKING
 ========================= */
 export type RankingRow = {
@@ -242,12 +269,15 @@ export type RankingRow = {
   like: number;
   favorite: number;
   moderation: number;
+  followers: number; // seguidores aceptados (suman 1 punto cada uno al total)
+  following: number; // personas que sigue (suman 1 punto cada una al total)
   total: number;
 };
 
 export const buildRanking = (
   users: AppUser[],
-  items: ActivityItem[]
+  items: ActivityItem[],
+  follows: FollowCounts = {}
 ): RankingRow[] => {
   const map = new Map<string, RankingRow>();
 
@@ -260,7 +290,10 @@ export const buildRanking = (
         like: 0,
         favorite: 0,
         moderation: 0,
-        total: 0
+        followers: follows[u.id]?.followers ?? 0,
+        following: follows[u.id]?.following ?? 0,
+        // cada seguidor y cada persona seguida suma 1 punto
+        total: (follows[u.id]?.followers ?? 0) + (follows[u.id]?.following ?? 0)
       })
     );
 

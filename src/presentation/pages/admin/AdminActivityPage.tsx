@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchAdminUsers, fetchActivity, buildRanking } from "../../../data/repositories/activity";
-import type { AppUser, ActivityItem } from "../../../data/repositories/activity";
+import { fetchAdminUsers, fetchActivity, fetchFollowCounts, buildRanking } from "../../../data/repositories/activity";
+import type { AppUser, ActivityItem, FollowCounts } from "../../../data/repositories/activity";
 import { PageHeader } from "../../components/admin/PageHeader";
 import { FilterTabs } from "../../components/admin/FilterTabs";
 import { RankingTable } from "../../components/admin/RankingTable";
@@ -16,6 +16,7 @@ const FILTERS: { value: RoleFilter; label: string }[] = [
 export function AdminActivityPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [items, setItems] = useState<ActivityItem[]>([]);
+  const [follows, setFollows] = useState<FollowCounts>({});
   const [filter, setFilter] = useState<RoleFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,7 +24,7 @@ export function AdminActivityPage() {
   useEffect(() => {
     let active = true;
 
-    Promise.all([fetchAdminUsers(), fetchActivity()]).then(([u, a]) => {
+    Promise.all([fetchAdminUsers(), fetchActivity(), fetchFollowCounts()]).then(([u, a, f]) => {
       if (!active) return;
 
       if (u === null || a === null) {
@@ -31,6 +32,7 @@ export function AdminActivityPage() {
       }
       setUsers(u ?? []);
       setItems(a ?? []);
+      setFollows(f ?? {});
       setLoading(false);
     });
 
@@ -39,7 +41,7 @@ export function AdminActivityPage() {
     };
   }, []);
 
-  const ranking = buildRanking(users, items).filter(
+  const ranking = buildRanking(users, items, follows).filter(
     (r) => filter === "all" || r.user.role === filter
   );
 
@@ -47,7 +49,7 @@ export function AdminActivityPage() {
     <div className="admin-page">
       <PageHeader
         title="📈 Actividad de la comunidad"
-        subtitle="Ranking de usuarios y moderadores según sus acciones en la app"
+        subtitle="Ranking según sus acciones en la app. Cada seguidor y cada persona seguida suman 1 punto al total"
       />
 
       <div className="admin-toolbar">

@@ -11,7 +11,7 @@ export function RankingTable({ rows }: RankingTableProps) {
 
   return (
     <div className="rank-table-wrap">
-      <table className="rank-table">
+      <table className="rank-table rank-table-cards">
         <thead>
           <tr>
             <th>#</th>
@@ -21,6 +21,8 @@ export function RankingTable({ rows }: RankingTableProps) {
             <th>Likes</th>
             <th>Favoritos</th>
             <th>Moderadas</th>
+            <th>Seguidores</th>
+            <th>Siguiendo</th>
             <th>Total</th>
           </tr>
         </thead>
@@ -28,9 +30,9 @@ export function RankingTable({ rows }: RankingTableProps) {
         <tbody>
           {rows.map((r, i) => (
             <tr key={r.user.id}>
-              <td>{MEDALS[i] ?? i + 1}</td>
+              <td className="rank-pos" data-label="Puesto">{MEDALS[i] ?? i + 1}</td>
 
-              <td>
+              <td className="rank-user-cell">
                 <div className="rank-user">
                   <div className="rank-avatar">
                     {r.user.name.charAt(0).toUpperCase()}
@@ -42,13 +44,15 @@ export function RankingTable({ rows }: RankingTableProps) {
                 </div>
               </td>
 
-              <td><span className={`pill ${r.user.role}`}>{r.user.role}</span></td>
-              <td>{r.review}</td>
-              <td>{r.like}</td>
-              <td>{r.favorite}</td>
-              <td>{r.moderation}</td>
+              <td data-label="Rol"><span className={`pill ${r.user.role}`}>{r.user.role}</span></td>
+              <td data-label="Reseñas">{r.review}</td>
+              <td data-label="Likes">{r.like}</td>
+              <td data-label="Favoritos">{r.favorite}</td>
+              <td data-label="Moderadas">{r.moderation}</td>
+              <td data-label="Seguidores">{r.followers}</td>
+              <td data-label="Siguiendo">{r.following}</td>
 
-              <td>
+              <td className="rank-total-cell" data-label="Total">
                 <div className="rank-total">
                   <div className="rank-bar">
                     <div

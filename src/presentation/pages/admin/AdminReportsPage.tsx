@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Download, Printer } from "lucide-react";
-import { fetchAdminUsers, fetchActivity, getStatus, buildRanking, downloadCSV } from "../../../data/repositories/activity";
-import type { AppUser, ActivityItem } from "../../../data/repositories/activity";
+import { fetchAdminUsers, fetchActivity, fetchFollowCounts, getStatus, buildRanking, downloadCSV } from "../../../data/repositories/activity";
+import type { AppUser, ActivityItem, FollowCounts } from "../../../data/repositories/activity";
 import { PageHeader } from "../../components/admin/PageHeader";
 import { ReportSheet } from "../../components/admin/ReportSheet";
 import { today } from "../../components/admin/admin-utils";
@@ -9,6 +9,7 @@ import { today } from "../../components/admin/admin-utils";
 export function AdminReportsPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [items, setItems] = useState<ActivityItem[]>([]);
+  const [follows, setFollows] = useState<FollowCounts>({});
   const [now] = useState(() => Date.now());
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -16,12 +17,13 @@ export function AdminReportsPage() {
   useEffect(() => {
     let active = true;
 
-    Promise.all([fetchAdminUsers(), fetchActivity()]).then(([u, a]) => {
+    Promise.all([fetchAdminUsers(), fetchActivity(), fetchFollowCounts()]).then(([u, a, f]) => {
       if (!active) return;
 
       if (u === null || a === null) setLoadError(true);
       setUsers(u ?? []);
       setItems(a ?? []);
+      setFollows(f ?? {});
       setLoading(false);
     });
 
@@ -30,7 +32,7 @@ export function AdminReportsPage() {
     };
   }, []);
 
-  const ranking = buildRanking(users, items);
+  const ranking = buildRanking(users, items, follows);
   const topActive = ranking.filter((r) => r.total > 0).slice(0, 5);
 
   const count = (role: string) => users.filter((u) => u.role === role).length;
@@ -55,7 +57,7 @@ export function AdminReportsPage() {
 
   const downloadActivity = () =>
     downloadCSV(`actividad-${today()}.csv`, [
-      ["Posición", "Nombre", "Correo", "Rol", "Reseñas", "Likes", "Favoritos", "Moderadas", "Total"],
+      ["Posición", "Nombre", "Correo", "Rol", "Reseñas", "Likes", "Favoritos", "Moderadas", "Seguidores", "Siguiendo", "Total"],
       ...ranking.map((r, i) => [
         i + 1,
         r.user.name,
@@ -65,6 +67,8 @@ export function AdminReportsPage() {
         r.like,
         r.favorite,
         r.moderation,
+        r.followers,
+        r.following,
         r.total
       ])
     ]);

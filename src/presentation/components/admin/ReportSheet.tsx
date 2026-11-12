@@ -37,7 +37,7 @@ export function ReportSheet({ title, summary, topTitle, top }: ReportSheetProps)
       ) : (
         <table className="rank-table">
           <thead>
-            <tr><th>#</th><th>Nombre</th><th>Rol</th><th>Acciones</th></tr>
+            <tr><th>#</th><th>Nombre</th><th>Rol</th><th>Puntos</th></tr>
           </thead>
           <tbody>
             {top.map((r, i) => (
