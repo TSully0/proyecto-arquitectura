@@ -1,4 +1,6 @@
-import uleamLogo from '../../../assets/uleam.png';
+import uleamClaro from '../../../assets/uleam-claro.png';
+import uleamOscuro from '../../../assets/uleam-oscuro.png';
+import { useTheme } from '../../hooks/useTheme';
 import '../../../styles/ui/footer.css';
 
 // ---------------------------------------------------------------
@@ -91,6 +93,7 @@ const githubIconPath =
 // COMPONENTE
 // ---------------------------------------------------------------
 export function Footer() {
+  const { theme } = useTheme();
   return (
     <footer className="campus-footer">
       {/* El contenedor tiene 3 columnas: marca | información | equipo */}
@@ -100,7 +103,7 @@ export function Footer() {
         <section className="footer-brand">
           <div className="footer-university">
             <img
-              src={uleamLogo}
+              src={theme === 'dark' ? uleamOscuro : uleamClaro}
               alt="Logo de la Universidad Laica Eloy Alfaro de Manabí"
               className="footer-uleam-logo"
             />

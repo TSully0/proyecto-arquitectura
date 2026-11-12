@@ -20,7 +20,7 @@
 .ui-avatar-photo {
   display: block;
   object-fit: cover;
-  background: #e5e7eb;
+  background: var(--surface-3);
 }
 
 /* home.css pone border-radius:0 !important a todo; el círculo necesita su excepción */
@@ -189,7 +189,7 @@
 .ui-avatar-photo {
   display: block;
   object-fit: cover;
-  background: #e5e7eb;
+  background: var(--surface-3);
 }
 
 /* Excepción para el avatar circular */

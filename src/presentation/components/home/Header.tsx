@@ -7,6 +7,7 @@ import { BrandLogo } from './BrandLogo';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { UserAvatar } from '../ui/UserAvatar';
 import { UserSearch } from './UserSearch';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 interface HeaderProps {
   user: UserType;
@@ -68,6 +69,9 @@ export function Header({
 
         {/* BUSCAR PERSONAS */}
         <UserSearch user={user} />
+
+        {/* MODO CLARO / OSCURO */}
+        <ThemeToggle />
 
         {/* NOTIFICATIONS */}
         <div className="notif-wrapper">

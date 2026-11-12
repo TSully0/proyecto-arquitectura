@@ -1,0 +1,125 @@
+/* =========================================================
+   TEMA CLARO / OSCURO - HUECAS MANABAS
+   El modo lo define <html data-theme="light|dark">.
+   Aquí solo se redefinen las variables que ya usa el proyecto.
+========================================================= */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* home.css */
+  --bg-tint:        #14110f;
+  --bg-card:        #1f1b18;
+  --bg-card-subtle: #2a2521;
+  --text-main:      #f2e7dd;
+  --text-secondary: #d9c9bb;
+  --text-muted:     #a89a8c;
+  --border-subtle:  #3a332d;
+  --accent-light:   #3a2a22;
+  --shadow-sm:      0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md:      0 4px 14px rgba(0, 0, 0, 0.55);
+  --primary-glow:   rgba(201, 125, 80, 0.3);
+
+  /* chat-widget.css */
+  --chat-cream:      #2a2521;
+  --chat-cream-dark: #3a332d;
+  --chat-text:       #f2e7dd;
+  --chat-muted:      #a89a8c;
+  --chat-border:     #3a332d;
+  --chat-white:      #1f1b18;
+}
+
+/* ---------- Variables nuevas (claro por defecto) ---------- */
+
+:root {
+  --surface:    #ffffff;
+  --surface-2:  #f9fafb;
+  --surface-3:  #e5e7eb;
+  --line:       #e5e7eb;
+  --t-main:     #292421;
+  --t-2:        #4a3f38;
+  --t-muted:    #6b7280;
+
+  /* Autenticación */
+  --auth-card:    rgba(255, 255, 255, 0.95);
+  --auth-overlay: linear-gradient(rgba(44, 110, 145, 0.45), rgba(167, 95, 55, 0.25));
+
+  /* Footer */
+  --footer-bg:       #f5ede3;
+  --footer-text:     #292421;
+  --footer-strong:   #292421;
+  --footer-muted:    #5c4a3e;
+  --footer-chip:     #ffffff;
+  --footer-chip-hov: #f2e7dd;
+  --footer-line:     #d9c9bb;
+  --footer-link:     #2c6e91;
+  --footer-copper:   #a75f37;
+  --footer-title:    #c0392b;
+}
+
+:root[data-theme="dark"] {
+  --surface:    #1f1b18;
+  --surface-2:  #2a2521;
+  --surface-3:  #3a332d;
+  --line:       #3a332d;
+  --t-main:     #f2e7dd;
+  --t-2:        #d9c9bb;
+  --t-muted:    #a89a8c;
+
+  --auth-card:    rgba(31, 27, 24, 0.94);
+  --auth-overlay: linear-gradient(rgba(10, 14, 22, 0.35), rgba(10, 8, 6, 0.45));
+
+  --footer-bg:       #1a1a1a;
+  --footer-text:     #eeeeee;
+  --footer-strong:   #ffffff;
+  --footer-muted:    #bbbbbb;
+  --footer-chip:     #2a2a2a;
+  --footer-chip-hov: #303030;
+  --footer-line:     #444444;
+  --footer-link:     #99d6ff;
+  --footer-copper:   #c47b50;
+  --footer-title:    #f0646b;
+}
+
+/* ---------- Botón de tema ---------- */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0;
+  color: var(--t-main);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50% !important;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--surface-3);
+  transform: translateY(-1px);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid #2c6e91;
+  outline-offset: 3px;
+}
+
+/* En login / registro va flotando arriba a la derecha */
+.theme-toggle-floating {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 50;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* Suaviza el cambio de modo */
+body,
+.campus-footer {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}

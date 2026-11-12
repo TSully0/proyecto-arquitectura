@@ -40,7 +40,7 @@ La aplicación incluye módulos de autenticación, perfiles, lugares y reseñas,
 ## ✨ Funcionalidades
 
 ### 🏠 Inicio y exploración
-- Feed social y tarjetas de lugares (`FacebookFeed`, `PlaceCard`).
+- Feed social con reseñas, comentarios y lugares (`FacebookFeed`).
 - Navegación por categorías (`CategoryNav`).
 - Lugares cargados desde Supabase (tabla `places`) con datos locales de respaldo (`initialPlaces`) si la consulta no responde.
 - Posibilidad de añadir nuevos lugares desde la página de inicio.
@@ -166,6 +166,12 @@ Las sanciones se configuran en `SanctionModal.tsx`:
 - Los archivos largos de código y de CSS están divididos en partes de menos de unas 700 líneas para facilitar el mantenimiento.
 - La lógica de la verificación por código está separada de las páginas (`OtpInput`, `useResendTimer`, `RegisterVerifyStep`), de modo que `ForgotPasswordPage.tsx` y `RegisterPage.tsx` no concentran toda la interfaz en un solo componente.
 
+### 🌗 Modo claro y oscuro
+- Botón de **luna/sol** (`ThemeToggle`) en la cabecera y, flotando arriba a la derecha, en login, registro y recuperación de contraseña.
+- El modo se guarda en `localStorage` (`hm-theme`); si no hay elección, se usa el del sistema (`prefers-color-scheme`). Un pequeño script en `index.html` lo aplica antes de pintar la página para evitar parpadeos.
+- El modo vive en `<html data-theme="light|dark">`. Las variables de color de cada modo están en `src/styles/theme.css`; los demás CSS usan esas variables (`--surface`, `--line`, `--t-main`, `--text-main`, etc.) en lugar de colores fijos.
+- Cada modo tiene sus propias imágenes: **claro** → `manta-dia.jpg` y `uleam-claro.png`; **oscuro** → `manta-noche.jpg` y `uleam-oscuro.png`. El Footer también cambia (crema en claro, oscuro en modo oscuro).
+
 ### 📱 Diseño adaptable
 Estilos separados por módulo: autenticación, inicio, perfil, chat, administración, moderación y componentes de interfaz reutilizables.
 
@@ -207,10 +213,11 @@ El código se organiza en capas y módulos:
     ├── index.css
     ├── main.tsx
     ├── assets/
-    │   ├── manta-bg.jpg
+    │   ├── manta-dia.jpg                 # Fondo de autenticación (modo claro)
+    │   ├── manta-noche.jpg               # Fondo de autenticación (modo oscuro)
     │   ├── react.svg
-    │   ├── uleam-alter.png
-    │   ├── uleam.png
+    │   ├── uleam-claro.png               # Logo ULEAM a color (modo claro)
+    │   ├── uleam-oscuro.png              # Logo ULEAM blanco (modo oscuro)
     │   └── vite.svg
     ├── business/
     │   ├── services/
@@ -263,7 +270,6 @@ El código se organiza en capas y módulos:
     │   │   │   ├── OtpInput.tsx              # Seis casillas para el código de verificación
     │   │   │   ├── PasswordStrengthMeter.tsx
     │   │   │   ├── RegisterAccountFields.tsx # Registro, paso 1: cuenta
-    │   │   │   ├── RegisterActions.tsx
     │   │   │   ├── RegisterProgress.tsx      # Indicador «Paso X de 3»
     │   │   │   ├── RegisterSecurityFields.tsx # Registro, paso 2: seguridad
     │   │   │   ├── RegisterTerms.tsx         # Términos y condiciones y política de privacidad
@@ -287,7 +293,6 @@ El código se organiza en capas y módulos:
     │   │   │   ├── Footer.tsx
     │   │   │   ├── Header.tsx
     │   │   │   ├── NotificationsDropdown.tsx
-    │   │   │   ├── PlaceCard.tsx
     │   │   │   ├── ReviewModal.tsx
     │   │   │   ├── Sidebar.tsx
     │   │   │   └── UserSearch.tsx        # Buscador de personas del header
@@ -310,13 +315,14 @@ El código se organiza en capas y módulos:
     │   │       ├── Button.tsx
     │   │       ├── Modal.tsx
     │   │       ├── PageLoader.tsx        # Indicador de carga de las páginas lazy
+    │   │       ├── ThemeToggle.tsx       # Botón de modo claro/oscuro
     │   │       ├── toast-context.ts
     │   │       ├── ToastProvider.tsx
     │   │       └── UserAvatar.tsx
     │   ├── hooks/
+    │   │   ├── useTheme.ts               # Modo claro/oscuro (localStorage + preferencia del sistema)
     │   │   ├── useFollows.ts             # Seguidores, seguidos y solicitudes (Supabase + Realtime)
     │   │   ├── useManagedUsers.ts        # Usuarios con sanciones desde Supabase (Realtime + refresco)
-    │   │   ├── useMyProfile.ts
     │   │   ├── useProfilePhoto.ts
     │   │   └── useResendTimer.ts         # Cuenta regresiva (05:00) para reenviar el código
     │   ├── layouts/
@@ -371,6 +377,7 @@ El código se organiza en capas y módulos:
         ├── home/        (home.css)
         ├── moderation/  (moderation-panel.css, moderation.css)
         ├── profile/     (profile.css, public-profile.css)
+        ├── theme.css                      # Variables de color de los modos claro y oscuro y botón de tema
         └── ui/          (avatar.css, footer.css, ui.css)
 ```
 
@@ -564,6 +571,7 @@ El proyecto incluye `vercel.json` con una regla de reescritura que envía todas 
 
 Antes de dar por terminado un cambio, comprobar:
 
+- **Modo claro y oscuro:** el botón de luna/sol cambia el modo en login, registro y dentro de la app; el modo se mantiene al recargar y al cerrar sesión; en claro el login usa `manta-dia.jpg` y el Footer el logo a color, y en oscuro `manta-noche.jpg` y el logo blanco; ningún texto queda ilegible (Home, perfil, chat, administración y moderación).
 - Registro con datos válidos e inválidos (nombre, dominio de correo, contraseña).
 - **Registro en 3 pasos:**
   - El indicador muestra «Paso 1 de 3», «Paso 2 de 3» y «Paso 3 de 3», y la barra avanza.
@@ -622,6 +630,7 @@ Antes de dar por terminado un cambio, comprobar:
 | Historial de moderación | En Supabase (`moderation_log`), con filtros y CSV. |
 | Notas internas por usuario | En Supabase (`user_notes`). |
 | Panel de moderación de reseñas | Interfaz lista con datos de ejemplo; falta conectarla a `reviews`. |
+| Modo claro y oscuro | Hecho: botón de tema, memoria del modo, fondos y logos por modo, y colores del proyecto en variables (`theme.css`). |
 | Chat | En Supabase (`messages`, `chat_state`, bucket `chat-files`) con Realtime, no leídos, adjuntos y eliminar chat/mensajes solo para mí. |
 | Notificaciones | Locales; sin entrega entre dispositivos. |
 | Actividad e informes de administración | En Supabase (`user_activity`, `moderation_log` y `follows`); el ranking incluye Seguidores y Siguiendo, y se adapta al celular; informes en CSV y PDF. El ranking muestra datos reales (reseñas, likes y favoritos cargados desde las tablas originales, más la moderación); las acciones nuevas del Home aún no se registran solas. |
@@ -630,20 +639,19 @@ Antes de dar por terminado un cambio, comprobar:
 
 ### Mejoras previstas
 
-1. Modo claro y oscuro.
-2. Chat: confirmación de lectura visible (✓✓), indicador «escribiendo…» y limitar quién puede escribir (por ejemplo, solo seguidores aceptados).
-3. Migrar la autenticación a **Supabase Auth** (hash de contraseñas, sesiones y envío real del código de verificación por correo, tanto en el registro como en la recuperación de contraseña).
-4. Mover la espera de 7 días del nombre a Supabase para que valga en todos los dispositivos.
-5. Conectar el panel de moderación a las reseñas reales: borrado lógico de reseñas con registro en el historial y restauración (acciones `review_delete` y `review_restore`, ya previstas en el historial).
-6. Registrar en el historial los cambios de rol (subir o bajar a moderador).
-7. Actualizar el rol de las sesiones abiertas sin cerrar sesión (hoy `AuthContext` solo sincroniza el nombre).
-8. Registrar automáticamente la actividad nueva (reseñas, «me gusta» y favoritos) con `logActivity` desde el Home, o con una vista en Supabase que la calcule desde las tablas originales.
-9. Restringir las políticas RLS según el usuario autenticado y su rol.
-10. Mover la URL y la clave de Supabase a variables de entorno.
-11. Migrar las notificaciones a un servicio compartido (por ejemplo, Supabase Realtime) y, junto con RLS, restringir el chat para que solo los dos participantes lean sus mensajes.
-12. Añadir pruebas automatizadas (por ejemplo con Vitest para el registro, el login y las sanciones) y mejorar el manejo de errores.
-13. Optimizar la carga de imágenes y la accesibilidad, y dividir los archivos más grandes del Home (`FacebookFeed.tsx` y `home.css`).
-14. Hacer que el código de verificación caduque (hoy el temporizador solo controla cuándo se puede reenviar, no la validez del código).
+1. Chat: confirmación de lectura visible (✓✓), indicador «escribiendo…» y limitar quién puede escribir (por ejemplo, solo seguidores aceptados).
+2. Migrar la autenticación a **Supabase Auth** (hash de contraseñas, sesiones y envío real del código de verificación por correo, tanto en el registro como en la recuperación de contraseña).
+3. Mover la espera de 7 días del nombre a Supabase para que valga en todos los dispositivos.
+4. Conectar el panel de moderación a las reseñas reales: borrado lógico de reseñas con registro en el historial y restauración (acciones `review_delete` y `review_restore`, ya previstas en el historial).
+5. Registrar en el historial los cambios de rol (subir o bajar a moderador).
+6. Actualizar el rol de las sesiones abiertas sin cerrar sesión (hoy `AuthContext` solo sincroniza el nombre).
+7. Registrar automáticamente la actividad nueva (reseñas, «me gusta» y favoritos) con `logActivity` desde el Home, o con una vista en Supabase que la calcule desde las tablas originales.
+8. Restringir las políticas RLS según el usuario autenticado y su rol.
+9. Mover la URL y la clave de Supabase a variables de entorno.
+10. Migrar las notificaciones a un servicio compartido (por ejemplo, Supabase Realtime) y, junto con RLS, restringir el chat para que solo los dos participantes lean sus mensajes.
+11. Añadir pruebas automatizadas (por ejemplo con Vitest para el registro, el login y las sanciones) y mejorar el manejo de errores.
+12. Optimizar la carga de imágenes y la accesibilidad, y dividir los archivos más grandes del Home (`FacebookFeed.tsx` y `home.css`).
+13. Hacer que el código de verificación caduque (hoy el temporizador solo controla cuándo se puede reenviar, no la validez del código).
 
 ## 👨‍💻 Información académica
 

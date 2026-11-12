@@ -4,7 +4,7 @@
 .public-profile-since {
   display: block;
   margin-top: 8px;
-  color: #6b7280;
+  color: var(--t-muted);
 }
 
 .public-profile-follows-you {
@@ -12,8 +12,8 @@
   margin-left: 8px;
   padding: 4px 10px;
   border-radius: 20px !important;
-  background: #e5e7eb;
-  color: #444;
+  background: var(--surface-3);
+  color: var(--t-2);
   font-size: 12px;
   font-weight: 700;
 }
@@ -36,14 +36,14 @@
   padding: 8px 14px;
   border: 1.5px solid #2C6E91;
   border-radius: 8px !important;
-  background: #fff;
+  background: var(--surface);
   color: #2C6E91;
   font-weight: 700;
   cursor: pointer;
 }
 
 .profile-message-btn:hover {
-  background: #eaf3f8;
+  background: var(--surface-2);
 }
 
 /* solicitudes de seguimiento */
@@ -53,7 +53,7 @@
   padding: 2px 9px;
   border-radius: 20px !important;
   background: #facc15;
-  color: #292421;
+  color: var(--t-main);
   font-size: 13px;
   vertical-align: middle;
 }
@@ -74,7 +74,7 @@
   padding: 10px 14px;
   border-radius: 10px !important;
   background: #fef9c3;
-  color: #292421;
+  color: var(--t-main);
   font-weight: 600;
 }
 
@@ -101,12 +101,12 @@
 }
 
 .profile-reject-btn {
-  background: #f3f4f6;
-  color: #444;
+  background: var(--surface-2);
+  color: var(--t-2);
 }
 
 .profile-reject-btn:hover {
-  background: #e5e7eb;
+  background: var(--surface-3);
 }
 
 .profile-accept-btn:disabled,
@@ -149,7 +149,7 @@
   z-index: 70;
   width: 320px;
   padding: 10px;
-  background-color: #ffffff;
+  background-color: var(--surface);
   border: 1px solid var(--border-subtle);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
 }
@@ -269,7 +269,7 @@
   color: #2C6E91;
   font-size: 14px;
   font-weight: 700;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid #d6e4ec;
   border-radius: 12px;
   cursor: pointer;
@@ -277,7 +277,7 @@
 }
 
 .profile-show-more-btn:hover {
-  background: #eef6fa;
+  background: var(--surface-2);
 }
 
 /* =========================
@@ -288,13 +288,13 @@
   font: inherit;
   background: transparent;
   border: none;
-  border-right: 1px solid #eee;
+  border-right: 1px solid var(--line);
   cursor: pointer;
   transition: background 0.2s ease;
 }
 
 .profile-stat-btn:hover {
-  background: #f3f8fb;
+  background: var(--surface-2);
 }
 
 .profile-stat-btn span {
@@ -322,29 +322,29 @@
 }
 
 .people-modal-item:hover {
-  background: #f3f8fb;
+  background: var(--surface-2);
 }
 
 .people-modal-item strong {
   display: block;
-  color: #1f2937;
+  color: var(--t-main);
   font-size: 15px;
 }
 
 .people-modal-item span {
-  color: #6b7280;
+  color: var(--t-muted);
   font-size: 12px;
 }
 
 .people-modal-empty {
   padding: 24px 8px;
-  color: #6b7280;
+  color: var(--t-muted);
   text-align: center;
 }
 
 @media (max-width: 640px) {
   .profile-stat-btn {
     border-right: none;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--line);
   }
 }

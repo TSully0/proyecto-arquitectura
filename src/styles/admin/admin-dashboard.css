@@ -4,7 +4,7 @@
   display: grid;
   grid-template-columns: 250px 1fr;
   min-height: 100vh;
-  background: #f5f7f8;
+  background: var(--surface-2);
   font-family: 'Inter', sans-serif;
 }
 
@@ -138,14 +138,14 @@
 
 .admin-page h1 {
   margin: 0 0 4px;
-  color: #292421;
+  color: var(--t-main);
   font-size: 26px;
   text-align: left;
 }
 
 .admin-page h2 {
   margin: 0 0 14px;
-  color: #292421;
+  color: var(--t-main);
   font-size: 18px;
   text-align: left;
 }
@@ -156,13 +156,13 @@
 
 .admin-subtitle {
   margin: 0 0 24px;
-  color: #6b7280;
+  color: var(--t-muted);
   font-size: 14px;
 }
 
 .admin-empty {
   margin: 0;
-  color: #6b7280;
+  color: var(--t-muted);
   font-size: 14px;
 }
 
@@ -181,19 +181,19 @@
 .admin-stat-card {
   padding: 20px;
   border-radius: 14px;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.06);
 }
 
 .admin-stat-card strong {
   display: block;
   margin-top: 12px;
-  color: #292421;
+  color: var(--t-main);
   font-size: 30px;
 }
 
 .admin-stat-card span {
-  color: #6b7280;
+  color: var(--t-muted);
   font-size: 13px;
 }
 
@@ -215,7 +215,7 @@
   margin-top: 24px;
   padding: 22px;
   border-radius: 14px;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.06);
 }
 
@@ -231,7 +231,7 @@
   align-items: center;
   gap: 14px;
   padding: 16px;
-  border: 1px solid #eee;
+  border: 1px solid var(--line);
   border-radius: 12px;
   color: #2C6E91;
   text-decoration: none;
@@ -250,13 +250,13 @@
 }
 
 .admin-link-card strong {
-  color: #292421;
+  color: var(--t-main);
   font-size: 14px;
 }
 
 .admin-link-card span {
   margin-top: 2px;
-  color: #6b7280;
+  color: var(--t-muted);
   font-size: 12px;
 }
 
@@ -272,7 +272,7 @@
   gap: 14px;
   padding: 12px 14px;
   border-radius: 10px;
-  background: #faf6f2;
+  background: var(--surface-2);
 }
 
 .admin-top-item div {
@@ -285,7 +285,7 @@
 }
 
 .admin-top-item span {
-  color: #777;
+  color: var(--t-muted);
   font-size: 12px;
 }
 
@@ -311,10 +311,10 @@
 
 .admin-filter {
   padding: 9px 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: #fff;
-  color: #444;
+  background: var(--surface);
+  color: var(--t-2);
   font-family: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -371,8 +371,8 @@
 
 .rank-table th {
   padding: 10px 12px;
-  border-bottom: 2px solid #eee;
-  color: #6b7280;
+  border-bottom: 2px solid var(--line);
+  color: var(--t-muted);
   font-size: 12px;
   text-align: left;
   text-transform: uppercase;
@@ -382,7 +382,7 @@
 .rank-table td {
   padding: 12px;
   border-bottom: 1px solid #f1f1f1;
-  color: #292421;
+  color: var(--t-main);
 }
 
 .rank-user {
@@ -397,7 +397,7 @@
 }
 
 .rank-user span {
-  color: #777;
+  color: var(--t-muted);
   font-size: 12px;
 }
 
@@ -418,7 +418,7 @@
   display: inline-block;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #e5e7eb;
+  background: var(--surface-3);
   font-size: 12px;
   font-weight: 700;
 }
@@ -438,7 +438,7 @@
   height: 8px;
   overflow: hidden;
   border-radius: 999px;
-  background: #eee;
+  background: var(--surface-3);
 }
 
 .rank-bar-fill {
@@ -485,7 +485,7 @@
 
   .admin-shell {
     display: block;
-    background: #fff;
+    background: var(--surface);
   }
 
   .admin-content {
@@ -813,8 +813,8 @@
     gap: 0 12px;
     margin-bottom: 12px;
     padding: 12px;
-    background: #fff;
-    border: 1px solid #eee;
+    background: var(--surface);
+    border: 1px solid var(--line);
     border-radius: 14px;
   }
 
@@ -831,7 +831,7 @@
 
   .rank-table-cards td::before {
     content: attr(data-label);
-    color: #6b7280;
+    color: var(--t-muted);
     font-size: 12px;
     font-weight: 700;
     text-align: left;

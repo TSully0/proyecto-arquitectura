@@ -30,14 +30,14 @@
 
   border: none;
   border-radius: 50% !important;
-  background: #f3f4f6;
+  background: var(--surface-2);
   color: var(--chat-blue);
   cursor: pointer;
   transition: background 0.2s, transform 0.2s;
 }
 
 .chat-attach:hover {
-  background: #e5e7eb;
+  background: var(--surface-3);
   transform: scale(1.04);
 }
 
@@ -120,7 +120,7 @@
 
 /* Hover uniforme */
 .chat-attach-menu > .chat-attach-option:hover {
-  background: #f7f1ea;
+  background: var(--surface-2);
 }
 
 /* Foco visible al navegar con teclado */
@@ -184,7 +184,7 @@
   display: block;
   margin: 0;
 
-  color: #3b2f25;
+  color: var(--t-2);
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -242,7 +242,7 @@
   height: 84px;
   max-width: 100%;
 
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--line);
   border-radius: 8px;
   object-fit: contain;
 }
@@ -293,7 +293,7 @@
 }
 
 .chat-row.theirs .chat-document {
-  background: #f7f3ef;
+  background: var(--surface-2);
   border-color: #eee2d7;
 }
 
@@ -389,7 +389,7 @@
 
   border: 1px solid #dceaf3;
   border-radius: 12px !important;
-  background: #f1f7fb;
+  background: var(--surface-2);
   color: var(--chat-blue);
 }
 
@@ -402,7 +402,7 @@
 
 .chat-pending-file strong {
   max-width: 190px;
-  color: #3b2f25;
+  color: var(--t-2);
   font-size: 12px;
   overflow-wrap: anywhere;
 }

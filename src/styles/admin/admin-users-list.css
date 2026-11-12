@@ -15,14 +15,14 @@
   min-width: 0;
   min-height: 100vh;
   padding: 40px 20px;
-  background: #f4efe8;
-  color: #3b2f25;
+  background: var(--surface-2);
+  color: var(--t-2);
   font-family: "Inter", sans-serif;
 }
 
 .users-container h1 {
   margin: 0 0 20px;
-  color: #4a2f1d;
+  color: var(--t-2);
   font-size: clamp(23px, 4vw, 30px);
 }
 
@@ -66,9 +66,9 @@
   min-width: 0;
   min-height: 42px;
   padding: 9px 12px;
-  color: #3b2f25;
-  background: #fff;
-  border: 1px solid #d6cfc2;
+  color: var(--t-2);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 8px;
   outline: none;
   font: inherit;
@@ -82,8 +82,8 @@
 .filter-btn {
   min-height: 40px;
   padding: 8px 12px;
-  color: #4a2f1d;
-  background: #e5ddd1;
+  color: var(--t-2);
+  background: var(--surface-3);
   border: none;
   border-radius: 8px;
   font-family: inherit;
@@ -117,8 +117,8 @@
 .user-card {
   min-width: 0;
   padding: 18px;
-  background: #fff;
-  border: 1px solid #e4dcd1;
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 14px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
   transition: transform 0.25s ease, border-color 0.25s ease;
@@ -170,14 +170,14 @@
 
 .user-header h3 {
   margin: 0;
-  color: #3b2f25;
+  color: var(--t-2);
   font-size: 16px;
   overflow-wrap: anywhere;
 }
 
 .user-header p {
   margin: 4px 0 0;
-  color: #7b6a58;
+  color: var(--t-muted);
   font-size: 13px;
   overflow-wrap: anywhere;
 }
@@ -298,6 +298,6 @@
 
 .empty {
   margin-top: 24px;
-  color: #7b6a58;
+  color: var(--t-muted);
   text-align: center;
 }

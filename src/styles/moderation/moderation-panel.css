@@ -26,9 +26,9 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface);
   transition: border-color 0.2s, background 0.2s;
 }
 
@@ -49,12 +49,12 @@
 }
 
 .mod-card-head strong {
-  color: #292421;
+  color: var(--t-main);
   font-size: 14px;
 }
 
 .mod-status {
-  color: #6b7280;
+  color: var(--t-muted);
   font-size: 12px;
 }
 
@@ -78,7 +78,7 @@
 
 .admin-page .mod-text {
   margin: 0;
-  color: #3f3f46;
+  color: var(--t-2);
   font-size: 14px;
   line-height: 1.5;
 }

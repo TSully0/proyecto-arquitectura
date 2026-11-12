@@ -9,7 +9,7 @@
 
 .users-subtitle {
   margin: -10px 0 20px;
-  color: #7b6a58;
+  color: var(--t-muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -27,13 +27,13 @@
 }
 
 .user-note-admin {
-  color: #4a2f1d;
-  background: #f1e9dd;
+  color: var(--t-2);
+  background: var(--surface-2);
 }
 
 /* ===== Filtro por estado ===== */
 .users-status-toolbar { align-items: center; margin-top: -8px; }
-.users-status-label { font-weight: 600; font-size: 0.9rem; color: #6b7280; margin-right: 4px; }
+.users-status-label { font-weight: 600; font-size: 0.9rem; color: var(--t-muted); margin-right: 4px; }
 
 /* ===== Botones de la pantalla de Roles ===== */
 .btn-promote {
@@ -64,7 +64,7 @@
 
 .sanction-icon.notes-icon {
   color: #8b6b4a;
-  background: #f7efe4;
+  background: var(--surface-2);
   border-color: #e4d3bd;
   font-size: 26px;
 }
@@ -72,8 +72,8 @@
 .notes-empty {
   margin: 4px 0 18px;
   padding: 14px;
-  color: #7b6a58;
-  background: #faf6f0;
+  color: var(--t-muted);
+  background: var(--surface-2);
   border-radius: 10px;
   font-size: 14px;
   text-align: center;
@@ -92,7 +92,7 @@
 
 .notes-item {
   padding: 10px 12px;
-  background: #faf6f0;
+  background: var(--surface-2);
   border: 1px solid #eadfce;
   border-left: 4px solid #c89b6d;
   border-radius: 10px;
@@ -100,7 +100,7 @@
 
 .notes-text {
   margin: 0 0 6px;
-  color: #3b2f25;
+  color: var(--t-2);
   font-size: 14px;
   line-height: 1.45;
   white-space: pre-wrap;
@@ -112,7 +112,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  color: #7b6a58;
+  color: var(--t-muted);
   font-size: 12px;
 }
 
@@ -139,8 +139,8 @@
   display: inline-block;
   margin-bottom: 6px;
   padding: 3px 10px;
-  color: #4a2f1d;
-  background: #efe2d0;
+  color: var(--t-2);
+  background: var(--surface-3);
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;

@@ -206,8 +206,8 @@
 }
 
 .chat-confirm-no {
-  background: #f3f4f6;
-  color: #444444;
+  background: var(--surface-2);
+  color: var(--t-2);
 }
 
 /* =====================================================
@@ -283,7 +283,7 @@
 
   border-radius: 999px;
   background: var(--chat-cream-dark);
-  color: #5c4a3e;
+  color: var(--t-2);
 
   font-size: 11px;
   font-weight: 700;
@@ -377,7 +377,7 @@
 
   min-width: 0;
   background: var(--chat-white);
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--line);
 }
 
 .chat-footer .chat-composer {
@@ -393,7 +393,7 @@
   min-width: 0;
   padding: 12px 14px;
 
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--line);
   background: var(--chat-white);
 }
 
@@ -407,9 +407,9 @@
   max-height: 110px;
   padding: 11px 14px;
 
-  border: 1px solid #d1c2b5;
+  border: 1px solid var(--line);
   border-radius: 9999px !important;
-  background: #f9f9f9;
+  background: var(--surface-2);
   color: var(--chat-text);
 
   font-family: inherit;
