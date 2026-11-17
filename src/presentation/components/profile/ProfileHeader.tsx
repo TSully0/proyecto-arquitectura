@@ -5,16 +5,17 @@ import { UserAvatar } from "../ui/UserAvatar";
 
 interface ProfileHeaderProps {
   user: User;
+  photoUserId?: string;
   daysLeft?: number;          // días que faltan para poder cambiar el nombre
   onEditName?: () => void;    // si no se pasa, no sale el botón (perfil de otra persona)
   onEditPhoto?: () => void;   // si no se pasa, no sale el botón de la cámara
 }
 
-export function ProfileHeader({ user, daysLeft = 0, onEditName, onEditPhoto }: ProfileHeaderProps) {
+export function ProfileHeader({ user, photoUserId, daysLeft = 0, onEditName, onEditPhoto }: ProfileHeaderProps) {
   return (
     <section className="profile-header-card">
       <div className="profile-avatar-wrap">
-        <UserAvatar userId={user.id} name={user.name} size={100} />
+        <UserAvatar userId={photoUserId ?? user.id} name={user.name} size={100} />
 
         {onEditPhoto && (
           <button

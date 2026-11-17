@@ -12,6 +12,7 @@ import {
   initialPlaces
 } from '../../data/repositories/places';
 import { syncUserToSupabase } from '../../data/repositories/users';
+import { migrateProfilePhoto } from '../../data/repositories/profilePhoto';
 import { createReview } from '../../services/reviewsService';
 import { Header } from '../components/home/Header';
 import { CategoryNav } from '../components/home/CategoryNav';
@@ -87,6 +88,13 @@ export function HomePage({ user, onLogout }: HomePageProps) {
           getSupabaseUserId(user.email),
           fetchFavoritePlaceIds(user.email)
         ]);
+        if (user.id !== userId) {
+          try {
+            await migrateProfilePhoto(user.id, userId);
+          } catch (photoError) {
+            console.warn('No se pudo migrar la foto de perfil:', photoError);
+          }
+        }
         if (isMounted) setCurrentSupabaseUserId(userId);
         return placeIds;
       })
@@ -240,6 +248,7 @@ export function HomePage({ user, onLogout }: HomePageProps) {
       {/* Top Header con BrandLogo y Notificaciones */}
       <Header
         user={user}
+        photoUserId={currentSupabaseUserId ?? user.id}
         onLogout={onLogout}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}

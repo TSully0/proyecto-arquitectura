@@ -48,7 +48,7 @@
   }
 
   .chat-bubble {
-    max-width: 88%;
+    max-width: calc(88% - 36px);
   }
 
   .chat-composer {
@@ -104,7 +104,7 @@
   }
 
   .chat-bubble {
-    max-width: 90%;
+    max-width: calc(90% - 36px);
   }
 
   /* Menú del clip adaptado al móvil */

@@ -619,7 +619,7 @@ export function FacebookFeed({
       <div className="fb-create-post-card">
         <div className="fb-create-top">
           <UserAvatar
-            userId={user.id}
+            userId={currentSupabaseUserId ?? user.id}
             name={user.name}
             size={40}
             shape="circle"
@@ -674,9 +674,9 @@ export function FacebookFeed({
             <div className="fb-post-header">
               <div className="fb-author-info">
                 <AuthorLink userId={post.authorUserId}>
-                {post.authorUserId && post.authorUserId === currentSupabaseUserId ? (
+                {post.authorUserId ? (
                   <UserAvatar
-                    userId={user.id}
+                    userId={post.authorUserId}
                     name={post.authorName}
                     size={40}
                     shape="circle"
@@ -854,9 +854,9 @@ export function FacebookFeed({
               {post.comments.map((comment) => (
                 <div key={comment.id} className="fb-comment-item">
                   <AuthorLink userId={comment.authorUserId}>
-                  {comment.authorUserId && comment.authorUserId === currentSupabaseUserId ? (
+                  {comment.authorUserId ? (
                     <UserAvatar
-                      userId={user.id}
+                      userId={comment.authorUserId}
                       name={comment.authorName}
                       size={32}
                       shape="circle"
@@ -890,7 +890,7 @@ export function FacebookFeed({
               {/* Input rápido o botón para abrir ventana flotante */}
               <div className="fb-comment-input-box">
                 <UserAvatar
-                  userId={user.id}
+                  userId={currentSupabaseUserId ?? user.id}
                   name={user.name}
                   size={32}
                   shape="circle"

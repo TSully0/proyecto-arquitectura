@@ -11,6 +11,7 @@ import { ThemeToggle } from '../ui/ThemeToggle';
 
 interface HeaderProps {
   user: UserType;
+  photoUserId?: string;
   onLogout: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -22,6 +23,7 @@ interface HeaderProps {
 
 export function Header({
   user,
+  photoUserId,
   onLogout,
   searchQuery,
   onSearchChange,
@@ -99,7 +101,7 @@ export function Header({
             onClick={() => setShowDropdown(!showDropdown)}
           >
             <UserAvatar
-              userId={user.id}
+              userId={photoUserId ?? user.id}
               name={user.name}
               size={32}
               shape="circle"

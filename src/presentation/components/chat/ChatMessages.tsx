@@ -1,10 +1,13 @@
 import { Download, FileText, Trash2 } from "lucide-react";
 import type { Message, ChatFile } from "../../../data/repositories/messages";
+import { UserAvatar } from "../ui/UserAvatar";
 import { LinkifiedText } from "./LinkifiedText";
 
 type ChatMessagesProps = {
   messages: Message[];
   myId: string;
+  myName: string;
+  peerName: string;
   onDelete: (id: string) => void;
   onViewImage: (image: string) => void;
   emptyMessage: string;
@@ -74,6 +77,8 @@ function FileAttachment({ file }: { file: ChatFile }) {
 export function ChatMessages({
   messages,
   myId,
+  myName,
+  peerName,
   onDelete,
   onViewImage,
   emptyMessage,
@@ -113,6 +118,15 @@ export function ChatMessages({
             <div
               className={`chat-row ${mine ? "mine" : "theirs"}`}
             >
+              {!mine && (
+                <UserAvatar
+                  userId={message.senderId}
+                  name={peerName}
+                  size={28}
+                  shape="circle"
+                  className="chat-message-avatar"
+                />
+              )}
               <div className="chat-bubble">
                 {message.image && (
                   <button
@@ -164,6 +178,15 @@ export function ChatMessages({
                   </button>
                 </div>
               </div>
+              {mine && (
+                <UserAvatar
+                  userId={message.senderId}
+                  name={myName}
+                  size={28}
+                  shape="circle"
+                  className="chat-message-avatar"
+                />
+              )}
             </div>
           </div>
         );

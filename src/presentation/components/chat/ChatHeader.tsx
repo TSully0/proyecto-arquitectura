@@ -1,5 +1,6 @@
 import { ArrowLeft, MoreHorizontal, Trash2, X } from "lucide-react";
 import type { User } from "../../../business/types/user";
+import { UserAvatar } from "../ui/UserAvatar";
 
 type ChatHeaderProps = {
   me: User;
@@ -43,9 +44,13 @@ export function ChatHeader({
         </button>
       )}
 
-      <div className="chat-avatar">
-        {peer.name.trim().charAt(0).toUpperCase() || "U"}
-      </div>
+      <UserAvatar
+        userId={peer.id}
+        name={peer.name}
+        size={38}
+        shape="circle"
+        className="chat-avatar"
+      />
 
       <div className="chat-header-info">
         <span className="chat-title">{peer.name}</span>

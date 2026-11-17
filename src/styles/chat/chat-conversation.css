@@ -59,6 +59,7 @@
   background: rgb(255 255 255 / 22%);
   color: var(--chat-white);
   font-weight: 800;
+  object-fit: cover;
 }
 
 .chat-header-info {
@@ -291,9 +292,15 @@
 
 .chat-row {
   display: flex;
+  align-items: flex-end;
+  gap: 8px;
   flex: 0 0 auto;
   min-width: 0;
   margin-bottom: 6px;
+}
+
+.chat-message-avatar {
+  margin-bottom: 3px;
 }
 
 .chat-row.mine {
@@ -306,7 +313,7 @@
 
 .chat-bubble {
   min-width: 0;
-  max-width: 78%;
+  max-width: calc(78% - 36px);
   padding: 8px 12px 6px;
 
   border-radius: 14px;

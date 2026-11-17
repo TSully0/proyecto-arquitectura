@@ -37,6 +37,51 @@ export const loadProfilePhoto = (userId: string): Promise<void> => {
   return request.finally(() => pendingLoads.delete(userId));
 };
 
+export const migrateProfilePhoto = async (
+  previousUserId: string,
+  userId: string
+): Promise<void> => {
+  if (!previousUserId.trim() || !userId.trim() || previousUserId === userId) return;
+
+  const { data, error } = await supabase
+    .from("profile_photos")
+    .select("user_id, photo_url, storage_path, updated_at")
+    .in("user_id", [previousUserId, userId]);
+
+  if (error) {
+    throw new Error(`No se pudo migrar la foto de perfil: ${error.message}`);
+  }
+
+  const previousPhoto = data?.find((photo) => photo.user_id === previousUserId);
+  const currentPhoto = data?.find((photo) => photo.user_id === userId);
+  if (!previousPhoto || currentPhoto) return;
+
+  const { error: saveError } = await supabase
+    .from("profile_photos")
+    .insert({
+      user_id: userId,
+      photo_url: previousPhoto.photo_url,
+      storage_path: previousPhoto.storage_path,
+      updated_at: previousPhoto.updated_at
+    });
+
+  if (saveError) {
+    throw new Error(`No se pudo migrar la foto de perfil: ${saveError.message}`);
+  }
+
+  const { error: removeError } = await supabase
+    .from("profile_photos")
+    .delete()
+    .eq("user_id", previousUserId);
+
+  if (removeError) {
+    throw new Error(`No se pudo completar la migración de la foto: ${removeError.message}`);
+  }
+
+  photoCache.set(userId, previousPhoto.photo_url);
+  emit(userId);
+};
+
 export const saveProfilePhoto = async (userId: string, photo: string): Promise<void> => {
   if (!userId.trim()) {
     throw new Error("No se pudo guardar la foto porque falta el usuario.");

@@ -294,6 +294,8 @@ export function ChatBox({
         <ChatMessages
           messages={messages}
           myId={myId}
+          myName={me.name}
+          peerName={peer.name}
           onDelete={handleDelete}
           onViewImage={setViewing}
           emptyMessage={

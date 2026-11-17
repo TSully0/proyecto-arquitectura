@@ -5,7 +5,9 @@ import type { User } from "../../../business/types/user";
 import type { CommunityUser, ProfilePost } from "../../../business/types/profile";
 import { changeUserName, daysLeftToChangeName } from "../../../business/services/nameChange";
 import { fetchPostsByUser } from "../../../data/repositories/profile";
+import { getSupabaseUserId } from "../../../data/repositories/places";
 import { fetchCommunityPeople } from "../../../data/repositories/publicProfile";
+import { migrateProfilePhoto } from "../../../data/repositories/profilePhoto";
 import { useFollows } from "../../hooks/useFollows";
 import { useProfilePhoto } from "../../hooks/useProfilePhoto";
 import { useToast } from "../../components/ui/toast-context";
@@ -38,8 +40,8 @@ export function MyProfilePage({ user }: MyProfilePageProps) {
     accept,
     reject
   } = useFollows(user);
-  const photo = useProfilePhoto(user.id);
-
+  const [photoUserId, setPhotoUserId] = useState<string | null>(null);
+  const photo = useProfilePhoto(photoUserId ?? user.id);
   const [showEditName, setShowEditName] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
   const [people, setPeople] = useState<CommunityUser[]>([]);
@@ -47,6 +49,37 @@ export function MyProfilePage({ user }: MyProfilePageProps) {
   const [postsLoading, setPostsLoading] = useState(true);
 
   const daysLeft = daysLeftToChangeName(user.id);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getSupabaseUserId(user.email)
+      .then(async (id) => {
+        if (user.id !== id) {
+          try {
+            await migrateProfilePhoto(user.id, id);
+          } catch (migrationError) {
+            if (isMounted) {
+              error(
+                migrationError instanceof Error
+                  ? migrationError.message
+                  : "No se pudo migrar la foto de perfil"
+              );
+            }
+          }
+        }
+        if (isMounted) setPhotoUserId(id);
+      })
+      .catch((err: unknown) => {
+        if (isMounted) {
+          error(err instanceof Error ? err.message : "No se pudo identificar tu cuenta");
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user.email, user.id, error]);
 
   // muestra el aviso de éxito después de recargar la página
   useEffect(() => {
@@ -149,9 +182,10 @@ export function MyProfilePage({ user }: MyProfilePageProps) {
 
         <ProfileHeader
           user={user}
+          photoUserId={photoUserId ?? user.id}
           daysLeft={daysLeft}
           onEditName={() => setShowEditName(true)}
-          onEditPhoto={() => setShowPhoto(true)}
+          onEditPhoto={photoUserId ? () => setShowPhoto(true) : undefined}
         />
 
         <ProfileStats
@@ -197,9 +231,9 @@ export function MyProfilePage({ user }: MyProfilePageProps) {
         />
       )}
 
-      {showPhoto && (
+      {showPhoto && photoUserId && (
         <ProfilePhotoModal
-          userId={user.id}
+          userId={photoUserId}
           name={user.name}
           hasPhoto={!!photo}
           onClose={() => setShowPhoto(false)}
