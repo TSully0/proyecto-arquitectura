@@ -446,3 +446,87 @@ export async function addPlaceToSupabase(place: Omit<Place, 'id' | 'likes_count'
   }
   return data.id;
 }
+
+export async function updatePlaceInSupabase(
+  placeId: string,
+  placeData: Partial<Place>
+): Promise<boolean> {
+  try {
+    const resolvedPlaceId = resolvePlaceId(placeId);
+    if (!resolvedPlaceId) {
+      return true;
+    }
+
+    const categoryUUID = placeData.category_id
+      ? CATEGORY_SLUG_TO_UUID[placeData.category_id]
+      : undefined;
+
+    const dbPayload: Record<string, any> = {};
+    if (placeData.name !== undefined) dbPayload.name = placeData.name;
+    if (placeData.description !== undefined) dbPayload.description = placeData.description;
+    if (placeData.address !== undefined) dbPayload.address = placeData.address;
+    if (categoryUUID !== undefined) dbPayload.categoryId = categoryUUID;
+    if (placeData.image_url !== undefined) {
+      dbPayload.images = [placeData.image_url];
+    }
+    if (placeData.has_student_discount !== undefined) {
+      dbPayload.hasStudentDiscount = Boolean(placeData.has_student_discount);
+    }
+    if (placeData.has_wifi !== undefined) {
+      dbPayload.hasWifi = Boolean(placeData.has_wifi);
+    }
+    if (placeData.is_open !== undefined) {
+      dbPayload.isOpen = Boolean(placeData.is_open);
+    }
+    if (placeData.is_pet_friendly !== undefined) {
+      dbPayload.isPetFriendly = Boolean(placeData.is_pet_friendly);
+    }
+    if (placeData.is_accessible !== undefined) {
+      dbPayload.isAccessible = Boolean(placeData.is_accessible);
+    }
+    if (placeData.is_night_spot !== undefined) {
+      dbPayload.isNightSpot = Boolean(placeData.is_night_spot);
+    }
+
+    const { error } = await supabase
+      .from('places')
+      .update(dbPayload)
+      .eq('id', resolvedPlaceId);
+
+    if (error) {
+      console.warn('Error al actualizar lugar en Supabase:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Excepción al actualizar lugar en Supabase:', err);
+    return false;
+  }
+}
+
+export async function deletePlaceFromSupabase(placeId: string): Promise<boolean> {
+  try {
+    const resolvedPlaceId = resolvePlaceId(placeId);
+    if (!resolvedPlaceId) {
+      return true;
+    }
+
+    await supabase.from('place_likes').delete().eq('placeId', resolvedPlaceId);
+    await supabase.from('user_favorites').delete().eq('placeId', resolvedPlaceId);
+    await supabase.from('reviews').delete().eq('placeId', resolvedPlaceId);
+
+    const { error } = await supabase
+      .from('places')
+      .delete()
+      .eq('id', resolvedPlaceId);
+
+    if (error) {
+      console.warn('Error al eliminar lugar en Supabase:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Excepción al eliminar lugar en Supabase:', err);
+    return false;
+  }
+}

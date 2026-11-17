@@ -977,7 +977,158 @@ body {
   font-weight: 600;
 }
 
+
+.fb-more-wrap {
+  position: relative;
+}
+
 .fb-more-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.fb-more-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-main);
+}
+
+.fb-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: transparent;
+}
+
+.fb-post-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  min-width: 220px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: fbMenuFadeIn 0.15s ease-out;
+}
+
+@keyframes fbMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.fb-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.fb-menu-item:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.fb-menu-item.danger {
+  color: #dc2626;
+}
+
+.fb-menu-item.danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.fb-menu-confirm-box {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fb-menu-confirm-box p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.fb-menu-confirm-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.fb-menu-confirm-btn {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.fb-menu-confirm-btn.delete {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.fb-menu-confirm-btn.delete:hover {
+  opacity: 0.9;
+}
+
+.fb-menu-confirm-btn.cancel {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.fb-menu-confirm-btn.cancel:hover {
+  background: #e5e7eb;
+}
+
+.fb-menu-info-box {
+  padding: 4px;
+}
+
+.fb-menu-hint {
+  display: block;
+  font-size: 11.5px;
+  color: #6b7280;
+  padding: 6px 10px 4px;
+  font-weight: 500;
+}
+
+/* Original more-btn replaced */
+.old-fb-more-btn {
   background: transparent;
   border: none;
   color: var(--text-muted);

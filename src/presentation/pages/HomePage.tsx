@@ -238,6 +238,46 @@ export function HomePage({ user, onLogout }: HomePageProps) {
     ]);
   };
 
+  const handleUpdatePlace = (placeId: string, updatedData: Partial<Place>) => {
+    setPlaces((prev) =>
+      prev.map((p) =>
+        resolvePlaceId(p.id) === resolvePlaceId(placeId) || p.id === placeId
+          ? { ...p, ...updatedData }
+          : p
+      )
+    );
+    setNotifications((prev) => [
+      {
+        id: `notif-${Date.now()}`,
+        title: '¡Publicación actualizada!',
+        description: `La recomendación "${updatedData.name || 'de lugar'}" ha sido modificada con éxito.`,
+        timestamp: 'Justo ahora',
+        isRead: false,
+        type: 'system'
+      },
+      ...prev
+    ]);
+  };
+
+  const handleDeletePlace = (placeId: string) => {
+    setPlaces((prev) =>
+      prev.filter(
+        (p) => resolvePlaceId(p.id) !== resolvePlaceId(placeId) && p.id !== placeId
+      )
+    );
+    setNotifications((prev) => [
+      {
+        id: `notif-${Date.now()}`,
+        title: 'Publicación eliminada',
+        description: 'La recomendación y su publicación han sido eliminadas.',
+        timestamp: 'Justo ahora',
+        isRead: false,
+        type: 'system'
+      },
+      ...prev
+    ]);
+  };
+
   // Handle map pin click
   const handleMapPinClick = (pinName: string) => {
     setSearchQuery(pinName);
@@ -314,6 +354,8 @@ export function HomePage({ user, onLogout }: HomePageProps) {
             onSelectPlace={(place) => {
               setSearchQuery(place.name);
             }}
+            onUpdatePlace={handleUpdatePlace}
+            onDeletePlace={handleDeletePlace}
           />
         </section>
       </main>

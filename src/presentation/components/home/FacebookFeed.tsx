@@ -1,5 +1,6 @@
+import { EditPlaceModal } from './EditPlaceModal';
 import { useState, useEffect } from 'react';
-import { ThumbsUp, MessageCircle, Share2, Bookmark, MoreHorizontal, Camera, Star, MapPin, Send, Check, Globe } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, Bookmark, MoreHorizontal, Camera, Star, MapPin, Send, Check, Globe, Pencil, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { User } from '../../../business/types/user';
@@ -11,7 +12,9 @@ import {
   fetchPlaceLikes,
   fetchReviewsByPlaceIds,
   resolvePlaceId,
-  setPlaceLike
+  setPlaceLike,
+  updatePlaceInSupabase,
+  deletePlaceFromSupabase
 } from '../../../data/repositories/places';
 
 // Lleva al perfil de quien escribió (solo si se conoce su id; los datos de ejemplo no tienen).
@@ -83,6 +86,8 @@ interface FacebookFeedProps {
   onSelectPlace?: (place: Place) => void;
   searchQuery?: string;
   onClearSearch?: () => void;
+  onUpdatePlace?: (placeId: string, updatedPlace: Partial<Place>) => void;
+  onDeletePlace?: (placeId: string) => void;
 }
 
 export function FacebookFeed({
@@ -98,7 +103,9 @@ export function FacebookFeed({
   onOpenCreateReview,
   onSelectPlace,
   searchQuery = '',
-  onClearSearch
+  onClearSearch,
+  onUpdatePlace,
+  onDeletePlace
 }: FacebookFeedProps) {
   // Modal de Comentario flotante
   const [commentModalState, setCommentModalState] = useState<{
@@ -112,7 +119,93 @@ export function FacebookFeed({
   });
 
   // Publicaciones iniciales de la comunidad
+    // Estados para menú de 3 puntos y edición/eliminación de recomendaciones
+  const [menuPostId, setMenuPostId] = useState<string | null>(null);
+  const [confirmDeletePostId, setConfirmDeletePostId] = useState<string | null>(null);
+  const [editingPost, setEditingPost] = useState<CommunityPost | null>(null);
+  const [feedNotice, setFeedNotice] = useState<string | null>(null);
+
+  const isPostOwner = (post: CommunityPost): boolean => {
+    if (post.authorUserId && currentSupabaseUserId && post.authorUserId === currentSupabaseUserId) {
+      return true;
+    }
+    if (post.authorUserId && user.id && post.authorUserId === user.id) {
+      return true;
+    }
+    if (
+      post.authorName &&
+      user.name &&
+      post.authorName.trim().toLowerCase() === user.name.trim().toLowerCase()
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  const handleSaveEditedPlace = async (updatedData: {
+    name: string;
+    category_id: CategoryId;
+    description: string;
+    address: string;
+    image_url: string;
+    rating: number;
+    has_student_discount: boolean;
+    has_wifi: boolean;
+    is_open: boolean;
+    is_pet_friendly: boolean;
+    is_accessible: boolean;
+    is_night_spot: boolean;
+  }) => {
+    if (!editingPost) return;
+
+    try {
+      await updatePlaceInSupabase(editingPost.place.id, updatedData);
+    } catch (err) {
+      console.warn('No se pudo sincronizar la actualización en Supabase:', err);
+    }
+
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === editingPost.id) {
+          return {
+            ...p,
+            locationName: updatedData.name,
+            content: updatedData.description,
+            imageUrl: updatedData.image_url,
+            place: {
+              ...p.place,
+              ...updatedData
+            }
+          };
+        }
+        return p;
+      })
+    );
+
+    onUpdatePlace?.(editingPost.place.id, updatedData);
+    setFeedNotice(`¡Recomendación "${updatedData.name}" actualizada con éxito!`);
+    setTimeout(() => setFeedNotice(null), 4000);
+  };
+
+  const handleDeletePost = async (post: CommunityPost) => {
+    setMenuPostId(null);
+    setConfirmDeletePostId(null);
+
+    try {
+      await deletePlaceFromSupabase(post.place.id);
+    } catch (err) {
+      console.warn('No se pudo sincronizar la eliminación en Supabase:', err);
+    }
+
+    setPosts((prev) => prev.filter((p) => p.id !== post.id));
+    onDeletePlace?.(post.place.id);
+
+    setFeedNotice(`Publicación sobre "${post.place.name}" eliminada.`);
+    setTimeout(() => setFeedNotice(null), 4000);
+  };
+
   const [posts, setPosts] = useState<CommunityPost[]>([
+
     {
       id: 'post-1',
       authorName: 'Ana G.',
@@ -707,9 +800,95 @@ export function FacebookFeed({
                 </div>
               </div>
 
-              <button className="fb-more-btn" aria-label="Más opciones">
-                <MoreHorizontal size={18} />
-              </button>
+              <div className="fb-more-wrap">
+                <button
+                  type="button"
+                  className="fb-more-btn"
+                  aria-label="Más opciones"
+                  onClick={() => {
+                    setConfirmDeletePostId(null);
+                    setMenuPostId((current) => (current === post.id ? null : post.id));
+                  }}
+                >
+                  <MoreHorizontal size={18} />
+                </button>
+
+                {menuPostId === post.id && (
+                  <>
+                    <div
+                      className="fb-menu-backdrop"
+                      onClick={() => {
+                        setMenuPostId(null);
+                        setConfirmDeletePostId(null);
+                      }}
+                    />
+                    <div className="fb-post-menu-dropdown">
+                      {isPostOwner(post) ? (
+                        <>
+                          {confirmDeletePostId === post.id ? (
+                            <div className="fb-menu-confirm-box">
+                              <p>¿Eliminar esta recomendación?</p>
+                              <div className="fb-menu-confirm-actions">
+                                <button
+                                  type="button"
+                                  className="fb-menu-confirm-btn delete"
+                                  onClick={() => handleDeletePost(post)}
+                                >
+                                  Sí, eliminar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="fb-menu-confirm-btn cancel"
+                                  onClick={() => setConfirmDeletePostId(null)}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                className="fb-menu-item"
+                                onClick={() => {
+                                  setMenuPostId(null);
+                                  setEditingPost(post);
+                                }}
+                              >
+                                <Pencil size={15} />
+                                <span>Modificar recomendación</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="fb-menu-item danger"
+                                onClick={() => setConfirmDeletePostId(post.id)}
+                              >
+                                <Trash2 size={15} />
+                                <span>Eliminar publicación</span>
+                              </button>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <div className="fb-menu-info-box">
+                          <span className="fb-menu-hint">Publicado por {post.authorName}</span>
+                          <button
+                            type="button"
+                            className="fb-menu-item"
+                            onClick={() => {
+                              navigator.clipboard?.writeText?.(window.location.href);
+                              setMenuPostId(null);
+                            }}
+                          >
+                            <Share2 size={14} />
+                            <span>Compartir enlace</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Contenido / Texto del Post */}
@@ -956,6 +1135,14 @@ export function FacebookFeed({
       </div>
 
       {/* Ventana Flotante de Comentario con Calificación Condicional */}
+      {feedNotice && <div className="feed-status-banner" style={{ margin: '12px 16px' }}>{feedNotice}</div>}
+      <EditPlaceModal
+        isOpen={!!editingPost}
+        onClose={() => setEditingPost(null)}
+        place={editingPost?.place || null}
+        initialDescription={editingPost?.content}
+        onSave={handleSaveEditedPlace}
+      />
       <CommentModal
         isOpen={commentModalState.isOpen}
         place={commentModalState.place}
