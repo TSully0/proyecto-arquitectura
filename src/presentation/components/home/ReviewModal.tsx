@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { X, Upload, MapPin } from 'lucide-react';
+import { MapPin, MapPinPlus, MessageSquareText, X } from 'lucide-react';
 import type { CategoryId, Place } from '../../../business/types/place';
+import { PlaceImageInput } from './PlaceImageInput';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -92,7 +93,7 @@ export function ReviewModal({ isOpen, onClose, places, onSubmitReview, onSubmit 
 
   return (
     <div className="modal-backdrop" onClick={handleClose}>
-      <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-dialog review-modal-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
             <span className="modal-tag">HUECAS MANABAS COMUNIDAD</span>
@@ -105,47 +106,79 @@ export function ReviewModal({ isOpen, onClose, places, onSubmitReview, onSubmit 
           </button>
         </div>
 
-        <div className="modal-actions">
+        {submitError && (
+          <div className="feed-status-banner" role="alert">
+            {submitError}
+          </div>
+        )}
+
+        <div className="modal-mode-tabs" role="tablist" aria-label="Tipo de publicación">
           <button
             type="button"
-            className={mode === 'review' ? 'btn-submit' : 'btn-cancel'}
-            onClick={() => { setMode('review'); setSubmitError(null); }}
+            className={`mode-tab ${mode === 'review' ? 'active' : ''}`}
+            role="tab"
+            aria-selected={mode === 'review'}
+            onClick={() => {
+              setMode('review');
+              setSubmitError(null);
+            }}
             disabled={isSubmitting}
           >
-            Reseñar un lugar
+            <span className="mode-tab-icon" aria-hidden="true">
+              <MessageSquareText size={20} />
+            </span>
+            <span className="mode-tab-copy">
+              <strong>Opinar sobre un lugar</strong>
+              <small>Comparte tu experiencia</small>
+            </span>
           </button>
           <button
             type="button"
-            className={mode === 'place' ? 'btn-submit' : 'btn-cancel'}
-            onClick={() => { setMode('place'); setSubmitError(null); }}
+            className={`mode-tab ${mode === 'place' ? 'active' : ''}`}
+            role="tab"
+            aria-selected={mode === 'place'}
+            onClick={() => {
+              setMode('place');
+              setSubmitError(null);
+            }}
             disabled={isSubmitting}
           >
-            Recomendar lugar nuevo
+            <span className="mode-tab-icon" aria-hidden="true">
+              <MapPinPlus size={20} />
+            </span>
+            <span className="mode-tab-copy">
+              <strong>Recomendar lugar nuevo</strong>
+              <small>Agrega un sitio a la comunidad</small>
+            </span>
           </button>
         </div>
-
-        {submitError && <div className="feed-status-banner" role="alert">{submitError}</div>}
 
         <form onSubmit={handleSubmit} className="modal-form">
           {mode === 'review' ? (
             <>
+              {places.length === 0 && (
+                <p className="review-empty-state">
+                  Aún no hay lugares disponibles para reseñar. Puedes recomendar uno nuevo.
+                </p>
+              )}
               <div className="form-group">
-                <label htmlFor="review-place">Lugar que deseas reseñar *</label>
+                <label htmlFor="review-place">Lugar *</label>
                 <select
                   id="review-place"
                   required
                   value={placeId}
                   onChange={(e) => setPlaceId(e.target.value)}
                 >
-                  <option value="">Selecciona un lugar</option>
+                  <option value="">Selecciona un lugar...</option>
                   {places.map((place) => (
-                    <option key={place.id} value={place.id}>{place.name}</option>
+                    <option key={place.id} value={place.id}>
+                      {place.name} ({place.category_id})
+                    </option>
                   ))}
                 </select>
-                {places.length === 0 && <small>No hay lugares disponibles para reseñar.</small>}
               </div>
               <div className="form-group">
-                <label>Calificación *</label>
+                <label>Calificación</label>
                 <div className="rating-select">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -243,16 +276,12 @@ export function ReviewModal({ isOpen, onClose, places, onSubmitReview, onSubmit 
           </div>
 
           <div className="form-group">
-            <label>URL de Imagen (Opcional)</label>
-            <div className="input-with-icon">
-              <Upload size={16} className="input-icon" />
-              <input
-                type="url"
-                placeholder="https://images.unsplash.com/..."
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
-            </div>
+            <label>Foto del Lugar (Opcional)</label>
+            <PlaceImageInput
+              value={imageUrl}
+              onChange={setImageUrl}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="form-group">

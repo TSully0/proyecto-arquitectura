@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, MapPin } from 'lucide-react';
+import { X, MapPin } from 'lucide-react';
 import type { CategoryId, Place } from '../../../business/types/place';
+import { PlaceImageInput } from './PlaceImageInput';
 
 interface EditPlaceModalProps {
   isOpen: boolean;
@@ -203,16 +204,12 @@ export function EditPlaceModal({
           </div>
 
           <div className="form-group">
-            <label>URL de Imagen (Opcional)</label>
-            <div className="input-with-icon">
-              <Upload size={16} className="input-icon" />
-              <input
-                type="url"
-                placeholder="https://images.unsplash.com/..."
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
-            </div>
+            <label>Foto del Lugar (Opcional)</label>
+            <PlaceImageInput
+              value={imageUrl}
+              onChange={setImageUrl}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="form-group">
