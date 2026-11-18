@@ -12,6 +12,12 @@ import {
   initialPlaces
 } from '../../data/repositories/places';
 import { syncUserToSupabase } from '../../data/repositories/users';
+import {
+  fetchUserNotifications,
+  markAllNotificationsAsReadInDb,
+  markNotificationAsReadInDb,
+  createNotificationInDb
+} from '../../data/repositories/notifications';
 import { migrateProfilePhoto } from '../../data/repositories/profilePhoto';
 import { createReview } from '../../services/reviewsService';
 import { Header } from '../components/home/Header';
@@ -39,28 +45,32 @@ export function HomePage({ user, onLogout }: HomePageProps) {
   const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
-  // Notificaciones interactivas
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: 'notif-1',
-      title: 'Beneficio Estudiantil',
-      description: 'Nuevo 20% de descuento en Cineplex Manta con carnet ULEAM.',
-      timestamp: 'Hace 30 min',
-      isRead: false,
-      type: 'discount'
-    },
-    {
-      id: 'notif-2',
-      title: 'Nueva Recomendación',
-      description: 'Juan Pérez recomendó mariscos frescos en Tarqui.',
-      timestamp: 'Hace 2 horas',
-      isRead: false,
-      type: 'review'
-    }
-  ]);
+  // Notificaciones interactivas conectadas a base de datos y caché local
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const userKey = user.email || user.id;
+    fetchUserNotifications(userKey).then((items) => {
+      if (isMounted && items) {
+        setNotifications(items);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [user.email, user.id]);
 
   const handleMarkAllNotificationsAsRead = () => {
+    const userKey = user.email || user.id;
+    markAllNotificationsAsReadInDb(userKey);
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+  };
+
+  const handleMarkNotificationAsRead = (id: string) => {
+    const userKey = user.email || user.id;
+    markNotificationAsReadInDb(id, userKey);
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
   };
 
   // Load places from Supabase on mount
@@ -225,17 +235,23 @@ export function HomePage({ user, onLogout }: HomePageProps) {
 
     setReviewsRefreshKey((key) => key + 1);
     await refreshPlaceSummary(placeId);
-    setNotifications((prev) => [
+    const newNotifItem: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: '¡Publicación exitosa!',
+      description: `El lugar y tu reseña sobre "${newPlaceData.name}" ya están guardados.`,
+      timestamp: 'Justo ahora',
+      isRead: false,
+      type: 'system'
+    };
+    setNotifications((prev) => [newNotifItem, ...prev]);
+    createNotificationInDb(
       {
-        id: `notif-${Date.now()}`,
-        title: '¡Publicación exitosa!',
-        description: `El lugar y tu reseña sobre "${newPlaceData.name}" ya están guardados.`,
-        timestamp: 'Justo ahora',
-        isRead: false,
+        title: newNotifItem.title,
+        description: newNotifItem.description,
         type: 'system'
       },
-      ...prev
-    ]);
+      user.email || user.id
+    ).catch(() => {});
   };
 
   const handleUpdatePlace = (placeId: string, updatedData: Partial<Place>) => {
@@ -246,17 +262,23 @@ export function HomePage({ user, onLogout }: HomePageProps) {
           : p
       )
     );
-    setNotifications((prev) => [
+    const newNotifItem: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: '¡Publicación actualizada!',
+      description: `La recomendación "${updatedData.name || 'de lugar'}" ha sido modificada con éxito.`,
+      timestamp: 'Justo ahora',
+      isRead: false,
+      type: 'system'
+    };
+    setNotifications((prev) => [newNotifItem, ...prev]);
+    createNotificationInDb(
       {
-        id: `notif-${Date.now()}`,
-        title: '¡Publicación actualizada!',
-        description: `La recomendación "${updatedData.name || 'de lugar'}" ha sido modificada con éxito.`,
-        timestamp: 'Justo ahora',
-        isRead: false,
+        title: newNotifItem.title,
+        description: newNotifItem.description,
         type: 'system'
       },
-      ...prev
-    ]);
+      user.email || user.id
+    ).catch(() => {});
   };
 
   const handleDeletePlace = (placeId: string) => {
@@ -265,17 +287,23 @@ export function HomePage({ user, onLogout }: HomePageProps) {
         (p) => resolvePlaceId(p.id) !== resolvePlaceId(placeId) && p.id !== placeId
       )
     );
-    setNotifications((prev) => [
+    const newNotifItem: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: 'Publicación eliminada',
+      description: 'La recomendación y su publicación han sido eliminadas.',
+      timestamp: 'Justo ahora',
+      isRead: false,
+      type: 'system'
+    };
+    setNotifications((prev) => [newNotifItem, ...prev]);
+    createNotificationInDb(
       {
-        id: `notif-${Date.now()}`,
-        title: 'Publicación eliminada',
-        description: 'La recomendación y su publicación han sido eliminadas.',
-        timestamp: 'Justo ahora',
-        isRead: false,
+        title: newNotifItem.title,
+        description: newNotifItem.description,
         type: 'system'
       },
-      ...prev
-    ]);
+      user.email || user.id
+    ).catch(() => {});
   };
 
   // Handle map pin click
@@ -295,6 +323,7 @@ export function HomePage({ user, onLogout }: HomePageProps) {
         onCreateReview={() => setIsReviewModalOpen(true)}
         notifications={notifications}
         onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
+        onMarkNotificationAsRead={handleMarkNotificationAsRead}
         onLogoClick={() => {
           setActiveCategory('inicio');
           setSearchQuery('');

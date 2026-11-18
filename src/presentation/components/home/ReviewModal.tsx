@@ -213,7 +213,7 @@ export function ReviewModal({ isOpen, onClose, places, onSubmitReview, onSubmit 
             <input
               type="text"
               required
-              placeholder="Ej: La Hueca de Pedro, Cineplex, Playa Murciélago..."
+              placeholder="Ej: Cevichería El Chaval, Cinemark Mall del Pacífico, Playa El Murciélago..."
               value={name}
               onChange={(e) => setName(e.target.value)}
             />

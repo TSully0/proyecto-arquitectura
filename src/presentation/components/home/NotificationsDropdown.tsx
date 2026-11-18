@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, CheckCheck, MoreHorizontal, MessageSquare, Tag, ShieldCheck } from 'lucide-react';
+import { Bell, CheckCheck, MoreHorizontal, MessageSquare, Tag, ShieldCheck, UserPlus } from 'lucide-react';
 import type { NotificationItem } from '../../../business/types/place';
 
 interface NotificationsDropdownProps {
@@ -7,13 +7,15 @@ interface NotificationsDropdownProps {
   onClose: () => void;
   notifications: NotificationItem[];
   onMarkAllAsRead: () => void;
+  onMarkAsRead?: (id: string) => void;
 }
 
 export function NotificationsDropdown({
   isOpen,
   onClose,
   notifications,
-  onMarkAllAsRead
+  onMarkAllAsRead,
+  onMarkAsRead
 }: NotificationsDropdownProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
 
@@ -73,6 +75,13 @@ export function NotificationsDropdown({
                 <div
                   key={notif.id}
                   className={`notif-item ${!notif.isRead ? 'unread' : ''}`}
+                  onClick={() => {
+                    if (!notif.isRead && onMarkAsRead) {
+                      onMarkAsRead(notif.id);
+                    }
+                  }}
+                  style={{ cursor: !notif.isRead ? 'pointer' : 'default' }}
+                  title={!notif.isRead ? 'Click para marcar como leída' : undefined}
                 >
                   <div className="notif-avatar-col">
                     {notif.avatarUrl ? (
@@ -83,6 +92,8 @@ export function NotificationsDropdown({
                           <MessageSquare size={16} />
                         ) : notif.type === 'discount' ? (
                           <Tag size={16} />
+                        ) : notif.type === 'follow' ? (
+                          <UserPlus size={16} />
                         ) : (
                           <ShieldCheck size={16} />
                         )}

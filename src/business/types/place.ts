@@ -70,6 +70,7 @@ export interface CommunityPost {
   isLiked?: boolean;
   commentsCount: number;
   comments: CommunityComment[];
+  sharesCount?: number;
 }
 
 // Retrocompatibilidad de alias si es necesario
@@ -82,5 +83,5 @@ export interface NotificationItem {
   timestamp: string;
   isRead: boolean;
   avatarUrl?: string;
-  type?: 'review' | 'system' | 'discount';
+  type?: 'review' | 'system' | 'discount' | 'follow';
 }

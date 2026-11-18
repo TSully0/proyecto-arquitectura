@@ -13,12 +13,12 @@ export const initialCategories: CategoryItem[] = [
 
 export const initialPlaces: Place[] = [
   {
-    id: 'cineplex-manta',
-    name: 'Cineplex Manta - Mall del Pacífico',
+    id: 'cinemark-manta',
+    name: 'Cinemark Manta - Mall del Pacífico',
     category_id: 'cines',
-    description: 'Cineplex Manta - Mall del Pacífico - Glorietas Universitarios, Manta.',
-    address: 'Mall del Pacífico, Av. Malecón, Manta',
-    image_url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=800&q=80',
+    description: 'Modernas salas XD y 2D/3D en Mall del Pacífico frente a la playa El Murciélago. Descuentos estudiantiles con carnet de la ULEAM todos los martes y miércoles.',
+    address: 'Mall del Pacífico, Av. Malecón y Calle 23, Manta',
+    image_url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=800&q=80',
     rating: 5.0,
     review_count: 148,
     has_student_discount: true,
@@ -29,12 +29,12 @@ export const initialPlaces: Place[] = [
     likes_count: 320
   },
   {
-    id: 'la-hueca-de-pedro',
-    name: 'La Hueca de Pedro - Mariscos',
+    id: 'la-hueca-de-tarqui',
+    name: 'Cevichería El Chaval - Tarqui',
     category_id: 'comida',
-    description: 'La Hueca de Pedro - Mariscos com corrdid y paraumente en Manta.',
-    address: 'Tarqui, Malecón frente al puerto, Manta',
-    image_url: 'https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=800&q=80',
+    description: 'Auténticos ceviches manabitas de pescado, camarón y concha con maní y chifles en la zona pesquera de Tarqui. Platos típicos a precios universitarios.',
+    address: 'Playita Mía / Tarqui, Malecón frente al puerto, Manta',
+    image_url: 'https://images.unsplash.com/photo-1535400255456-984241443b29?auto=format&fit=crop&w=800&q=80',
     rating: 5.0,
     review_count: 215,
     has_student_discount: true,
@@ -46,10 +46,10 @@ export const initialPlaces: Place[] = [
   },
   {
     id: 'playa-murcielago-surf',
-    name: 'Playa Murciélago - Surf',
+    name: 'Playa El Murciélago - Surf & Malecón',
     category_id: 'extremos',
-    description: 'Playa Murciélago - Surf, comortadamente e alea planaos amendo en Manta.',
-    address: 'Playa Murciélago, Manta',
+    description: 'La playa más emblemática de Manta. Olas constantes para surfistas novatos y avanzados, malecón escénico con restaurantes y ambiente universitario.',
+    address: 'Malecón Escénico, Playa El Murciélago, Manta',
     image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     rating: 5.0,
     review_count: 380,
@@ -61,12 +61,12 @@ export const initialPlaces: Place[] = [
     likes_count: 589
   },
   {
-    id: 'cineplex-manta-2',
-    name: 'Cineplex Manta - Mall del Pacífico',
+    id: 'museo-centro-cultural-manta',
+    name: 'Museo Centro Cultural Manta & MAAC Cine',
     category_id: 'historicos',
-    description: 'Cineplex Manta - Mall del Pacífico y de universitario.',
-    address: 'Av. Circunvalación, Manta',
-    image_url: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80',
+    description: 'Espacio cultural y arqueológico frente al mar. Alberga la colección de la cultura Manteña, sillas de piedra manteñas y proyecciones de cine independiente.',
+    address: 'Av. Malecón Jaime Chávez Gutiérrez y Calle 20, Manta',
+    image_url: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?auto=format&fit=crop&w=800&q=80',
     rating: 5.0,
     review_count: 92,
     has_student_discount: true,
@@ -77,12 +77,12 @@ export const initialPlaces: Place[] = [
     likes_count: 140
   },
   {
-    id: 'playa-murcielago-sunset',
-    name: 'Playa Murciélago - Surf',
+    id: 'playa-santa-marianita',
+    name: 'Playa Santa Marianita - Capital del Kitesurf',
     category_id: 'naturaleza',
-    description: 'Playa Murciélago - surf santamentosbrica, orassones y anturaleo.',
-    address: 'Costanera Manta',
-    image_url: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=800&q=80',
+    description: 'Playa tranquila a 15 minutos de Manta, famosa a nivel internacional por sus vientos constantes ideales para kitesurf y atardeceres mágicos.',
+    address: 'Costanera Sur, Santa Marianita, Manta',
+    image_url: 'https://images.unsplash.com/photo-1510414842594-a61752afb394?auto=format&fit=crop&w=800&q=80',
     rating: 5.0,
     review_count: 240,
     has_student_discount: true,
@@ -93,12 +93,12 @@ export const initialPlaces: Place[] = [
     likes_count: 275
   },
   {
-    id: 'playa-murcielago-naturale',
-    name: 'Playa Murciélago - Naturale a Manta',
+    id: 'refugio-silvestre-pacoche',
+    name: 'Refugio de Vida Silvestre Pacoche',
     category_id: 'naturaleza',
-    description: 'Playa Murciélago con Manta.',
-    address: 'Mirador costero, Manta',
-    image_url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+    description: 'Microclima húmedo y bosque tropical a minutos de Manta. Senderismo guiado para avistamiento de monos aulladores, flora nativa y cascadas.',
+    address: 'Parroquia San Lorenzo - Pacoche, Manta',
+    image_url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80',
     rating: 5.0,
     review_count: 110,
     has_student_discount: true,
@@ -184,11 +184,16 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 // Los lugares de ejemplo del feed usan ids tipo "cineplex-manta", pero en
 // Supabase esos mismos lugares tienen un UUID (ver DATOS SEMILLA en supabase_schema.sql).
 export const PLACE_SLUG_TO_UUID: Record<string, string> = {
+  'cinemark-manta': 'b1111111-0000-0000-0000-000000000001',
   'cineplex-manta': 'b1111111-0000-0000-0000-000000000001',
+  'la-hueca-de-tarqui': 'b1111111-0000-0000-0000-000000000002',
   'la-hueca-de-pedro': 'b1111111-0000-0000-0000-000000000002',
   'playa-murcielago-surf': 'b1111111-0000-0000-0000-000000000003',
+  'museo-centro-cultural-manta': 'b1111111-0000-0000-0000-000000000004',
   'cineplex-manta-2': 'b1111111-0000-0000-0000-000000000004',
+  'playa-santa-marianita': 'b1111111-0000-0000-0000-000000000005',
   'playa-murcielago-sunset': 'b1111111-0000-0000-0000-000000000005',
+  'refugio-silvestre-pacoche': 'b1111111-0000-0000-0000-000000000006',
   'playa-murcielago-naturale': 'b1111111-0000-0000-0000-000000000006'
 };
 

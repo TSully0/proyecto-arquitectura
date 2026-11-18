@@ -7,6 +7,7 @@ import type { User } from '../../../business/types/user';
 import type { Place, CommunityPost, CommunityComment, CategoryId } from '../../../business/types/place';
 import { CommentModal } from './CommentModal';
 import { UserAvatar } from '../ui/UserAvatar';
+import { getPostSharesCount, recordPostShare } from '../../../data/repositories/shares';
 import { createReview } from '../../../services/reviewsService';
 import {
   fetchPlaceLikes,
@@ -205,24 +206,23 @@ export function FacebookFeed({
   };
 
   const [posts, setPosts] = useState<CommunityPost[]>([
-
     {
       id: 'post-1',
-      authorName: 'Ana G.',
+      authorName: 'Sully',
       authorRole: 'Estudiante ULEAM',
       authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
       timestamp: 'Hace 2 horas',
-      locationName: 'Cineplex Manta - Mall del Pacífico',
-      content: '¡Ayer fuimos con los chicos de la facultad al Cineplex! El combo universitario de canguil y gaseosa nos salió con descuento mostrando el carnet. Las salas están impecables, el aire acondicionado al 100% y la cartelera tiene todos los estrenos. ¡Plan perfecto para relajarse después de parciales! 🍿🎬✨',
-      imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=900&q=80',
+      locationName: 'Cinemark Manta - Mall del Pacífico',
+      content: '¡Ayer fuimos con los chicos de la facultad a Cinemark en el Mall del Pacífico! El combo universitario de canguil y gaseosa nos salió con descuento mostrando el carnet de la ULEAM. Las salas XD están impecables, el aire acondicionado al 100% y la cartelera tiene todos los estrenos. ¡Plan perfecto para relajarse después de parciales! 🍿🎬✨',
+      imageUrl: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=900&q=80',
       place: places[0] || {
-        id: 'cineplex-manta',
-        name: 'Cineplex Manta - Mall del Pacífico',
+        id: 'cinemark-manta',
+        name: 'Cinemark Manta - Mall del Pacífico',
         category_id: 'cines',
-        description: 'Cineplex Manta - Mall del Pacífico - Glorietas Universitarios, Manta.',
-        image_url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=800&q=80',
+        description: 'Modernas salas XD y 2D/3D en Mall del Pacífico frente a la playa El Murciélago. Descuentos estudiantiles con carnet de la ULEAM todos los martes y miércoles.',
+        image_url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=800&q=80',
         rating: 5.0,
-        review_count: 142,
+        review_count: 148,
         has_student_discount: true,
         has_wifi: true,
         is_open: true,
@@ -230,11 +230,12 @@ export function FacebookFeed({
       },
       likesCount: 54,
       isLiked: false,
+      sharesCount: getPostSharesCount('post-1', 12),
       commentsCount: 2,
       comments: [
         {
           id: 'c-1',
-          authorName: 'Carlos Mendoza',
+          authorName: 'Sebastián Mendoza',
           authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
           text: 'Totalmente de acuerdo, los martes de promo son los mejores para ir!',
           timestamp: 'Hace 1 hora',
@@ -243,9 +244,9 @@ export function FacebookFeed({
         },
         {
           id: 'c-2',
-          authorName: 'María Moderadora',
+          authorName: 'Camila Intriago',
           authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-          text: '¿Alguien sabe si el descuento aplica también los fines de semana?',
+          text: '¿Alguien sabe si el descuento aplica también los fines de semana con el carnet?',
           timestamp: 'Hace 30 min',
           hasVisited: false
         }
@@ -253,21 +254,21 @@ export function FacebookFeed({
     },
     {
       id: 'post-2',
-      authorName: 'Juan Pérez',
-      authorRole: 'Estudiante Ingeniería',
+      authorName: 'Ricardo',
+      authorRole: 'Estudiante Ingeniería ULEAM',
       authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
       timestamp: 'Hace 5 horas',
       locationName: 'Tarqui, Manta',
-      content: 'Si buscan mariscos frescos de verdad y a buen precio, tienen que ir a La Hueca de Pedro en Tarqui. El ceviche mixto y el arroz marinero vienen súper cargados. Con $5 almuerzas como rey frente al puerto pesquero 🦐🐟🍲',
-      imageUrl: 'https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80',
+      content: 'Si buscan mariscos frescos de verdad y a buen precio, tienen que ir a Cevichería El Chaval en Tarqui. El ceviche de pescado con maní y chifles viene súper cargado. Con $4.50 almuerzas como rey frente al puerto pesquero 🦐🐟🍲',
+      imageUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?auto=format&fit=crop&w=900&q=80',
       place: places[1] || {
-        id: 'la-hueca-de-pedro',
-        name: 'La Hueca de Pedro - Mariscos',
+        id: 'la-hueca-de-tarqui',
+        name: 'Cevichería El Chaval - Tarqui',
         category_id: 'comida',
-        description: 'La Hueca de Pedro - Mariscos com corrdid y paraumente en Manta.',
-        image_url: 'https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=800&q=80',
+        description: 'Auténticos ceviches manabitas de pescado, camarón y concha con maní y chifles en la zona pesquera de Tarqui. Platos típicos a precios universitarios.',
+        image_url: 'https://images.unsplash.com/photo-1535400255456-984241443b29?auto=format&fit=crop&w=800&q=80',
         rating: 5.0,
-        review_count: 98,
+        review_count: 215,
         has_student_discount: true,
         has_wifi: true,
         is_open: true,
@@ -275,6 +276,7 @@ export function FacebookFeed({
       },
       likesCount: 89,
       isLiked: true,
+      sharesCount: getPostSharesCount('post-2', 8),
       commentsCount: 1,
       comments: [
         {
@@ -294,17 +296,17 @@ export function FacebookFeed({
       authorRole: 'Club de Surf Manta',
       authorAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=100&q=80',
       timestamp: 'Ayer a las 18:30',
-      locationName: 'Playa Murciélago, Manta',
-      content: 'Atardecer perfecto en Murciélago después de clases. El viento suave y las olas estuvieron en su punto para surfear. Hay estacionamiento accesible y ambiente nocturno genial en los locales del malecón 🌊🏄‍♂️🌙',
+      locationName: 'Playa El Murciélago, Manta',
+      content: 'Atardecer perfecto en El Murciélago después de clases. El viento suave y las olas estuvieron en su punto para surfear. Hay estacionamiento accesible y ambiente nocturno genial en los locales del malecón escénico 🌊🏄‍♂️🌙',
       imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
       place: places[2] || {
         id: 'playa-murcielago-surf',
-        name: 'Playa Murciélago - Surf',
+        name: 'Playa El Murciélago - Surf & Malecón',
         category_id: 'extremos',
-        description: 'Playa Murciélago - Surf, comortadamente e alea planaos amendo en Manta.',
+        description: 'La playa más emblemática de Manta. Olas constantes para surfistas novatos y avanzados, malecón escénico con restaurantes y ambiente universitario.',
         image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
         rating: 5.0,
-        review_count: 210,
+        review_count: 380,
         has_student_discount: true,
         has_wifi: true,
         is_open: true,
@@ -313,6 +315,7 @@ export function FacebookFeed({
       },
       likesCount: 124,
       isLiked: false,
+      sharesCount: getPostSharesCount('post-3', 19),
       commentsCount: 1,
       comments: [
         {
@@ -560,6 +563,37 @@ export function FacebookFeed({
 
   // Dar o quitar like: el cambio se ve al instante y se guarda en Supabase.
   // Si falla el guardado, se deshace el cambio y se avisa al usuario.
+    const handleSharePost = async (post: CommunityPost) => {
+    const shareUrl = `${window.location.origin}/?lugar=${encodeURIComponent(post.place.name)}`;
+    const resolvedId = resolvePlaceId(post.place.id) ?? undefined;
+    const newShares = await recordPostShare(post.id, resolvedId, user.id);
+
+    setPosts((prev) =>
+      prev.map((p) => (p.id === post.id ? { ...p, sharesCount: newShares } : p))
+    );
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: post.place.name,
+          text: `¡Mira esta reseña de ${post.place.name} en MantaCampus!`,
+          url: shareUrl
+        });
+        setFeedNotice(`¡Publicación de ${post.place.name} compartida!`);
+        setTimeout(() => setFeedNotice(null), 3500);
+        return;
+      } catch {
+        // Fallback al portapapeles
+      }
+    }
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareUrl);
+      setFeedNotice(`¡Enlace de ${post.place.name} copiado al portapapeles y compartido!`);
+      setTimeout(() => setFeedNotice(null), 3500);
+    }
+  };
+
   const handleToggleLike = async (post: CommunityPost) => {
     const placeId = resolvePlaceId(post.place.id);
     if (!placeId) {
@@ -876,7 +910,7 @@ export function FacebookFeed({
                             type="button"
                             className="fb-menu-item"
                             onClick={() => {
-                              navigator.clipboard?.writeText?.(window.location.href);
+                              handleSharePost(post);
                               setMenuPostId(null);
                             }}
                           >
@@ -967,7 +1001,7 @@ export function FacebookFeed({
               <div className="fb-stats-comments">
                 <span>{post.commentsCount} comentarios</span>
                 <span>&bull;</span>
-                <span>4 compartidos</span>
+                <span>{post.sharesCount ?? getPostSharesCount(post.id, 4)} compartidos</span>
               </div>
             </div>
 
@@ -995,10 +1029,8 @@ export function FacebookFeed({
 
               <button
                 className="fb-action-btn"
-                onClick={() => {
-                  navigator.clipboard?.writeText(window.location.href);
-                  alert('¡Enlace del lugar copiado al portapapeles!');
-                }}
+                onClick={() => handleSharePost(post)}
+                title="Compartir enlace de este lugar"
               >
                 <Share2 size={18} />
                 <span>Compartir</span>

@@ -18,6 +18,7 @@ interface HeaderProps {
   onCreateReview: () => void;
   notifications: NotificationItem[];
   onMarkAllNotificationsAsRead: () => void;
+  onMarkNotificationAsRead?: (id: string) => void;
   onLogoClick?: () => void;
 }
 
@@ -30,6 +31,7 @@ export function Header({
   onCreateReview,
   notifications,
   onMarkAllNotificationsAsRead,
+  onMarkNotificationAsRead,
   onLogoClick
 }: HeaderProps) {
 
@@ -90,6 +92,7 @@ export function Header({
             onClose={() => setShowNotifications(false)}
             notifications={notifications}
             onMarkAllAsRead={onMarkAllNotificationsAsRead}
+            onMarkAsRead={onMarkNotificationAsRead}
           />
         </div>
 
